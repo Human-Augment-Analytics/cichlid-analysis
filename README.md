@@ -1,1 +1,1 @@
-# cichlid-analysis
+# courtship-analysis
