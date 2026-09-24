@@ -9,7 +9,7 @@ import polars as pl
 from pose_change import TRACK_KEYS
 
 
-def overlay_pose(frame, pose_row, color=(0, 215, 255), track_label=None):
+def overlay_pose(frame, pose_row, color=(0, 215, 255), track_label=None, *, labels=True):
     """Draw labeled keypoints on a copy of a BGR video frame."""
     _frame = frame.copy()
     _pose_row = pose_row
@@ -44,6 +44,12 @@ def overlay_pose(frame, pose_row, color=(0, 215, 255), track_label=None):
         if not (0 <= _x < _width and 0 <= _y < _height):
             continue
         _points.append((_name, _x, _y))
+
+    if not labels:
+        for _name, _x, _y in _points:
+            cv2.circle(_frame, (_x, _y), 6, (0, 0, 0), -1, cv2.LINE_AA)
+            cv2.circle(_frame, (_x, _y), 4, color, -1, cv2.LINE_AA)
+        return _frame
 
     # Alternate labels between the two sides of nearby points to reduce overlap.
     _min_point_x = min((_point[1] for _point in _points), default=0)
@@ -122,7 +128,7 @@ def overlay_pose(frame, pose_row, color=(0, 215, 255), track_label=None):
     return _frame
 
 
-def overlay_frame(frame, frame_poses):
+def overlay_frame(frame, frame_poses, *, labels=True):
     """Draw every detected TrackID for exactly one video frame."""
     if frame_poses.is_empty():
         return frame.copy()
@@ -133,9 +139,8 @@ def overlay_frame(frame, frame_poses):
     annotated = frame.copy()
     for row in frame_poses.sort("TrackID").iter_rows(named=True):
         track_id = int(row["TrackID"])
-        rgb = hsv_to_rgb((track_id * 0.61803398875) % 1, 0.75, 1.0)
-        color = tuple(round(channel * 255) for channel in reversed(rgb))
-        annotated = overlay_pose(annotated, row, color=color, track_label=f"TrackID {track_id}")
+        color = track_color(track_id)
+        annotated = overlay_pose(annotated, row, color=color, track_label=f"TrackID {track_id}", labels=labels)
     return annotated
 
 
@@ -183,3 +188,28 @@ def render_frame_pairs(video_path, poses, pairs):
             yield pair, png.tobytes()
     finally:
         capture.release()
+
+
+def track_color(track_id):
+    """Return a stable, distinct BGR color for a TrackID."""
+    rgb = hsv_to_rgb((int(track_id) * 0.61803398875) % 1, 0.75, 1.0)
+    return tuple(round(channel * 255) for channel in reversed(rgb))
+
+
+def overlay_track_legend(frame, track_ids):
+    """Draw a fixed top-right legend; leave the keypoints themselves unlabeled."""
+    annotated = frame.copy()
+    labels = [(int(track_id), f"TrackID {int(track_id)}") for track_id in sorted(track_ids)]
+    if not labels:
+        return annotated
+    font, scale = cv2.FONT_HERSHEY_SIMPLEX, 0.65
+    width = max(cv2.getTextSize(label, font, scale, 1)[0][0] for _, label in labels) + 58
+    height = 32 * len(labels) + 16
+    x, y = annotated.shape[1] - width - 12, 12
+    cv2.rectangle(annotated, (x, y), (x + width, y + height), (24, 24, 24), -1)
+    for index, (track_id, label) in enumerate(labels):
+        baseline = y + 29 + index * 32
+        cv2.circle(annotated, (x + 18, baseline - 6), 5, track_color(track_id), -1, cv2.LINE_AA)
+        cv2.putText(annotated, label, (x + 34, baseline), font, scale,
+                    (255, 255, 255), 1, cv2.LINE_AA)
+    return annotated

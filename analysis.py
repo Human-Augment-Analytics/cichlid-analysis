@@ -3,6 +3,8 @@
 # dependencies = [
 #     "altair==6.0.0",
 #     "imageio-ffmpeg==0.6.0",
+#     "joblib==1.6.0",
+#     "scikit-learn==1.9.1",
 #     "marimo==0.24.0",
 #     "matplotlib==3.11.2",
 #     "numpy==2.5.2",
@@ -13,7 +15,7 @@
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.24.2"
 app = marimo.App(width="full")
 
 with app.setup:
@@ -301,50 +303,320 @@ def _(selected_pairs, table, video_filename):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Video clip spans
+    ## Circling spans and displacement bands
+
+    The clip intervals below are treated as circling annotations, with inclusive
+    start and end frames. Orange shading applies to the video timeline; these
+    intervals do not identify which fish is circling.
     """)
     return
 
 
 @app.cell
 def _():
-    _clip_groups = [
-        (
-            "MC920",
-            "0028_vid.mp4",
-            [
-                (334703, 334830),
-                (334985, 335118),
-                (335409, 335502),
-                (336153, 336285),
-                (436636, 436895),
-                (437259, 437437),
-                (713035, 713330),
-            ],
-        ),
-        (
-            "F1_613",
-            "0031_vid.mp4",
-            [
-                (265510, 266227),
-                (266809, 267100),
-                (267242, 267837),
-                (269089, 271817),
-                (272241, 273018),
-                (273550, 274787),
-                (275040, 275190),
-                (276439, 276530),
-            ],
-        ),
-    ]
+    from circling_clips import CIRCLING_SPANS_BY_VIDEO
+
+    circling_spans_by_video = CIRCLING_SPANS_BY_VIDEO
+    return (circling_spans_by_video,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    Each keypoint panel shows the **mean frame-to-frame displacement across fish**
+    at each frame (gray), a trailing rolling mean (blue), and **Bollinger bands
+    at mean ± 2 population standard deviations** (blue fill). These summarize
+    the frame means, not the spread between individual fish. Displacements are
+    computed within tracks before averaging.
+
+    The default window is 30 frames (1 second at 30 FPS). Missing frames stay
+    missing; bands require a complete window. Negative lower bands are retained
+    as a statistical bound. The second view zooms to the annotated region with
+    10 seconds of padding. Both views use seconds from the start of the video.
+    """)
+    return
+
+
+@app.cell
+def _():
+    bollinger_window_frames = mo.ui.number(
+        start=2, stop=18000, value=30, step=1, label="Bollinger window (frames)"
+    )
+    bollinger_window_frames
+    return (bollinger_window_frames,)
+
+
+@app.cell
+def _(
+    bollinger_window_frames,
+    circling_spans_by_video,
+    keypoint_changes,
+    video_filename,
+):
+    from io import BytesIO as _BytesIO
+    from pose_change import plot_displacement_bands
+
+    _spans = circling_spans_by_video.get(video_filename, [])
+    _views = [("full", None)]
+    if _spans:
+        _views.append(("circling", (
+            max(0, min(_start for _start, _end in _spans) - int(10 * FPS)),
+            max(_end for _start, _end in _spans) + int(10 * FPS),
+        )))
+    _output_dir = DATA_DIR.parent / "outputs"
+    _output_dir.mkdir(parents=True, exist_ok=True)
+    _plots = []
+    for _view_name, _frame_range in _views:
+        _figure = plot_displacement_bands(
+            keypoint_changes, _spans, fps=FPS,
+            window_frames=int(bollinger_window_frames.value), frame_range=_frame_range,
+        )
+        _buffer = _BytesIO()
+        _figure.savefig(_buffer, format="png", dpi=160)
+        _output = _output_dir / f"{Path(video_filename).stem}_displacement_bands_{_view_name}.png"
+        _output.write_bytes(_buffer.getvalue())
+        _figure.clear()
+        _plots.append(mo.image(
+            _buffer.getvalue(), width="100%",
+            alt=f"{video_filename}: keypoint displacement with Bollinger bands and circling spans ({_view_name})",
+            caption=f"{video_filename} — {_view_name} view; saved to {_output.name}",
+        ))
+    mo.vstack(_plots)
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
- 
+    ## Circling ground truth vs. logistic regression
+
+    The top bar shows annotated circling in **teal**; the bottom bar shows
+    pose-and-pair model predictions in **purple**. Gray means non-circling. Dashed lines
+    mark annotation boundaries. Select a video, then a span or custom range.
+
+    Predictions cover **every frame** in the selected range, including training
+    frames. This is a visual review, not a held-out evaluation. The score reflects
+    the balanced training sample; the default classification threshold is 0.5.
     """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(circling_spans_by_video, video_filename):
+    timeline_video = mo.ui.dropdown(
+        options=list(circling_spans_by_video), value=video_filename,
+        label="Video", allow_select_none=False,
+    )
+    timeline_video
+    return (timeline_video,)
+
+
+@app.cell(hide_code=True)
+def _(circling_spans_by_video, timeline_video):
+    _capture = cv2.VideoCapture(str(DATA_DIR / timeline_video.value))
+    try:
+        if not _capture.isOpened():
+            raise RuntimeError(f"Cannot open {timeline_video.value}")
+        timeline_last_frame = int(_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
+    finally:
+        _capture.release()
+    _spans = circling_spans_by_video[timeline_video.value]
+    _options = {
+        "Annotated region (+10 s padding)": (max(0, _spans[0][0] - 300), min(timeline_last_frame, _spans[-1][1] + 300)),
+        "Full video": (0, timeline_last_frame),
+        **{f"Span {_index}: {_start:,}–{_end:,} (+10 s)":
+           (max(0, _start - 300), min(timeline_last_frame, _end + 300))
+           for _index, (_start, _end) in enumerate(_spans, 1)},
+    }
+    timeline_preset = mo.ui.dropdown(
+        options=_options, value="Annotated region (+10 s padding)",
+        label="View", allow_select_none=False,
+    )
+    timeline_preset
+    return timeline_last_frame, timeline_preset
+
+
+@app.cell(hide_code=True)
+def _(timeline_last_frame, timeline_preset):
+    timeline_range = mo.ui.range_slider(
+        start=0, stop=timeline_last_frame, step=1,
+        value=timeline_preset.value, debounce=True, show_value=True,
+        full_width=True, label="Frame range (inclusive)",
+    )
+    timeline_threshold = mo.ui.slider(
+        start=0, stop=1, step=0.01, value=0.5, debounce=True,
+        show_value=True, label="Prediction threshold",
+    )
+    mo.vstack([timeline_range, timeline_threshold])
+    return timeline_range, timeline_threshold
+
+
+@app.cell(hide_code=True)
+def _(timeline_range, timeline_video):
+    import importlib as _importlib
+    import pose_features as _pose_features
+    import circling_model as _circling_model
+    import circling_timeline as _circling_timeline
+
+    # A live kernel may retain pose-only helpers after the model is retrained.
+    # Reload dependencies in order before loading the model's feature schema.
+    _importlib.reload(_pose_features)
+    _importlib.reload(_circling_model)
+    _importlib.reload(_circling_timeline)
+    score_window = _circling_timeline.score_window
+
+    _model_path = DATA_DIR.parent / "outputs" / "circling_baseline" / "model.joblib"
+    mo.stop(not _model_path.exists(), mo.md("Run `uv run python circling_model.py train` to create the model."))
+    timeline_predictions = score_window(
+        _model_path, (DATA_DIR / timeline_video.value).with_suffix(".parquet"),
+        *timeline_range.value,
+    )
+    return (timeline_predictions,)
+
+
+@app.cell(hide_code=True)
+def _(
+    circling_spans_by_video,
+    timeline_predictions,
+    timeline_threshold,
+    timeline_video,
+):
+    from io import BytesIO as _BytesIO
+    from circling_timeline import plot_timeline
+
+    _figure = plot_timeline(
+        timeline_predictions, circling_spans_by_video[timeline_video.value],
+        threshold=timeline_threshold.value, video_name=timeline_video.value,
+    )
+    _buffer = _BytesIO()
+    _figure.savefig(_buffer, format="png", dpi=160)
+    _figure.clear()
+    mo.image(_buffer.getvalue(), width="100%",
+             alt="Aligned ground-truth and logistic-regression circling label bars")
+    return
+
+
+@app.cell(hide_code=True)
+def _(circling_spans_by_video):
+    _options = {
+        f"{_video} · {_start:,}–{_end:,}": f"{Path(_video).stem}_{_start}-{_end}_overlay.mp4"
+        for _video, _spans in circling_spans_by_video.items()
+        for _start, _end in _spans
+    }
+    clip_selection = mo.ui.dropdown(
+        options=_options, value=next(iter(_options)), label="Circling clip",
+        allow_select_none=False,
+    )
+    mo.vstack([mo.md("## Circling clips — pose points and TrackID legend"), clip_selection])
+    return (clip_selection,)
+
+
+@app.cell(hide_code=True)
+def _(clip_selection):
+    _clip_dir = DATA_DIR.parent / "outputs" / "circling_clips"
+    _clip = _clip_dir / clip_selection.value
+    mo.stop(not _clip.exists(), mo.md("Run `python circling_clips.py` to export clips."))
+    # VS Code embeds local videos in the cell output. Keep one small preview
+    # per cell instead of embedding all full-resolution clips (~680 MB).
+    _preview_dir = _clip_dir / "previews"
+    _preview_dir.mkdir(exist_ok=True)
+    _preview = _preview_dir / _clip.name
+    if not _preview.exists() or _preview.stat().st_mtime_ns < _clip.stat().st_mtime_ns:
+        subprocess.run([
+            imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-loglevel", "error",
+            "-i", str(_clip), "-vf", "scale=480:-2", "-an",
+            "-c:v", "libx264", "-preset", "fast", "-crf", "32",
+            "-maxrate", "250k", "-bufsize", "500k", "-movflags", "+faststart",
+            str(_preview),
+        ], check=True)
+    mo.vstack([
+        mo.video(str(_preview), width="100%"),
+        mo.md(f"Preview · Full-resolution clip: `outputs/circling_clips/{_clip.name}`"),
+    ])
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Sustained positive predictions
+
+    Scan the **whole selected video** (the Video selector above), using the current
+    prediction threshold. Each returned span lasts **more than 10 seconds** and
+    has **at least 90% positive frames**. This refers to the proportion of positive
+    classifications, not a 0.9 probability threshold.
+
+    We scan 301-frame windows at 30 FPS, then greedily merge overlapping/touching
+    windows only if the combined span still meets 90%. The table lists all matches;
+    choose a span to render its pose-overlay clip. Predictions include training frames.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(timeline_last_frame, timeline_video):
+    # timeline_predictions ensures the model helper reload has finished first.
+    import importlib as _importlib
+    import predicted_spans as _predicted_spans
+
+    _importlib.reload(_predicted_spans)
+    _model = DATA_DIR.parent / "outputs" / "circling_baseline" / "model.joblib"
+    with mo.status.spinner(title=f"Scanning all frames of {timeline_video.value}..."):
+        sustained_scores = _predicted_spans.score_video(
+            _model, DATA_DIR / timeline_video.value, timeline_last_frame + 1,
+            DATA_DIR.parent / "outputs" / "predicted_spans",
+        )
+    return (sustained_scores,)
+
+
+@app.cell(hide_code=True)
+def _(sustained_scores, timeline_threshold, timeline_video):
+    from predicted_spans import find_positive_spans
+
+    sustained_spans = find_positive_spans(
+        sustained_scores, fps=FPS, threshold=timeline_threshold.value,
+    )
+    _output = DATA_DIR.parent / "outputs" / "predicted_spans"
+    sustained_spans.write_csv(_output / f"{Path(timeline_video.value).stem}_spans_threshold_{timeline_threshold.value:.2f}.csv")
+    mo.vstack([
+        mo.md(f"**{sustained_spans.height} qualifying spans** in {timeline_video.value} · threshold {timeline_threshold.value:.2f}"),
+        mo.ui.table(sustained_spans, selection=None, pagination=True, page_size=10),
+    ])
+    return (sustained_spans,)
+
+
+@app.cell(hide_code=True)
+def _(sustained_spans):
+    mo.stop(sustained_spans.is_empty(), mo.md("No spans meet these conditions."))
+    _options = {
+        f"Span {_r['span']}: {_r['start_frame']:,}–{_r['end_frame']:,} · {_r['duration_seconds']:.1f}s · {_r['positive_fraction']:.1%} positive":
+        (_r['start_frame'], _r['end_frame'])
+        for _r in sustained_spans.iter_rows(named=True)
+    }
+    sustained_selection = mo.ui.dropdown(options=_options, value=next(iter(_options)),
+                                         label="Predicted span", allow_select_none=False)
+    sustained_selection
+    return (sustained_selection,)
+
+
+@app.cell(hide_code=True)
+def _(sustained_selection, timeline_video):
+    from predicted_spans import render_span
+
+    with mo.status.spinner(title="Rendering selected span with pose points and TrackID legend..."):
+        _clip, _preview = render_span(
+            DATA_DIR / timeline_video.value, *sustained_selection.value,
+            DATA_DIR.parent / "outputs" / "predicted_spans" / "clips",
+        )
+    mo.vstack([
+        mo.video(str(_preview), width="100%"),
+        mo.md(f"Full-resolution clip: `{_clip.relative_to(DATA_DIR.parent)}`"),
+    ])
+    return
+
+
+@app.cell
+def _():
     return
 
 

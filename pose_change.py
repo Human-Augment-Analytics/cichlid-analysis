@@ -2,8 +2,11 @@
 
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from matplotlib.ticker import StrMethodFormatter
 
 
@@ -73,6 +76,99 @@ def top_frame_pairs(changes: pl.DataFrame, count: int = 20) -> pl.DataFrame:
             "PreviousFrameNum", "FrameNum", "mean_displacement_px",
         )
     )
+
+
+def displacement_bands(changes: pl.DataFrame, window_frames: int = 30) -> pl.DataFrame:
+    """Per-frame mean across fish, with trailing mean ± 2 population SD.
+
+    Reindex to every frame so missing observations cannot shorten a window.
+    Require a full window of valid frame means for each keypoint.
+    """
+    if window_frames < 2:
+        raise ValueError("The rolling window must contain at least two frames.")
+    if changes.is_empty() or changes.select("project_id", "day_label").unique().height != 1:
+        raise ValueError("Provide nonempty displacement data for exactly one video.")
+    means = changes.group_by("FrameNum").agg([
+        pl.col(name).filter(pl.col(name).is_finite()).mean().alias(name)
+        for name in KEYPOINTS
+    ])
+    frames = pl.DataFrame({"FrameNum": pl.int_range(
+        changes["FrameNum"].min(), changes["FrameNum"].max() + 1, eager=True,
+        dtype=changes.schema["FrameNum"],
+    )})
+    means = frames.join(means, on="FrameNum", how="left").sort("FrameNum")
+    means = means.with_columns([
+        expr
+        for name in KEYPOINTS
+        for expr in (
+            pl.col(name).rolling_mean(window_frames).alias(f"{name}_mean"),
+            pl.col(name).rolling_std(window_frames, ddof=0).alias(f"{name}_std"),
+        )
+    ])
+    return means.with_columns([
+        expr
+        for name in KEYPOINTS
+        for expr in (
+            (pl.col(f"{name}_mean") - 2 * pl.col(f"{name}_std")).alias(f"{name}_lower"),
+            (pl.col(f"{name}_mean") + 2 * pl.col(f"{name}_std")).alias(f"{name}_upper"),
+        )
+    ])
+
+
+def plot_displacement_bands(
+    changes: pl.DataFrame,
+    circling_spans=(),
+    *,
+    fps: float = 30.0,
+    window_frames: int = 30,
+    frame_range: tuple[int, int] | None = None,
+) -> Figure:
+    """Plot displacement over time; annotated span endpoints are inclusive.
+
+    Bands summarize frame means across fish, not individual-track variability.
+    Compute windows before cropping to preserve the history at zoom boundaries.
+    """
+    if not np.isfinite(fps) or fps <= 0:
+        raise ValueError("FPS must be positive and finite.")
+    bands = displacement_bands(changes, window_frames)
+    if frame_range is not None:
+        bands = bands.filter(pl.col("FrameNum").is_between(*frame_range))
+    if bands.height < 2:
+        raise ValueError("The plotted range must contain at least two frames.")
+    time = bands["FrameNum"].to_numpy() / fps
+    figure = Figure(figsize=(16, 14))
+    figure.subplots_adjust(left=0.07, right=0.99, bottom=0.09, top=0.92,
+                           hspace=0.3, wspace=0.06)
+    axes = figure.subplots(5, 2, sharex=True, sharey=True)
+    for axis, name in zip(axes.flat, KEYPOINTS):
+        for start, end in circling_spans:
+            if end < start:
+                raise ValueError("Circling span end must be at or after its start.")
+            axis.axvspan(start / fps, (end + 1) / fps, color="#f3b544", alpha=0.3, zorder=0)
+        axis.plot(time, bands[name].to_numpy(), color="#657482", lw=0.45, alpha=0.5)
+        axis.fill_between(time, bands[f"{name}_lower"].to_numpy(),
+                          bands[f"{name}_upper"].to_numpy(), color="#3278ba", alpha=0.2)
+        axis.plot(time, bands[f"{name}_mean"].to_numpy(), color="#145a91", lw=0.8)
+        axis.set_title(name, loc="left", fontsize=11)
+        axis.grid(alpha=0.18)
+        axis.set_axisbelow(True)
+        axis.spines[["top", "right"]].set_visible(False)
+        axis.xaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
+    axes[0, 0].set_xlim(time[0], time[-1])
+    figure.supxlabel("Time (seconds; displacement assigned to the later frame)", y=0.045)
+    figure.supylabel("Mean keypoint displacement across fish (pixels / frame)")
+    figure.suptitle(
+        f"{changes['day_label'][0]} — keypoint displacement and circling\n"
+        f"Trailing {window_frames}-frame ({window_frames / fps:g} s) Bollinger bands · mean ± 2 SD",
+        fontsize=16,
+    )
+    figure.legend(handles=[
+        Line2D([], [], color="#657482", lw=1, label="Per-frame mean across fish"),
+        Line2D([], [], color="#145a91", lw=1.5, label="Rolling mean"),
+        Patch(facecolor="#3278ba", alpha=0.2, label="± 2 SD (population)"),
+        Patch(facecolor="#f3b544", alpha=0.3, label="Circling span"),
+    ], loc="lower center", ncols=4, frameon=False)
+    return figure
 
 
 def plot_keypoint_displacements(changes: pl.DataFrame) -> Figure:
