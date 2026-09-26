@@ -79,6 +79,51 @@ def find_positive_spans(predictions, fps=30., threshold=.5, fraction=.9, seconds
         'positive_fraction': pl.Float64})
 
 
+def annotate_spans(spans, video_path, fps=30.):
+    """Add review metadata; TrackIDs are observed, not assigned participants."""
+    video_path = Path(video_path)
+    if not np.isfinite(fps) or fps <= 0:
+        raise ValueError('Invalid frame rate')
+
+    def timestamp(frame):
+        milliseconds = round(frame * 1000 / fps)
+        hours, remainder = divmod(milliseconds, 3_600_000)
+        minutes, remainder = divmod(remainder, 60_000)
+        seconds, remainder = divmod(remainder, 1_000)
+        return f'{hours:02d}:{minutes:02d}:{seconds:02d}.{remainder:03d}'
+
+    metadata = []
+    poses = None
+    if not spans.is_empty():
+        poses = (pl.scan_parquet(video_path.with_suffix('.parquet'))
+                 .select('FrameNum', 'TrackID')
+                 .filter(pl.col('FrameNum').is_between(
+                     spans['start_frame'].min(), spans['end_frame'].max()))
+                 .collect())
+    for row in spans.iter_rows(named=True):
+        start, end = row['start_frame'], row['end_frame']
+        track_ids = (poses.filter(pl.col('FrameNum').is_between(start, end))
+                     ['TrackID'].drop_nulls().unique().sort().to_list())
+        metadata.append({
+            'Video ID': video_path.stem,
+            'Event ID': f'{video_path.stem}-{start:07d}-{end:07d}',
+            'Start Time': timestamp(start),
+            'End Time': timestamp(end + 1),
+            'Behavior': 'Predicted circling',
+            'Fish IDs': ', '.join(map(str, track_ids)) if track_ids else 'Unknown',
+            'Confidence / Notes': (
+                f"{row['positive_fraction']:.1%} positive frames; "
+                'fish involvement unverified'),
+        })
+    schema = {
+        'Video ID': pl.String, 'Event ID': pl.String,
+        'Start Time': pl.String, 'End Time': pl.String,
+        'Behavior': pl.String, 'Fish IDs': pl.String,
+        'Confidence / Notes': pl.String,
+    }
+    return pl.concat([pl.DataFrame(metadata, schema=schema), spans], how='horizontal_extend')
+
+
 def render_span(video_path, start, end, output_dir):
     """Cache a full-resolution pose-overlay clip plus a small notebook preview."""
     video_path, output_dir = Path(video_path), Path(output_dir)

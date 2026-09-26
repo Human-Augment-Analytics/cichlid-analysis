@@ -1,7 +1,9 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import numpy as np
 import polars as pl
-from predicted_spans import find_positive_spans
+from predicted_spans import annotate_spans, find_positive_spans
 
 
 def detect(labels, offset=0):
@@ -37,3 +39,19 @@ class SpansTest(unittest.TestCase):
     def test_empty(self):
         self.assertTrue(detect([]).is_empty())
         self.assertTrue(detect([0]*500).is_empty())
+
+    def test_review_metadata(self):
+        with TemporaryDirectory() as directory:
+            video = Path(directory) / 'sample.mp4'
+            pl.DataFrame({'FrameNum': [0, 10, 10, 20, 301],
+                          'TrackID': [99, 2, 1, 2, 8]}).write_parquet(video.with_suffix('.parquet'))
+            result = annotate_spans(detect([1] * 301, offset=10), video)
+            row = result.row(0, named=True)
+            self.assertEqual(row['Video ID'], 'sample')
+            self.assertEqual(row['Event ID'], 'sample-0000010-0000310')
+            self.assertEqual((row['Start Time'], row['End Time']),
+                             ('00:00:00.333', '00:00:10.367'))
+            self.assertEqual(row['Behavior'], 'Predicted circling')
+            self.assertEqual(row['Fish IDs'], '1, 2, 8')
+            self.assertIn('100.0% positive frames', row['Confidence / Notes'])
+            self.assertEqual(annotate_spans(detect([]), video).height, 0)

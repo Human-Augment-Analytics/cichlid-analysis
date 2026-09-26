@@ -61,5 +61,8 @@ selected in the timeline, using its current prediction threshold. It finds
 overlapping/touching windows while preserving that fraction. Returned spans are
 strictly longer than 10 seconds at nominal 30 FPS. The table lists every match;
 a dropdown renders a selected span with colored pose points and a TrackID legend.
+Each row also includes the video and event IDs, start and end times, predicted
+behavior, observed fish TrackIDs, and a positive-frame fraction with a note that
+fish involvement is unverified. End time is the boundary after the last frame.
 Full-video scores and span tables are cached in `outputs/predicted_spans/`;
 full-resolution clips and compact previews are generated on selection.

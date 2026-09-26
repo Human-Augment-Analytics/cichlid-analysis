@@ -84,71 +84,25 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Inspect pose data
-    """)
-    return
-
-
 @app.cell
 def _():
     # Change this filename to reuse the inspection and plots for another video.
-    video_filename = "0031_vid.mp4"
-    return (video_filename,)
+    VIDEOS = ["0031_vid.mp4", "0028_vid.mp4"]
+    dd = mo.ui.dropdown(
+        options=VIDEOS,
+        value=VIDEOS[0],
+        label="Select video file"
+    )
+    dd
+    return (dd,)
 
 
 @app.cell
-def _(video_filename):
+def _(dd):
+    video_filename = dd.value
     table = pl.read_parquet((DATA_DIR / video_filename).with_suffix(".parquet"))
     # table.filter(pl.col('FrameNum') == 1)
-    table.select(pl.col('TrackID').unique())
-    return (table,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Frame-to-frame keypoint movement
-
-    Each panel plots **√(Δx² + Δy²)** in pixels for one keypoint across
-    all frames in the video selected by `video_filename`. Each dot is a measurement for one fish,
-    assigned to the later frame. All panels use the same scales.
-
-    Differences compare **the same TrackID in the same video** at frames t − 1
-    and t. Multiple fish in one frame produce separate measurements; rows from
-    different TrackIDs are never subtracted. Track starts, gaps, and missing or nonfinite coordinates
-    are excluded. No averaging, smoothing, or downsampling is applied.
-    The cell outputs a PNG image.
-    """)
-    return
-
-
-@app.cell
-def _(table, video_filename):
-    from io import BytesIO as _BytesIO
-
-    from pose_change import keypoint_displacements, plot_keypoint_displacements
-
-    keypoint_changes = keypoint_displacements(table)
-    _figure = plot_keypoint_displacements(keypoint_changes)
-    _image_buffer = _BytesIO()
-    _figure.savefig(_image_buffer, format="png", dpi=160)
-    _figure.clear()
-    mo.image(
-        _image_buffer.getvalue(),
-        alt=f"Frame-to-frame displacement for all 10 keypoints in {video_filename}",
-        width="100%",
-        caption=f"{video_filename} — keypoint displacement in pixels across all frames",
-    )
-    return (keypoint_changes,)
-
-
-@app.cell
-def _():
-    pair_count = 20
-    return (pair_count,)
+    return table, video_filename
 
 
 @app.cell(hide_code=True)
@@ -237,72 +191,6 @@ def _(table, video_filename):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Largest frame-to-frame movements
-
-    Show the **20 track/frame pairs with the largest mean displacement** across
-    all 10 keypoints, ordered from largest to smallest. `pair_count` controls
-    the number of pairs. All 10 measurements must be present and finite.
-    Ties are resolved by video, TrackID, and frame number.
-
-    Each ranked pair belongs to one TrackID. The 10-keypoint average describes
-    that fish's movement. Both frames overlay **all detected TrackIDs**, with a
-    consistent color and label for each track.
-
-    Each image shows all detected fish in frame **t − 1 on the left** and
-    **t on the right**, using the same labeled keypoint overlay as above.
-    """)
-    return
-
-
-@app.cell
-def _(keypoint_changes, pair_count):
-    from pose_change import top_frame_pairs
-
-    selected_pairs = top_frame_pairs(keypoint_changes, count=pair_count)
-    selected_pairs
-    return (selected_pairs,)
-
-
-@app.cell
-def _(selected_pairs, table, video_filename):
-    import numpy as _np
-
-    from pose_overlay import render_frame_pairs
-
-    _output_dir = DATA_DIR.parent / "outputs" / f"{Path(video_filename).stem}_top{selected_pairs.height}_pairs"
-    _output_dir.mkdir(parents=True, exist_ok=True)
-    (_output_dir / "pairs.json").write_text(selected_pairs.write_json())
-    _images = []
-    for _pair, _png in render_frame_pairs(DATA_DIR / video_filename, table, selected_pairs):
-        _name = f"pair_{_pair['rank']:02d}_{_pair['PreviousFrameNum']}-{_pair['FrameNum']}"
-        (_output_dir / f"{_name}.png").write_bytes(_png)
-        # Full-resolution PNGs are retained above; compact previews keep the
-        # combined gallery below marimo's cell-output limit.
-        _frame = cv2.imdecode(_np.frombuffer(_png, dtype=_np.uint8), cv2.IMREAD_COLOR)
-        _preview_width = min(1296, _frame.shape[1])
-        _preview = cv2.resize(
-            _frame,
-            (_preview_width, round(_frame.shape[0] * _preview_width / _frame.shape[1])),
-            interpolation=cv2.INTER_AREA,
-        )
-        _ok, _jpeg = cv2.imencode(".jpg", _preview, [cv2.IMWRITE_JPEG_QUALITY, 40])
-        if not _ok:
-            raise RuntimeError("Could not encode frame-pair preview")
-        _preview_path = _output_dir / f"{_name}.jpg"
-        _preview_path.write_bytes(_jpeg.tobytes())
-        _caption = (
-            f"Rank {_pair['rank']}: frames {_pair['PreviousFrameNum']:,} → "
-            f"{_pair['FrameNum']:,} | Ranked TrackID {_pair['TrackID']} | all tracks overlaid | "
-            f"Mean movement {_pair['mean_displacement_px']:.2f} px"
-        )
-        _images.append(mo.image(_preview_path, alt=_caption, caption=_caption, width="100%"))
-    mo.vstack(_images)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ## Circling spans and displacement bands
 
     The clip intervals below are treated as circling annotations, with inclusive
@@ -318,71 +206,6 @@ def _():
 
     circling_spans_by_video = CIRCLING_SPANS_BY_VIDEO
     return (circling_spans_by_video,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Each keypoint panel shows the **mean frame-to-frame displacement across fish**
-    at each frame (gray), a trailing rolling mean (blue), and **Bollinger bands
-    at mean ± 2 population standard deviations** (blue fill). These summarize
-    the frame means, not the spread between individual fish. Displacements are
-    computed within tracks before averaging.
-
-    The default window is 30 frames (1 second at 30 FPS). Missing frames stay
-    missing; bands require a complete window. Negative lower bands are retained
-    as a statistical bound. The second view zooms to the annotated region with
-    10 seconds of padding. Both views use seconds from the start of the video.
-    """)
-    return
-
-
-@app.cell
-def _():
-    bollinger_window_frames = mo.ui.number(
-        start=2, stop=18000, value=30, step=1, label="Bollinger window (frames)"
-    )
-    bollinger_window_frames
-    return (bollinger_window_frames,)
-
-
-@app.cell
-def _(
-    bollinger_window_frames,
-    circling_spans_by_video,
-    keypoint_changes,
-    video_filename,
-):
-    from io import BytesIO as _BytesIO
-    from pose_change import plot_displacement_bands
-
-    _spans = circling_spans_by_video.get(video_filename, [])
-    _views = [("full", None)]
-    if _spans:
-        _views.append(("circling", (
-            max(0, min(_start for _start, _end in _spans) - int(10 * FPS)),
-            max(_end for _start, _end in _spans) + int(10 * FPS),
-        )))
-    _output_dir = DATA_DIR.parent / "outputs"
-    _output_dir.mkdir(parents=True, exist_ok=True)
-    _plots = []
-    for _view_name, _frame_range in _views:
-        _figure = plot_displacement_bands(
-            keypoint_changes, _spans, fps=FPS,
-            window_frames=int(bollinger_window_frames.value), frame_range=_frame_range,
-        )
-        _buffer = _BytesIO()
-        _figure.savefig(_buffer, format="png", dpi=160)
-        _output = _output_dir / f"{Path(video_filename).stem}_displacement_bands_{_view_name}.png"
-        _output.write_bytes(_buffer.getvalue())
-        _figure.clear()
-        _plots.append(mo.image(
-            _buffer.getvalue(), width="100%",
-            alt=f"{video_filename}: keypoint displacement with Bollinger bands and circling spans ({_view_name})",
-            caption=f"{video_filename} — {_view_name} view; saved to {_output.name}",
-        ))
-    mo.vstack(_plots)
-    return
 
 
 @app.cell(hide_code=True)
@@ -549,6 +372,11 @@ def _():
     We scan 301-frame windows at 30 FPS, then greedily merge overlapping/touching
     windows only if the combined span still meets 90%. The table lists all matches;
     choose a span to render its pose-overlay clip. Predictions include training frames.
+
+    Start Time is the first frame's time; End Time is the boundary after the last
+    included frame. Fish IDs lists tracks observed during the span, not confirmed
+    participants. Confidence / Notes reports the fraction of frames classified
+    positive; it is not a calibrated event probability.
     """)
     return
 
@@ -571,10 +399,13 @@ def _(timeline_last_frame, timeline_video):
 
 @app.cell(hide_code=True)
 def _(sustained_scores, timeline_threshold, timeline_video):
-    from predicted_spans import find_positive_spans
+    from predicted_spans import annotate_spans, find_positive_spans
 
-    sustained_spans = find_positive_spans(
-        sustained_scores, fps=FPS, threshold=timeline_threshold.value,
+    sustained_spans = annotate_spans(
+        find_positive_spans(
+            sustained_scores, fps=FPS, threshold=timeline_threshold.value,
+        ),
+        DATA_DIR / timeline_video.value, fps=FPS,
     )
     _output = DATA_DIR.parent / "outputs" / "predicted_spans"
     sustained_spans.write_csv(_output / f"{Path(timeline_video.value).stem}_spans_threshold_{timeline_threshold.value:.2f}.csv")
