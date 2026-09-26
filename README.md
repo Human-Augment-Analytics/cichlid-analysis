@@ -1,5 +1,34 @@
 # courtship-analysis
 
+## Setup
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if needed, then run from the repository root:
+
+```sh
+uv sync
+```
+
+`uv sync` installs the locked dependencies and the required Python version. Open the
+local URL printed by marimo to use the notebook. On first launch, `analysis.py`
+downloads the source videos and Parquet files into `data/`; the two videos are
+about 31 GB each, so allow time and disk space for the initial download.
+
+```sh
+uv run marimo edit analysis.py
+```
+You can edit the marimo notebook from the browser with the above command, or just work on it in
+VSCode with the Marimo extension, just like Jupyter.
+
+## Guidelines for Circling Annotation and Span adjustment
+
+1. Run `analysis.py` to force download of raw videos and dropbox files
+2. Open/run `merged_spans_review.py`
+3. Refine start and end frames, mark `Verified` column in `00xx_vid_merged_spans.csv` as `true` or `false`
+    - Notebook is reactive and new preview will be rendered immediately after widget changes, but updating the csv file requires a manual run of the loading cell.
+4. Commit changes and submit a pull request.
+
+## notes
+
 Export all 15 annotated circling spans with colored pose points and a corner TrackID legend:
 
 ```sh
@@ -61,8 +90,10 @@ selected in the timeline, using its current prediction threshold. It finds
 overlapping/touching windows while preserving that fraction. Returned spans are
 strictly longer than 10 seconds at nominal 30 FPS. The table lists every match;
 a dropdown renders a selected span with colored pose points and a TrackID legend.
-Each row also includes the video and event IDs, start and end times, predicted
+Each row also includes the video and event IDs, start and end frames and times, predicted
 behavior, observed fish TrackIDs, and a positive-frame fraction with a note that
 fish involvement is unverified. End time is the boundary after the last frame.
-Full-video scores and span tables are cached in `outputs/predicted_spans/`;
+Full-video scores are cached as Parquet in `outputs/predicted_spans/`.
+The span table loads from its CSV there when present; otherwise the notebook computes
+it and saves both CSV and Parquet files. Delete the CSV to recompute the spans;
 full-resolution clips and compact previews are generated on selection.

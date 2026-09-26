@@ -219,3 +219,4 @@ __marimo__/
 data/
 .DS_Store
 outputs/predicted_spans/clips
+outputs/merged_spans/previews/

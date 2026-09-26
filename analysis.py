@@ -87,20 +87,21 @@ def _():
 
 @app.cell
 def _():
+    from circling_clips import CIRCLING_SPANS_BY_VIDEO
+
     # Change this filename to reuse the inspection and plots for another video.
-    VIDEOS = ["0031_vid.mp4", "0028_vid.mp4"]
-    dd = mo.ui.dropdown(
-        options=VIDEOS,
-        value=VIDEOS[0],
-        label="Select video file"
+    _videos = list(CIRCLING_SPANS_BY_VIDEO)
+    timeline_video = mo.ui.dropdown(
+        options=_videos, value=_videos[0],
+        label="Select video file", allow_select_none=False,
     )
-    dd
-    return (dd,)
+    timeline_video
+    return CIRCLING_SPANS_BY_VIDEO, timeline_video
 
 
 @app.cell
-def _(dd):
-    video_filename = dd.value
+def _(timeline_video):
+    video_filename = timeline_video.value
     table = pl.read_parquet((DATA_DIR / video_filename).with_suffix(".parquet"))
     # table.filter(pl.col('FrameNum') == 1)
     return table, video_filename
@@ -201,14 +202,6 @@ def _():
     return
 
 
-@app.cell
-def _():
-    from circling_clips import CIRCLING_SPANS_BY_VIDEO
-
-    circling_spans_by_video = CIRCLING_SPANS_BY_VIDEO
-    return (circling_spans_by_video,)
-
-
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
@@ -226,17 +219,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(circling_spans_by_video, video_filename):
-    timeline_video = mo.ui.dropdown(
-        options=list(circling_spans_by_video), value=video_filename,
-        label="Video", allow_select_none=False,
-    )
-    timeline_video
-    return (timeline_video,)
-
-
-@app.cell(hide_code=True)
-def _(circling_spans_by_video, timeline_video):
+def _(CIRCLING_SPANS_BY_VIDEO, timeline_video):
     _capture = cv2.VideoCapture(str(DATA_DIR / timeline_video.value))
     try:
         if not _capture.isOpened():
@@ -244,7 +227,7 @@ def _(circling_spans_by_video, timeline_video):
         timeline_last_frame = int(_capture.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
     finally:
         _capture.release()
-    _spans = circling_spans_by_video[timeline_video.value]
+    _spans = CIRCLING_SPANS_BY_VIDEO[timeline_video.value]
     _options = {
         "Annotated region (+10 s padding)": (max(0, _spans[0][0] - 300), min(timeline_last_frame, _spans[-1][1] + 300)),
         "Full video": (0, timeline_last_frame),
@@ -300,7 +283,7 @@ def _(timeline_range, timeline_video):
 
 @app.cell(hide_code=True)
 def _(
-    circling_spans_by_video,
+    CIRCLING_SPANS_BY_VIDEO,
     timeline_predictions,
     timeline_threshold,
     timeline_video,
@@ -308,7 +291,7 @@ def _(
     from circling_timeline import plot_timeline
 
     _figure = plot_timeline(
-        timeline_predictions, circling_spans_by_video[timeline_video.value],
+        timeline_predictions, CIRCLING_SPANS_BY_VIDEO[timeline_video.value],
         threshold=timeline_threshold.value, video_name=timeline_video.value,
     )
     _buffer = BytesIO()
@@ -320,10 +303,10 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(circling_spans_by_video):
+def _(CIRCLING_SPANS_BY_VIDEO):
     _options = {
         f"{_video} · {_start:,}–{_end:,}": f"{Path(_video).stem}_{_start}-{_end}_overlay.mp4"
-        for _video, _spans in circling_spans_by_video.items()
+        for _video, _spans in CIRCLING_SPANS_BY_VIDEO.items()
         for _start, _end in _spans
     }
     clip_selection = mo.ui.dropdown(
@@ -361,15 +344,16 @@ def _(clip_selection):
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
+    MIN_SPAN_LENGTH = 7.5
+    mo.md(f"""
     ## Sustained positive predictions
 
     Scan the **whole selected video** (the Video selector above), using the current
-    prediction threshold. Each returned span lasts **more than 10 seconds** and
+    prediction threshold. Each returned span lasts **more than {MIN_SPAN_LENGTH} seconds** and
     has **at least 90% positive frames**. This refers to the proportion of positive
     classifications, not a 0.9 probability threshold.
 
-    We scan 301-frame windows at 30 FPS, then greedily merge overlapping/touching
+    We scan {int(MIN_SPAN_LENGTH * 30)}-frame windows at 30 FPS, then greedily merge overlapping/touching
     windows only if the combined span still meets 90%. The table lists all matches;
     choose a span to render its pose-overlay clip. Predictions include training frames.
 
@@ -378,7 +362,7 @@ def _():
     participants. Confidence / Notes reports the fraction of frames classified
     positive; it is not a calibrated event probability.
     """)
-    return
+    return (MIN_SPAN_LENGTH,)
 
 
 @app.cell(hide_code=True)
@@ -398,18 +382,15 @@ def _(timeline_last_frame, timeline_video):
 
 
 @app.cell(hide_code=True)
-def _(sustained_scores, timeline_threshold, timeline_video):
-    from predicted_spans import annotate_spans, find_positive_spans
+def _(MIN_SPAN_LENGTH, sustained_scores, timeline_threshold, timeline_video):
+    from predicted_spans import load_sustained_spans
 
-    sustained_spans = annotate_spans(
-        find_positive_spans(
-            sustained_scores, fps=FPS, threshold=timeline_threshold.value,
-            seconds=7.5
-        ),
-        DATA_DIR / timeline_video.value, fps=FPS,
-    )
     _output = DATA_DIR.parent / "outputs" / "predicted_spans"
-    sustained_spans.write_csv(_output / f"{Path(timeline_video.value).stem}_spans_threshold_{timeline_threshold.value:.2f}.csv")
+    _csv_path = _output / f"{Path(timeline_video.value).stem}_spans_threshold_{timeline_threshold.value:.2f}.csv"
+    sustained_spans = load_sustained_spans(
+        sustained_scores, DATA_DIR / timeline_video.value, _csv_path,
+        fps=FPS, threshold=timeline_threshold.value, seconds=MIN_SPAN_LENGTH,
+    )
     mo.vstack([
         mo.md(f"**{sustained_spans.height} qualifying spans** in {timeline_video.value} · threshold {timeline_threshold.value:.2f}"),
         mo.ui.table(sustained_spans, selection=None, pagination=True, page_size=10),
@@ -421,8 +402,8 @@ def _(sustained_scores, timeline_threshold, timeline_video):
 def _(sustained_spans):
     mo.stop(sustained_spans.is_empty(), mo.md("No spans meet these conditions."))
     _options = {
-        f"Span {_r['span']}: {_r['start_frame']:,}–{_r['end_frame']:,} · {_r['duration_seconds']:.1f}s · {_r['positive_fraction']:.1%} positive":
-        (_r['start_frame'], _r['end_frame'])
+        f"Video {_r['Video ID']}: {_r['Start Frame']:,}–{_r['End Frame']:,} · {_r['duration_seconds']:.1f}s · {_r['positive_fraction']:.1%} positive":
+        (_r['Start Frame'], _r['End Frame'])
         for _r in sustained_spans.iter_rows(named=True)
     }
     sustained_selection = mo.ui.dropdown(options=_options, value=next(iter(_options)),
@@ -449,7 +430,7 @@ def _(sustained_selection, timeline_video):
 
 @app.cell
 def _(
-    circling_spans_by_video,
+    CIRCLING_SPANS_BY_VIDEO,
     sustained_spans,
     timeline_last_frame,
     timeline_video,
@@ -461,9 +442,9 @@ def _(
     _axis = _figure.subplots()
     _stop = timeline_last_frame + 1
     _annotated = [(start, end - start + 1)
-                  for start, end in circling_spans_by_video[timeline_video.value]]
+                  for start, end in CIRCLING_SPANS_BY_VIDEO[timeline_video.value]]
     _predicted = [(start, end - start + 1)
-                  for start, end in sustained_spans.select("start_frame", "end_frame").iter_rows()]
+                  for start, end in sustained_spans.select("Start Frame", "End Frame").iter_rows()]
     for _y, _intervals, _color in ((1, _annotated, "#159b8e"),
                                    (0, _predicted, "#bd7400")):
         _axis.broken_barh([(0, _stop)], (_y - 0.3, 0.6), facecolors="#edf0f3")

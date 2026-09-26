@@ -107,6 +107,8 @@ def annotate_spans(spans, video_path, fps=30.):
         metadata.append({
             'Video ID': video_path.stem,
             'Event ID': f'{video_path.stem}-{start:07d}-{end:07d}',
+            'Start Frame': start,
+            'End Frame': end,
             'Start Time': timestamp(start),
             'End Time': timestamp(end + 1),
             'Behavior': 'Predicted circling',
@@ -117,11 +119,41 @@ def annotate_spans(spans, video_path, fps=30.):
         })
     schema = {
         'Video ID': pl.String, 'Event ID': pl.String,
+        'Start Frame': pl.Int64, 'End Frame': pl.Int64,
         'Start Time': pl.String, 'End Time': pl.String,
         'Behavior': pl.String, 'Fish IDs': pl.String,
         'Confidence / Notes': pl.String,
     }
-    return pl.concat([pl.DataFrame(metadata, schema=schema), spans], how='horizontal_extend')
+    return pl.concat([pl.DataFrame(metadata, schema=schema),
+                      spans.drop('start_frame', 'end_frame')], how='horizontal_extend')
+
+
+def load_sustained_spans(predictions, video_path, csv_path, fps=30., threshold=.5, seconds=7.5):
+    """Read a saved review table, or compute and save it on a cache miss."""
+    csv_path = Path(csv_path)
+    parquet_path = csv_path.with_suffix('.parquet')
+    if csv_path.exists():
+        spans = pl.read_csv(csv_path, schema_overrides={
+            'Video ID': pl.String, 'Event ID': pl.String,
+            'Start Frame': pl.Int64, 'End Frame': pl.Int64,
+            'Start Time': pl.String, 'End Time': pl.String,
+            'Behavior': pl.String, 'Fish IDs': pl.String,
+            'Confidence / Notes': pl.String, 'span': pl.Int64,
+            'duration_seconds': pl.Float64, 'positive_frames': pl.Int64,
+            'frame_count': pl.Int64, 'positive_fraction': pl.Float64,
+        })
+        if not parquet_path.exists() or parquet_path.stat().st_mtime_ns < csv_path.stat().st_mtime_ns:
+            spans.write_parquet(parquet_path)
+        return spans
+
+    spans = annotate_spans(
+        find_positive_spans(predictions, fps=fps, threshold=threshold, seconds=seconds),
+        video_path, fps=fps,
+    )
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    spans.write_csv(csv_path)
+    spans.write_parquet(parquet_path)
+    return spans
 
 
 def render_span(video_path, start, end, output_dir):

@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import numpy as np
 import polars as pl
-from predicted_spans import annotate_spans, find_positive_spans
+from predicted_spans import annotate_spans, find_positive_spans, load_sustained_spans
 
 
 def detect(labels, offset=0):
@@ -47,6 +47,11 @@ class SpansTest(unittest.TestCase):
                           'TrackID': [99, 2, 1, 2, 8]}).write_parquet(video.with_suffix('.parquet'))
             result = annotate_spans(detect([1] * 301, offset=10), video)
             row = result.row(0, named=True)
+            self.assertEqual(result.columns[:6], [
+                'Video ID', 'Event ID', 'Start Frame', 'End Frame',
+                'Start Time', 'End Time',
+            ])
+            self.assertEqual((row['Start Frame'], row['End Frame']), (10, 310))
             self.assertEqual(row['Video ID'], 'sample')
             self.assertEqual(row['Event ID'], 'sample-0000010-0000310')
             self.assertEqual((row['Start Time'], row['End Time']),
@@ -54,4 +59,35 @@ class SpansTest(unittest.TestCase):
             self.assertEqual(row['Behavior'], 'Predicted circling')
             self.assertEqual(row['Fish IDs'], '1, 2, 8')
             self.assertIn('100.0% positive frames', row['Confidence / Notes'])
-            self.assertEqual(annotate_spans(detect([]), video).height, 0)
+            csv_path = Path(directory) / 'spans.csv'
+            parquet_path = Path(directory) / 'spans.parquet'
+            result.write_csv(csv_path)
+            result.write_parquet(parquet_path)
+            self.assertEqual(pl.read_csv(csv_path).columns, result.columns)
+            self.assertEqual(pl.read_parquet(parquet_path).columns, result.columns)
+            empty = annotate_spans(detect([]), video)
+            self.assertEqual(empty.height, 0)
+            self.assertEqual(empty.columns, result.columns)
+
+    def test_sustained_spans_csv_cache(self):
+        with TemporaryDirectory() as directory:
+            video = Path(directory) / 'sample.mp4'
+            poses = video.with_suffix('.parquet')
+            csv_path = Path(directory) / 'spans.csv'
+            parquet_path = csv_path.with_suffix('.parquet')
+            pl.DataFrame({'FrameNum': [0, 300], 'TrackID': [1, 2]}).write_parquet(poses)
+            scores = pl.DataFrame({
+                'FrameNum': np.arange(301),
+                'circling_score': np.ones(301),
+            })
+            computed = load_sustained_spans(scores, video, csv_path, seconds=10.)
+            self.assertEqual(computed.height, 1)
+            self.assertTrue(csv_path.exists())
+            self.assertTrue(parquet_path.exists())
+
+            poses.unlink()
+            parquet_path.unlink()
+            cached = load_sustained_spans(pl.DataFrame(), video, csv_path, seconds=10.)
+            self.assertEqual(cached.columns, computed.columns)
+            self.assertEqual(cached.select('Start Frame', 'End Frame').row(0), (0, 300))
+            self.assertTrue(parquet_path.exists())
