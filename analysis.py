@@ -22,6 +22,7 @@ with app.setup:
     import subprocess
     from pathlib import Path
     from urllib.request import urlretrieve
+    from io import BytesIO
 
     import cv2
     import imageio_ffmpeg
@@ -304,14 +305,13 @@ def _(
     timeline_threshold,
     timeline_video,
 ):
-    from io import BytesIO as _BytesIO
     from circling_timeline import plot_timeline
 
     _figure = plot_timeline(
         timeline_predictions, circling_spans_by_video[timeline_video.value],
         threshold=timeline_threshold.value, video_name=timeline_video.value,
     )
-    _buffer = _BytesIO()
+    _buffer = BytesIO()
     _figure.savefig(_buffer, format="png", dpi=160)
     _figure.clear()
     mo.image(_buffer.getvalue(), width="100%",
@@ -404,6 +404,7 @@ def _(sustained_scores, timeline_threshold, timeline_video):
     sustained_spans = annotate_spans(
         find_positive_spans(
             sustained_scores, fps=FPS, threshold=timeline_threshold.value,
+            seconds=7.5
         ),
         DATA_DIR / timeline_video.value, fps=FPS,
     )
@@ -447,7 +448,41 @@ def _(sustained_selection, timeline_video):
 
 
 @app.cell
-def _():
+def _(
+    circling_spans_by_video,
+    sustained_spans,
+    timeline_last_frame,
+    timeline_video,
+):
+    from matplotlib.figure import Figure as _Figure
+    from matplotlib.ticker import StrMethodFormatter as _StrMethodFormatter
+
+    _figure = _Figure(figsize=(15, 3.4), layout="constrained")
+    _axis = _figure.subplots()
+    _stop = timeline_last_frame + 1
+    _annotated = [(start, end - start + 1)
+                  for start, end in circling_spans_by_video[timeline_video.value]]
+    _predicted = [(start, end - start + 1)
+                  for start, end in sustained_spans.select("start_frame", "end_frame").iter_rows()]
+    for _y, _intervals, _color in ((1, _annotated, "#159b8e"),
+                                   (0, _predicted, "#bd7400")):
+        _axis.broken_barh([(0, _stop)], (_y - 0.3, 0.6), facecolors="#edf0f3")
+        _axis.broken_barh(_intervals, (_y - 0.3, 0.6), facecolors=_color)
+    _axis.set(yticks=[1, 0], yticklabels=["Ground truth", "Sustained spans"],
+              xlim=(0, _stop), ylim=(-0.55, 1.55),
+              xlabel="Frame number (zero-based)",
+              title=f"{timeline_video.value} · {sustained_spans.height} sustained spans")
+    _axis.tick_params(axis="y", length=0, pad=12, labelsize=12)
+    _axis.xaxis.set_major_formatter(_StrMethodFormatter("{x:,.0f}"))
+    _axis.spines[["top", "right", "left"]].set_visible(False)
+    _buffer = BytesIO()
+    _figure.savefig(_buffer, format="png", dpi=160)
+    _figure.clear()
+    mo.vstack([
+        mo.md("### Sustained spans across the full video\n\nOrange intervals show every qualifying sustained span; teal intervals show annotated circling."),
+        mo.image(_buffer.getvalue(), width="100%",
+                 alt=f"All sustained spans and annotated circling intervals in {timeline_video.value}"),
+    ])
     return
 
 

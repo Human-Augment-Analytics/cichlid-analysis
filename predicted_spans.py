@@ -35,7 +35,7 @@ def score_video(model_path, video_path, frame_count, output_dir):
     return result
 
 
-def find_positive_spans(predictions, fps=30., threshold=.5, fraction=.9, seconds=10.):
+def find_positive_spans(predictions, fps=30., threshold=.5, fraction=.9, seconds=5.):
     """Greedily merge qualifying windows, retaining >=fraction over each union.
 
     Start from the shortest window strictly longer than `seconds`. Merge
