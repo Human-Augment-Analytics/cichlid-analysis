@@ -1,4 +1,4 @@
-# courtship-analysis
+# cichlid-analysis
 
 ## Setup
 
