@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.ipynb_checkpoints/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Large source and generated data are shared outside GitHub.
+*.parquet
+*.mp4
+*.part
+data/raw/
+outputs/
