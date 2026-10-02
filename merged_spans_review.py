@@ -176,7 +176,10 @@ def _(buffer_frames, frame_count, selected, spans):
 
 @app.cell(hide_code=True)
 def _(buffer_frames, frame_count, selected, video_path):
-    from merged_span_preview import render_merged_preview
+    import importlib as _importlib
+    import merged_span_preview as _merged_span_preview
+
+    _importlib.reload(_merged_span_preview)
 
     _start, _end = selected["Start Frame"], selected["End Frame"]
     if not 0 <= _start <= _end < frame_count:
@@ -184,13 +187,13 @@ def _(buffer_frames, frame_count, selected, video_path):
 
     _preview_dir = ROOT / "outputs" / "merged_spans" / "previews"
     with mo.status.spinner(title=f"Rendering buffered frames around {_start:,}–{_end:,}..."):
-        _preview, _preview_start, _preview_end = render_merged_preview(
+        _preview, _preview_start, _preview_end = _merged_span_preview.render_merged_preview(
             video_path, _start, _end, buffer_frames.value, _preview_dir,
         )
     mo.vstack([
-        mo.md(f"Preview frames **{_preview_start:,}–{_preview_end:,}** · "
+        mo.md(f"Preview frames {selected['Merge ID']} **{_preview_start:,}–{_preview_end:,}** · "
               "colored keypoints and a per-frame TrackID legend"),
-        mo.video(str(_preview), width="100%"),
+        mo.video(str(_preview), width="80%"),
     ])
     return
 
