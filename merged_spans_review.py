@@ -96,7 +96,7 @@ def _(spans):
 @app.cell(hide_code=True)
 def _():
     buffer_frames = mo.ui.slider(
-        start=0, stop=300, step=1, value=60, show_value=True,
+        start=0, stop=300, step=1, value=30, show_value=True,
         label="Buffer before and after (frames)",
     )
     buffer_frames
