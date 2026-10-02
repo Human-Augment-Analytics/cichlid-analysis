@@ -13,10 +13,12 @@ Detected events against CSV labels. Blue bars are detected events (horizontal le
 ### Vid 28 (MC920)
 
 ![vid_0028 timeline](images/vid_0028_timeline.png)
+![vid_0028 rich timeline](images/vid_0028_rich_timeline.png)
 
 ### Vid 31 (F1_613)
 
 ![vid_0031 timeline](images/vid_0031_timeline.png)
+![vid_0031 rich timeline](images/vid_0031_rich_timeline.png)
 
 
 ## Setup
