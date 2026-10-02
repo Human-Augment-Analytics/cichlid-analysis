@@ -1,0 +1,16 @@
+name: cichlid-vision
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - pyarrow
+  - opencv
+  - matplotlib
+  - seaborn
+  - tqdm
+  - jupyter
+  - jupyterlab
+  - ipython
+  - pip
