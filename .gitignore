@@ -220,3 +220,21 @@ data/
 .DS_Store
 outputs/predicted_spans/clips
 outputs/merged_spans/previews/
+
+# Reproducible DLC2Action smoke-test binary artifacts
+outputs/dlc2action_test/*.pt
+outputs/dlc2action_test/*.joblib
+outputs/dlc2action_test/*.parquet
+outputs/dlc2action_test/*.html
+outputs/dlc2action_test/previews/
+
+# Regenerable VideoMAE frame caches, model weights and embeddings
+outputs/videomae_mstcn/frames/
+outputs/videomae_mstcn/encoders/
+outputs/videomae_mstcn/embeddings/
+outputs/videomae_mstcn/base_processor/
+outputs/videomae_mstcn/previews/
+outputs/videomae_mstcn/*.pt
+outputs/videomae_mstcn/*.joblib
+outputs/videomae_mstcn/*.parquet
+outputs/videomae_mstcn/*.html

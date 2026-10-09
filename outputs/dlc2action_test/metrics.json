@@ -1,0 +1,393 @@
+{
+  "model": "dlc2action.model.ms_tcn.MS_TCN3",
+  "dlc2action_version": "1.0",
+  "api": "DLC2Action model API with a custom PyTorch supervised training loop",
+  "label_policy": "Verified=true rows are circling (1), with inclusive endpoints. Verified=false or blank rows are ignored (-100), not negative examples. Frames within the context buffer but outside every CSV span are assumed background (0); these frames have not been exhaustively annotated. Predictions are video-level, not assignments to individual fish.",
+  "source_sha256": "652772ac6aab83f868f5352874d9c8c77e21f4b0f380e225bc172cde5081d1b0",
+  "source_rows": 153,
+  "accepted_rows": 140,
+  "ignored_rows": 13,
+  "train_video": "0028_vid",
+  "test_video": "0031_vid",
+  "seed": 42,
+  "device": "cpu",
+  "epochs": 50,
+  "context_frames": 60,
+  "window_frames": 512,
+  "threshold": 0.5,
+  "features": [
+    "track_count",
+    "Nose_mean",
+    "Nose_max",
+    "LeftEye_mean",
+    "LeftEye_max",
+    "RightEye_mean",
+    "RightEye_max",
+    "Head_mean",
+    "Head_max",
+    "Spine1_mean",
+    "Spine1_max",
+    "Spine2_mean",
+    "Spine2_max",
+    "Spine3_mean",
+    "Spine3_max",
+    "Spine4_mean",
+    "Spine4_max",
+    "Peduncle_mean",
+    "Peduncle_max",
+    "TailTip_mean",
+    "TailTip_max",
+    "bend_mean",
+    "bend_max",
+    "turn_mean",
+    "turn_max",
+    "track_count_trailing30",
+    "Nose_mean_trailing30",
+    "Nose_max_trailing30",
+    "LeftEye_mean_trailing30",
+    "LeftEye_max_trailing30",
+    "RightEye_mean_trailing30",
+    "RightEye_max_trailing30",
+    "Head_mean_trailing30",
+    "Head_max_trailing30",
+    "Spine1_mean_trailing30",
+    "Spine1_max_trailing30",
+    "Spine2_mean_trailing30",
+    "Spine2_max_trailing30",
+    "Spine3_mean_trailing30",
+    "Spine3_max_trailing30",
+    "Spine4_mean_trailing30",
+    "Spine4_max_trailing30",
+    "Peduncle_mean_trailing30",
+    "Peduncle_max_trailing30",
+    "TailTip_mean_trailing30",
+    "TailTip_max_trailing30",
+    "bend_mean_trailing30",
+    "bend_max_trailing30",
+    "turn_mean_trailing30",
+    "turn_max_trailing30",
+    "pair_count",
+    "centroid_distance_px_mean",
+    "centroid_distance_px_min",
+    "centroid_distance_px_max",
+    "dist_nose1_nose2_px_mean",
+    "dist_nose1_nose2_px_min",
+    "dist_nose1_nose2_px_max",
+    "dist_nose1_tailtip2_px_mean",
+    "dist_nose1_tailtip2_px_min",
+    "dist_nose1_tailtip2_px_max",
+    "dist_nose2_tailtip1_px_mean",
+    "dist_nose2_tailtip1_px_min",
+    "dist_nose2_tailtip1_px_max",
+    "dist_nose1_spine4of2_px_mean",
+    "dist_nose1_spine4of2_px_min",
+    "dist_nose1_spine4of2_px_max",
+    "dist_nose2_spine4of1_px_mean",
+    "dist_nose2_spine4of1_px_min",
+    "dist_nose2_spine4of1_px_max",
+    "d_heading_1_rad_s_mean",
+    "d_heading_1_rad_s_min",
+    "d_heading_1_rad_s_max",
+    "d_heading_2_rad_s_mean",
+    "d_heading_2_rad_s_min",
+    "d_heading_2_rad_s_max",
+    "d_orbital_rad_s_mean",
+    "d_orbital_rad_s_min",
+    "d_orbital_rad_s_max",
+    "orbital_rad_sin_mean",
+    "orbital_rad_sin_min",
+    "orbital_rad_sin_max",
+    "orbital_rad_cos_mean",
+    "orbital_rad_cos_min",
+    "orbital_rad_cos_max",
+    "rel_heading_rad_sin_mean",
+    "rel_heading_rad_sin_min",
+    "rel_heading_rad_sin_max",
+    "rel_heading_rad_cos_mean",
+    "rel_heading_rad_cos_min",
+    "rel_heading_rad_cos_max",
+    "bearing_1_rad_sin_mean",
+    "bearing_1_rad_sin_min",
+    "bearing_1_rad_sin_max",
+    "bearing_1_rad_cos_mean",
+    "bearing_1_rad_cos_min",
+    "bearing_1_rad_cos_max",
+    "bearing_2_rad_sin_mean",
+    "bearing_2_rad_sin_min",
+    "bearing_2_rad_sin_max",
+    "bearing_2_rad_cos_mean",
+    "bearing_2_rad_cos_min",
+    "bearing_2_rad_cos_max"
+  ],
+  "train_frames": 39719,
+  "train_class_counts": [
+    9866,
+    29853
+  ],
+  "class_weights": [
+    2.012923240661621,
+    0.6652430295944214
+  ],
+  "test_predicted_frames": 45379,
+  "test_ignored_frames": 2622,
+  "predicted_segments": 154,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.6909549459815025
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.561446201056242
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.45847444981336594
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.40440189465880394
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.3701622970402241
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.355120237916708
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.3392134793102741
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.3121148683130741
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.292559202760458
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.2873806841671467
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.2682265732437372
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.2642741519957781
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.24797174707055092
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.24158656038343906
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.235423406586051
+    },
+    {
+      "epoch": 16,
+      "train_loss": 0.22338309697806835
+    },
+    {
+      "epoch": 17,
+      "train_loss": 0.2267653550952673
+    },
+    {
+      "epoch": 18,
+      "train_loss": 0.21930395253002644
+    },
+    {
+      "epoch": 19,
+      "train_loss": 0.22750714607536793
+    },
+    {
+      "epoch": 20,
+      "train_loss": 0.2330563496798277
+    },
+    {
+      "epoch": 21,
+      "train_loss": 0.22701169922947884
+    },
+    {
+      "epoch": 22,
+      "train_loss": 0.21987667493522167
+    },
+    {
+      "epoch": 23,
+      "train_loss": 0.21834947913885117
+    },
+    {
+      "epoch": 24,
+      "train_loss": 0.2003023736178875
+    },
+    {
+      "epoch": 25,
+      "train_loss": 0.1962151937186718
+    },
+    {
+      "epoch": 26,
+      "train_loss": 0.19162881933152676
+    },
+    {
+      "epoch": 27,
+      "train_loss": 0.18849611841142178
+    },
+    {
+      "epoch": 28,
+      "train_loss": 0.19012144953012466
+    },
+    {
+      "epoch": 29,
+      "train_loss": 0.18325218744575977
+    },
+    {
+      "epoch": 30,
+      "train_loss": 0.18973995745182037
+    },
+    {
+      "epoch": 31,
+      "train_loss": 0.17801324650645256
+    },
+    {
+      "epoch": 32,
+      "train_loss": 0.17625755816698074
+    },
+    {
+      "epoch": 33,
+      "train_loss": 0.17217785865068436
+    },
+    {
+      "epoch": 34,
+      "train_loss": 0.18196728266775608
+    },
+    {
+      "epoch": 35,
+      "train_loss": 0.17459749802947044
+    },
+    {
+      "epoch": 36,
+      "train_loss": 0.16750036925077438
+    },
+    {
+      "epoch": 37,
+      "train_loss": 0.17691830545663834
+    },
+    {
+      "epoch": 38,
+      "train_loss": 0.17474902607500553
+    },
+    {
+      "epoch": 39,
+      "train_loss": 0.1663098931312561
+    },
+    {
+      "epoch": 40,
+      "train_loss": 0.15909609198570251
+    },
+    {
+      "epoch": 41,
+      "train_loss": 0.16395512409508228
+    },
+    {
+      "epoch": 42,
+      "train_loss": 0.15905041620135307
+    },
+    {
+      "epoch": 43,
+      "train_loss": 0.1562327118590474
+    },
+    {
+      "epoch": 44,
+      "train_loss": 0.15951080806553364
+    },
+    {
+      "epoch": 45,
+      "train_loss": 0.15997334942221642
+    },
+    {
+      "epoch": 46,
+      "train_loss": 0.16546295955777168
+    },
+    {
+      "epoch": 47,
+      "train_loss": 0.16039154306054115
+    },
+    {
+      "epoch": 48,
+      "train_loss": 0.15352464653551579
+    },
+    {
+      "epoch": 49,
+      "train_loss": 0.15275018475949764
+    },
+    {
+      "epoch": 50,
+      "train_loss": 0.16747969016432762
+    }
+  ],
+  "test": {
+    "frames": 42757,
+    "positive_frames": 34359,
+    "prevalence": 0.8035877166311949,
+    "average_precision": 0.9851389030101703,
+    "roc_auc": 0.9447995473401096,
+    "precision": 0.9582053801744257,
+    "recall": 0.908146337204226,
+    "f1": 0.9325045201201381,
+    "tn": 7037,
+    "fp": 1361,
+    "fn": 3156,
+    "tp": 31203,
+    "mof": 89.43564796407605,
+    "edit_score": 64.62962962962963,
+    "edit_score_with_background": 72.25590783834512,
+    "evaluation_runs": 81,
+    "segmental_f1_10": 56.43564356435643,
+    "segmental_counts_10": {
+      "tp": 57,
+      "fp": 87,
+      "fn": 1
+    },
+    "segmental_f1_25": 54.45544554455446,
+    "segmental_counts_25": {
+      "tp": 55,
+      "fp": 89,
+      "fn": 3
+    },
+    "segmental_f1_50": 45.54455445544554,
+    "segmental_counts_50": {
+      "tp": 46,
+      "fp": 98,
+      "fn": 12
+    }
+  },
+  "constant_score_average_precision": 0.8035877166311949,
+  "all_background_accuracy": 0.19641228336880512,
+  "limitations": "Smoke test on candidate-centered excerpts of one held-out video, not full-video validation. Background labels are assumptions. No tuning or checkpoint selection uses test labels. Non-overlapping 512-frame windows (or the configured length) can create boundary artifacts; no smoothing or minimum-duration filter is applied. No identity-specific actions are inferred.",
+  "input_files": {
+    "data/0028_vid.parquet": {
+      "size": 221815222,
+      "mtime_ns": 1788546795818079339
+    },
+    "data/0028_vid_pairs.parquet": {
+      "size": 43203157,
+      "mtime_ns": 1788486700370697832
+    },
+    "data/0031_vid.parquet": {
+      "size": 215662753,
+      "mtime_ns": 1788561579185845936
+    },
+    "data/0031_vid_pairs.parquet": {
+      "size": 36691632,
+      "mtime_ns": 1788561528084393654
+    }
+  }
+}
