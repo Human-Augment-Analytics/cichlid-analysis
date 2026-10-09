@@ -220,3 +220,10 @@ data/
 .DS_Store
 outputs/predicted_spans/clips
 outputs/merged_spans/previews/
+
+# Local pair-motion feature engineering artifacts
+outputs/pair_motion/
+outputs/pair_features_frame.parquet
+feature_engineering/pair_motion/data/*.parquet
+feature_engineering/pair_motion/data/*.mp4
+feature_engineering/pair_motion/data/*.part

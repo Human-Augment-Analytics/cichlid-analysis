@@ -19,6 +19,28 @@ uv run marimo edit analysis.py
 You can edit the marimo notebook from the browser with the above command, or just work on it in
 VSCode with the Marimo extension, just like Jupyter.
 
+## Repository layout
+
+- Root scripts and `analysis.py`: interactive analysis, labels, baseline models, and clip review.
+- `ground-truth-annotations/`: annotation workflow, finalized intervals, and supporting notebooks.
+- `feature_engineering/`: reusable feature pipelines. Each feature group has its own package,
+  documentation, checked-in sample data, and ignored generated outputs.
+- `tests/`: regression tests for shared model and interval utilities.
+
+### Pair-motion feature pipeline
+
+`feature_engineering/pair_motion/` creates a frame-level pair table for distance,
+orientation, and speed. It expects the four validated pose parquets in `data/`;
+they are local inputs and are not committed.
+
+```sh
+uv run python -m feature_engineering.pair_motion.build_features --data-dir data
+```
+
+The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
+quality checks, parameters, and a small committed sample are kept alongside the
+pipeline. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+
 ## Guidelines for Circling Annotation and Span adjustment
 
 1. Run `analysis.py` to force download of raw videos and dropbox files
