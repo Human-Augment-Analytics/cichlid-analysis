@@ -245,3 +245,19 @@ uv run python -m unittest discover -s tests -p 'test_temporal_metrics.py' -v
 uv run python -m unittest discover -s tests -p 'test_videomae_pipeline.py' -v
 uv run marimo check videomae_notebook.py
 ```
+
+Re-evaluate saved visual predictions and replay the saved MS-TCN checkpoint from
+cached embeddings without retraining:
+
+```sh
+uv run python evaluate_videomae.py
+```
+
+This writes `evaluation.md`, `evaluation_checks.json`, and
+`evaluation_comparison.csv` in `outputs/videomae_mstcn/`. If the saved pose run
+uses different excerpts, the comparison uses only shared frames with identical
+labels; full visual-run metrics remain in `metrics.json` and `report.md`.
+The completed visual run scores MoF 54.18%, Edit 40.16%, F1@10/25/50
+18.92/8.78/4.05%, and frame F1 0.4691 on 54,484 labeled held-out frames.
+It underperforms the pose baseline; encoder training accuracy is not evidence
+of held-out segmentation quality.

@@ -1,0 +1,16 @@
+{
+  "unique_test_frames": 57106,
+  "evaluated_frames": 54484,
+  "ignored_frames": 2622,
+  "predicted_segments": 246,
+  "encoder_train_video": "0028_vid",
+  "encoder_train_clips": 256,
+  "metrics_match_saved_report": true,
+  "labels_match_saved_manifest": true,
+  "segment_export_verified": true,
+  "checkpoint_replay_max_abs_error": 1.6689300537109375e-06,
+  "checkpoint_replay_verified": true,
+  "same_evaluation_frames_as_baseline": false,
+  "comparison_common_frames": 45379,
+  "comparison_evaluated_frames": 42757
+}
