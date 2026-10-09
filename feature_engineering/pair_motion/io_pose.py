@@ -7,7 +7,8 @@ from pathlib import Path
 import pandas as pd
 import pyarrow.parquet as pq
 
-DEFAULT_DATA_DIR = Path.home() / "Downloads"
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DATA_DIR = REPOSITORY_ROOT / "data"
 
 TRACK_FILES = ("0028_vid.parquet", "0031_vid.parquet")
 PAIR_FILES = ("0028_vid_pairs.parquet", "0031_vid_pairs.parquet")

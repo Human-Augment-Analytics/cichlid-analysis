@@ -2,7 +2,7 @@
 
 Run from the repository root:
 
-    python -m src.build_features --data-dir ~/Downloads
+    uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 """
 
 from __future__ import annotations
@@ -18,6 +18,9 @@ import pyarrow.parquet as pq
 from .features_motion import PARAMETERS, build_motion_features, run_synthetic_checks, spot_check_features
 from .io_pose import DEFAULT_DATA_DIR, load_pose
 from .qc import build_qc_summary, write_qc_summary
+
+PACKAGE_ROOT = Path(__file__).resolve().parent
+REPOSITORY_ROOT = PACKAGE_ROOT.parents[1]
 
 
 def write_feature_table(features, path: Path) -> None:
@@ -43,12 +46,20 @@ def write_sample(features, path: Path, rows_per_video: int = 80) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build first-half circling motion features")
+    parser = argparse.ArgumentParser(description="Build frame-level pair-motion features")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
-    parser.add_argument("--out", type=Path, default=Path("outputs/pair_features_frame.parquet"))
-    parser.add_argument("--qc-out", type=Path, default=Path("docs/qc_summary.md"))
-    parser.add_argument("--params-out", type=Path, default=Path("docs/feature_params.json"))
-    parser.add_argument("--sample-out", type=Path, default=Path("data/sample_pair_features.csv"))
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=REPOSITORY_ROOT / "outputs/pair_motion/pair_features_frame.parquet",
+    )
+    parser.add_argument("--qc-out", type=Path, default=PACKAGE_ROOT / "docs/qc_summary.md")
+    parser.add_argument("--params-out", type=Path, default=PACKAGE_ROOT / "docs/feature_params.json")
+    parser.add_argument(
+        "--sample-out",
+        type=Path,
+        default=PACKAGE_ROOT / "data/sample_pair_features.csv",
+    )
     args = parser.parse_args()
 
     print("Checking feature definitions...", flush=True)

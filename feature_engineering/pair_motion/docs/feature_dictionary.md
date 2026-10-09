@@ -1,6 +1,6 @@
 # Feature dictionary
 
-`outputs/pair_features_frame.parquet` has one row for an ordered pair of fish
+`outputs/pair_motion/pair_features_frame.parquet` has one row for an ordered pair of fish
 on one video frame. It combines the original pair measurements with the two
 matching fish tracks. `TrackUID_1 < TrackUID_2` keeps each pair in one order.
 
