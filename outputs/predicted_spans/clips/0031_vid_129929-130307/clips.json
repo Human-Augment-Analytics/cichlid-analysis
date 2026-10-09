@@ -1,0 +1,23 @@
+[
+  {
+    "file": "0031_vid_129929-130307_overlay.mp4",
+    "source": "0031_vid.mp4",
+    "start_frame": 129929,
+    "end_frame": 130307,
+    "frame_count": 379,
+    "fps": 29.99999446818543,
+    "duration_seconds": 12.633335662842342,
+    "frames_without_poses": 0,
+    "track_ids": [
+      6070,
+      6383,
+      6391,
+      6398,
+      6399,
+      6401,
+      6404,
+      6407,
+      6410
+    ]
+  }
+]
