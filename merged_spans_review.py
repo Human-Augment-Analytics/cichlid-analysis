@@ -41,9 +41,9 @@ def _():
 
 @app.cell(hide_code=True)
 def _():
-    _span_files = sorted((ROOT / "ground-truth-annotations").glob("circling_annotations_vid*.csv"))
+    _span_files = sorted((ROOT / "ground_truth_annotations").glob("circling_annotations_vid*.csv"))
     _video_files = sorted((ROOT / "data").glob("*_vid.mp4"))
-    mo.stop(not _span_files, mo.md("No `circling_annotations_vid*.csv` files in `ground-truth-annotations/`."))
+    mo.stop(not _span_files, mo.md("No `circling_annotations_vid*.csv` files in `ground_truth_annotations/`."))
     mo.stop(not _video_files, mo.md("Put the source videos in `data/` to preview the spans."))
 
     spans_file = mo.ui.dropdown(

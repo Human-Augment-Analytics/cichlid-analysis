@@ -14,7 +14,7 @@ ground-truth circling events matched by a prediction. Frame ranges are
 zero-based and inclusive.
 
     uv run python evaluation/evaluate.py \\
-        --ground-truth ground-truth-annotations/finalized-annotations/*.csv \\
+        --ground-truth ground_truth_annotations/finalized_annotations/merged_spans.csv \\
         --predicted outputs/predicted_spans/*_spans_threshold_0.50.csv
 """
 
@@ -53,6 +53,16 @@ def _():
 
     Pass arguments after `--` when editing, e.g.
     `marimo edit evaluation/evaluate.py -- --predicted path.csv`.
+
+    ## Expected file schema
+    Minimal headers expected: extra columbns will simply be ignored.
+    Concatenate rows across all videos together.
+
+    |Header name|Description|
+    |-|-|
+    |VideoID|`0028_vid` or `0031_vid` for now|
+    |StartFrame| frame number |
+    |EndFrame| frame number |
     """)
     return
 
@@ -62,8 +72,8 @@ def parse_args(argv):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         '--ground-truth', nargs='+', type=Path,
-        default=sorted((ROOT / 'ground_truth_annotations/finalized_annotations').glob('*.csv')),
-        help='ground-truth interval files (default: finalized annotations)',
+        default=[ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'],
+        help='ground-truth interval files (default: ground_truth_annotations/finalized_annotations/merged_spans.csv)',
     )
     parser.add_argument(
         '--predicted', nargs='+', type=Path,
@@ -90,8 +100,9 @@ def parse_args(argv):
 def read_intervals(path):
     """Read intervals as (video_id, start, end) from CSV or rule-based TSV.
 
-    CSV files need a video ID column plus start/end frames ("Start Frame") or
-    times ("StartTime"). Headerless TSV rows are `<VVVV>-<n>  start  end`.
+    CSV files need a video ID column plus start/end frames ("Start Frame").
+    Rows with Circling other than true or ShouldUse false are dropped when those
+    columns exist. Headerless TSV rows are `<VVVV>-<n>  start  end`.
     """
     path = Path(path)
     if path.suffix == '.tsv':
@@ -103,6 +114,10 @@ def read_intervals(path):
 
     rows = pl.read_csv(path, infer_schema=False)
     columns = {re.sub(r'[^a-z]', '', column.lower()): column for column in rows.columns}
+    if 'circling' in columns:
+        rows = rows.filter(pl.col(columns['circling']).str.to_lowercase() == 'true')
+    if 'shoulduse' in columns:
+        rows = rows.filter(pl.col(columns['shoulduse']).fill_null('').str.to_lowercase() != 'false')
     if 'videoid' not in columns:
         raise ValueError(f'{path}: missing video ID column')
     if {'startframe', 'endframe'} <= columns.keys():
@@ -261,15 +276,6 @@ def _(args):
         frames = [read_intervals(path) for path in paths]
         return pl.concat(frames) if frames else pl.DataFrame(schema=INTERVAL_SCHEMA)
 
-    span_files = sorted((ROOT / "ground_truth_annotations" / "finalized_annotations").glob("*.csv"))
-    video_files = sorted((ROOT / "data").glob("*_vid.mp4"))
-    mo.stop(not span_files, mo.md("Missing action annotations"))
-    mo.stop(not video_files, mo.md("Put the source videos in `data/` to preview the spans."))
-
-    spans_file = mo.ui.dropdown(
-        options={path.name: str(path) for path in span_files},
-        value=span_files[0].name, label="spans CSV", allow_select_none=False,
-    )
     gt = load(args.ground_truth)
     predicted = load(args.predicted)
     return gt, predicted

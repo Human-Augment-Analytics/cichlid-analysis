@@ -30,7 +30,7 @@ def merge_latest(commit, models, output_dir, fps=30):
     if output_dir.resolve() == (ROOT/'outputs'/'merged_spans').resolve():
         raise ValueError('Choose a separate review directory to preserve manually verified spans')
     intervals, provenance, counts = [], [], {}
-    for path in sorted((ROOT/'ground-truth-annotations'/'finalized-annotations').glob('*.csv')):
+    for path in sorted((ROOT/'ground_truth_annotations'/'finalized_annotations').glob('*.csv')):
         with path.open(newline='') as stream:
             rows = list(csv.DictReader(stream))
         counts[path.name] = len(rows)

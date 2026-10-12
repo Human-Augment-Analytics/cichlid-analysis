@@ -24,7 +24,7 @@ Detected events against CSV labels. Blue bars are detected events (horizontal le
 ## Setup
 
 ```
-cd ground-truth-annotations
+cd ground_truth_annotations
 conda env create -f environment.yaml
 conda activate cichlid-vision
 ```

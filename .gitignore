@@ -216,6 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project specific
 data/
 .DS_Store
 outputs/predicted_spans/clips

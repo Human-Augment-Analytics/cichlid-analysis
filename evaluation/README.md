@@ -7,7 +7,7 @@ ground truth, per video and overall. It also runs as a command-line tool.
 
 ```sh
 uv run python evaluation/evaluate.py \
-    --ground-truth ground-truth-annotations/finalized-annotations/*.csv \
+    --ground-truth ground_truth_annotations/finalized_annotations/*.csv \
     --predicted outputs/predicted_spans/*_spans_threshold_0.50.csv \
     [--iou-threshold 0.5] [--fps 30] [--num-frames 0031_vid=1080398] [--output results.json]
 ```

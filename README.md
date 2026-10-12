@@ -23,7 +23,7 @@ VSCode with the Marimo extension, just like Jupyter.
 
 - `data/`: video and parquet files
 - `outputs/`: generated artifacts, model files, etc
-- `ground-truth-annotations/`: annotation workflow, finalized intervals, and supporting notebooks.
+- `ground_truth_annotations/`: annotation workflow, finalized intervals, and supporting notebooks.
 - `feature_engineering/`: reusable feature pipelines. Each feature group has its own package,
   documentation, checked-in sample data, and ignored generated outputs.
 - `tests/`: regression tests for shared model and interval utilities.
