@@ -23,7 +23,7 @@ import marimo
 __generated_with = "0.24.2"
 app = marimo.App(width="medium")
 
-with app.setup:
+with app.setup(hide_code=True):
     import argparse
     import json
     import re
@@ -118,10 +118,6 @@ def read_intervals(path):
 
     rows = pl.read_csv(path, infer_schema=False)
     columns = {re.sub(r'[^a-z]', '', column.lower()): column for column in rows.columns}
-    if 'circling' in columns:
-        rows = rows.filter(pl.col(columns['circling']).str.to_lowercase() == 'true')
-    if 'shoulduse' in columns:
-        rows = rows.filter(pl.col(columns['shoulduse']).fill_null('').str.to_lowercase() != 'false')
     if 'videoid' not in columns:
         raise ValueError(f'{path}: missing video ID column')
     if {'startframe', 'endframe'} <= columns.keys():
@@ -134,12 +130,6 @@ def read_intervals(path):
     if len(invalid):
         raise ValueError(f'{path}: invalid intervals\n{invalid}')
     return intervals
-
-
-@app.function
-def display_path(path):
-    path = Path(path).resolve()
-    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
 
 @app.function
@@ -161,6 +151,12 @@ def video_frame_count(video_id, video_dir):
 def _():
     args = parse_args(sys.argv[1:])
     return (args,)
+
+
+@app.function
+def display_path(path):
+    path = Path(path).resolve()
+    return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
 
 @app.cell
@@ -220,10 +216,11 @@ def _(args, gt, predicted):
 
 
 @app.cell
-def _(args, results, warnings):
+def _(args, predicted_file, results, warnings):
     _overall = results.row(-1, named=True)
     mo.vstack([
         mo.md(f'Ground truth: `{display_path(args.ground_truth)}`'),
+        mo.md(f'Prediction: `{display_path(predicted_file.value)}`'),
         *(mo.callout(mo.md(_w), kind='warn') for _w in warnings),
         mo.hstack([
             mo.stat(f"{_overall['mof']:.1%}", label='MoF'),
