@@ -16,7 +16,7 @@ def buffered_bounds(start, end, buffer_frames, frame_count):
     return max(0, start - buffer_frames), min(frame_count - 1, end + buffer_frames)
 
 
-def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max_width=960):
+def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max_width=640):
     """Cache a small video with pose points and a per-frame TrackID legend."""
     video_path, output_dir = Path(video_path), Path(output_dir)
     pose_path = video_path.with_suffix('.parquet')
@@ -36,7 +36,12 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
             raise ValueError(f'Invalid video metadata: {video_path}')
         preview_start, preview_end = buffered_bounds(start, end, buffer_frames, frame_count)
         output_dir.mkdir(parents=True, exist_ok=True)
-        preview = output_dir / f'{video_path.stem}_{start}-{end}_buffer_{buffer_frames}_overlay.mp4'
+        # Keep the notebook payload small; older 960 px previews can exceed
+        # marimo's output limit when VS Code serializes the video.
+        preview = output_dir / (
+            f'{video_path.stem}_{start}-{end}_buffer_{buffer_frames}'
+            f'_w{max_width}_crf30_overlay.mp4'
+        )
         sources = (video_path, pose_path, Path(__file__), Path(__file__).with_name('pose_overlay.py'))
         if preview.exists() and preview.stat().st_mtime_ns >= max(p.stat().st_mtime_ns for p in sources):
             return preview, preview_start, preview_end
@@ -58,7 +63,7 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
             str(partial), (output_width, output_height), fps=fps,
             pix_fmt_in='bgr24', pix_fmt_out='yuv420p', codec='libx264',
             macro_block_size=1, ffmpeg_log_level='error',
-            output_params=['-crf', '26', '-preset', 'veryfast', '-movflags', '+faststart'],
+            output_params=['-crf', '30', '-preset', 'veryfast', '-movflags', '+faststart'],
         )
         try:
             writer.send(None)
