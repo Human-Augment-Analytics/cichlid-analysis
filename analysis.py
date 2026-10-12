@@ -32,13 +32,13 @@ with app.setup:
     from pose_overlay import overlay_frame
 
     DATA_DIR = Path(__file__).parent / "data"
-    FPS = 30.0
+    FPS = 30
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Preliminary exploration
+    # Setup
     """)
     return
 
