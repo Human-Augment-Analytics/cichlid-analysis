@@ -1,15 +1,16 @@
 # evaluation
 
 `evaluate.py` is a marimo notebook that compares predicted circling intervals with
-ground truth, per video and overall. It also runs as a command-line tool.
+ground truth, per video and overall. It also runs as a command-line tool. The
+metric functions live in `metrics.py` and have no marimo or polars dependency.
 
 ## Usage
 
 ```sh
 uv run python evaluation/evaluate.py \
-    --ground-truth ground_truth_annotations/finalized_annotations/*.csv \
-    --predicted outputs/predicted_spans/*_spans_threshold_0.50.csv \
-    [--iou-threshold 0.5] [--fps 30] [--num-frames 0031_vid=1080398] [--output results.json]
+    --ground-truth ground_truth_annotations/finalized_annotations/merged_spans.csv \
+    --predicted predicted_spans.csv \
+    [--iou-threshold 0.5] [--num-frames 0031_vid=1080398] [--output results.json]
 ```
 
 To open it as a notebook, pass arguments after `--`:
@@ -18,20 +19,23 @@ To open it as a notebook, pass arguments after `--`:
 uv run marimo edit evaluation/evaluate.py -- --predicted rule-based.tsv
 ```
 
-With no arguments, the files shown above are used as defaults. From the command
+`--ground-truth` and `--predicted` each take a single file with rows for every
+video. `--ground-truth` defaults to the merged spans shown above. `--predicted`
+is required on the command line; in the notebook it is optional and only sets
+the initial choice in a dropdown listing `outputs/predicted_spans/*.csv|tsv`.
+From the command
 line it prints a table and, with `--output`, writes the results as JSON. In the
 notebook it shows summary figures and a per-video table.
 
 ## Input formats
 
-- CSV files with a video ID column plus either `Start Frame`/`End Frame` or
-  `StartTime`/`EndTime` (`HH:MM:SS[.mmm]`). The ground-truth annotations,
-  predicted spans and merged spans all load as they are.
+- CSV files with a video ID column plus `Start Frame`/`End Frame` columns
+  (header case, spaces and punctuation are ignored). Rows whose `Circling` is
+  not `true`, or whose `ShouldUse` is `false`, are dropped when those columns
+  exist. The merged ground-truth spans and predicted spans load as they are.
 - Headerless TSV files in the `rule-based.tsv` format (`<VVVV>-<n>`, start, end).
 
-Frame ranges are zero-based and inclusive. A time is converted to the frame at
-that timestamp (`round(seconds × fps)`), so a whole-second end time does not
-include the rest of that second.
+Frame ranges are zero-based and inclusive.
 
 ## Metrics
 

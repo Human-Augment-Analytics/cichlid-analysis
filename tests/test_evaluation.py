@@ -3,7 +3,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from evaluation.evaluate import edit_score, evaluate_video, match_events, read_intervals, summarize
+from evaluation.evaluate import read_intervals
+from evaluation.metrics import edit_score, evaluate_video, match_events, summarize
 
 
 class EvaluationTest(unittest.TestCase):
@@ -45,14 +46,15 @@ class EvaluationTest(unittest.TestCase):
         self.assertAlmostEqual(overall['frame_recall'], .5)
         self.assertEqual(overall['edit_score'], (100 + 50) / 2)
 
-    def test_reads_time_and_frame_csvs(self):
+    def test_reads_frame_csvs(self):
         with TemporaryDirectory() as directory:
-            times = Path(directory, 'gt.csv')
-            times.write_text('VideoID,StartTime,EndTime\n0028_vid,00:00:01,00:00:02.5\n')
             frames = Path(directory, 'pred.csv')
             frames.write_text('Video ID,Start Frame,End Frame\n0028_vid,3,7\n')
-            self.assertEqual(read_intervals(times).rows(), [('0028_vid', 30, 75)])
+            times = Path(directory, 'gt.csv')
+            times.write_text('VideoID,StartTime,EndTime\n0028_vid,00:00:01,00:00:02.5\n')
             self.assertEqual(read_intervals(frames).rows(), [('0028_vid', 3, 7)])
+            with self.assertRaises(ValueError):
+                read_intervals(times)
 
 
 if __name__ == '__main__':
