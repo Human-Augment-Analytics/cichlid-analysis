@@ -7,7 +7,7 @@ import imageio_ffmpeg
 import numpy as np
 import polars as pl
 
-from merged_span_preview import buffered_bounds, render_merged_preview
+from merged_spans_review import buffered_bounds, render_merged_preview
 
 
 class MergedSpanPreviewTest(unittest.TestCase):

@@ -11,23 +11,18 @@
 
 Reports MoF, segmental edit score, frame precision/recall/F1 and the number of
 ground-truth circling events matched by a prediction. Frame ranges are
-zero-based and inclusive.
+zero-based and inclusive. Run interactively:
 
-    uv run python evaluation/evaluate.py \\
-        --ground-truth ground_truth_annotations/finalized_annotations/merged_spans.csv \\
-        --predicted predicted_spans.csv
+    uv run marimo edit evaluation/evaluate.py
 """
 
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
-    import argparse
-    import json
     import re
-    import sys
     from pathlib import Path
 
     import marimo as mo
@@ -40,6 +35,8 @@ with app.setup(hide_code=True):
 
     ROOT = Path(__file__).resolve().parent.parent
     PREDICTIONS_DIR = ROOT / 'outputs/predicted_spans'
+    GROUND_TRUTH = ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'
+    VIDEO_DIR = ROOT / 'data'
 
 
 @app.cell(hide_code=True)
@@ -56,9 +53,9 @@ def _():
     - **Matched events**: ground-truth events paired one-to-one with a prediction
       at IoU ≥ the threshold (greedy, highest IoU first).
 
-    Pick the prediction file from the dropdown, which lists `outputs/predicted_spans`
-    plus any `--predicted` file. Pass arguments after `--` when editing, e.g.
-    `marimo edit evaluation/evaluate.py -- --predicted path.csv`.
+    Pick one or more prediction files from `outputs/predicted_spans`; their rows
+    are concatenated. Frame counts are read from `data/<video>.mp4`, else the last
+    annotated or predicted frame + 1.
 
     ## Expected file schema
     Minimal headers expected: extra columns will simply be ignored.
@@ -69,38 +66,14 @@ def _():
     |VideoID|`0028_vid` or `0031_vid` for now|
     |StartFrame| frame number |
     |EndFrame| frame number |
+
+    You may generate individual intervals for each video, but evaluation has to be done across the all videos.
+    We will merge the individual prediction results to perform evaluation.
     """)
     return
 
 
-@app.function
-def parse_args(argv):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        '--ground-truth', type=Path,
-        default=ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv',
-        help='ground-truth interval file, with rows for all videos '
-             '(default: ground_truth_annotations/finalized_annotations/merged_spans.csv)',
-    )
-    parser.add_argument(
-        '--predicted', type=Path, required=not mo.running_in_notebook(),
-        help='predicted interval file, with rows for all videos (optional in the notebook)',
-    )
-    parser.add_argument('--iou-threshold', type=float, default=.5, help='minimum IoU for an event match')
-    parser.add_argument(
-        '--num-frames', nargs='+', default=[], metavar='VIDEO=N',
-        help='frame count per video; otherwise read from VIDEO-DIR/<video>.mp4, '
-             'else the last annotated or predicted frame + 1',
-    )
-    parser.add_argument('--video-dir', type=Path, default=ROOT / 'data')
-    parser.add_argument('--output', type=Path, help='optional JSON path for the results')
-    args = parser.parse_args(argv)
-    if not 0 < args.iou_threshold <= 1:
-        parser.error('iou-threshold must be in (0, 1]')
-    return args
-
-
-@app.function
+@app.function(hide_code=True)
 def read_intervals(path):
     """Read intervals as (video_id, start, end) from CSV or rule-based TSV.
 
@@ -109,13 +82,6 @@ def read_intervals(path):
     columns exist. Headerless TSV rows are `<VVVV>-<n>  start  end`.
     """
     path = Path(path)
-    if path.suffix == '.tsv':
-        rows = pl.read_csv(path, separator='\t', has_header=False, new_columns=['id', 'start', 'end'])
-        return rows.select(
-            pl.col('id').str.slice(0, 4).add('_vid').alias('video_id'),
-            pl.col('start').cast(pl.Int64), pl.col('end').cast(pl.Int64),
-        )
-
     rows = pl.read_csv(path, infer_schema=False)
     columns = {re.sub(r'[^a-z]', '', column.lower()): column for column in rows.columns}
     if 'videoid' not in columns:
@@ -132,7 +98,7 @@ def read_intervals(path):
     return intervals
 
 
-@app.function
+@app.function(hide_code=True)
 def video_frame_count(video_id, video_dir):
     path = Path(video_dir) / f'{video_id}.mp4'
     if not path.exists():
@@ -147,52 +113,39 @@ def video_frame_count(video_id, video_dir):
     return count or None
 
 
-@app.cell
-def _():
-    args = parse_args(sys.argv[1:])
-    return (args,)
-
-
-@app.function
+@app.function(hide_code=True)
 def display_path(path):
     path = Path(path).resolve()
     return str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
 
 
-@app.cell
-def _(args):
+@app.cell(hide_code=True)
+def _():
     _candidates = sorted(p for p in PREDICTIONS_DIR.glob('*') if p.suffix in ('.csv', '.tsv'))
-    if args.predicted:
-        _candidates.append(args.predicted)
-    predicted_file = mo.ui.dropdown(
+    predicted_files = mo.ui.multiselect(
         options={display_path(_p): _p for _p in _candidates},
-        value=display_path(args.predicted) if args.predicted else None,
-        label='Predictions', searchable=True,
+        label='Predictions',
     )
-    predicted_file
-    return (predicted_file,)
+    iou_threshold = mo.ui.number(start=.05, stop=1, step=.05, value=.5, label='IoU threshold')
+    mo.vstack([predicted_files, iou_threshold], justify='start')
+    return iou_threshold, predicted_files
 
 
 @app.cell
-def _(args):
-    gt = read_intervals(args.ground_truth)
+def _():
+    gt = read_intervals(GROUND_TRUTH)
     return (gt,)
 
 
 @app.cell
-def _(predicted_file):
-    mo.stop(predicted_file.value is None, mo.callout('Select a prediction file.', kind='info'))
-    predicted = read_intervals(predicted_file.value)
+def _(predicted_files):
+    mo.stop(not predicted_files.value, mo.callout('Select one or more prediction files.', kind='info'))
+    predicted = pl.concat([read_intervals(_p) for _p in predicted_files.value])
     return (predicted,)
 
 
 @app.cell
-def _(args, gt, predicted):
-    explicit_frames = {}
-    for _item in args.num_frames:
-        _video, _, _count = _item.rpartition('=')
-        explicit_frames[_video] = int(_count)
-
+def _(gt, iou_threshold, predicted):
     warnings = []
     _extra = set(predicted['video_id']) - set(gt['video_id'])
     if _extra:
@@ -203,24 +156,30 @@ def _(args, gt, predicted):
         _gt = list(gt.filter(pl.col('video_id') == _video).select('start', 'end').iter_rows())
         _pred = list(predicted.filter(pl.col('video_id') == _video).select('start', 'end').iter_rows())
         _last = max(end for _, end in _gt + _pred) + 1
-        _frames = explicit_frames.get(_video) or video_frame_count(_video, args.video_dir)
+        _frames = video_frame_count(_video, VIDEO_DIR)
         if _frames is None:
             _frames = _last
             warnings.append(f'{_video}: frame count unknown, using last interval frame + 1 ({_last:,}) for MoF')
         elif _frames < _last:
             raise ValueError(f'{_video}: {_frames} frames but intervals reach frame {_last - 1}')
-        rows.append({'video_id': _video, **evaluate_video(_gt, _pred, _frames, args.iou_threshold)})
+        rows.append({'video_id': _video, **evaluate_video(_gt, _pred, _frames, iou_threshold.value)})
     rows.append({'video_id': 'overall', **summarize(rows)})
     results = pl.DataFrame(rows)
     return results, warnings
 
 
 @app.cell
-def _(args, predicted_file, results, warnings):
+def _(results):
+    results
+    return
+
+
+@app.cell
+def _(iou_threshold, predicted_files, results, warnings):
     _overall = results.row(-1, named=True)
     mo.vstack([
-        mo.md(f'Ground truth: `{display_path(args.ground_truth)}`'),
-        mo.md(f'Prediction: `{display_path(predicted_file.value)}`'),
+        mo.md(f'Ground truth: `{display_path(GROUND_TRUTH)}`'),
+        mo.md('Predictions: ' + ', '.join(f'`{display_path(_p)}`' for _p in predicted_files.value)),
         *(mo.callout(mo.md(_w), kind='warn') for _w in warnings),
         mo.hstack([
             mo.stat(f"{_overall['mof']:.1%}", label='MoF'),
@@ -230,41 +189,11 @@ def _(args, predicted_file, results, warnings):
             mo.stat(f"{_overall['frame_f1']:.1%}", label='Frame F1'),
             mo.stat(
                 f"{_overall['matched_events']} / {_overall['gt_events']}",
-                label=f'Events matched (IoU ≥ {args.iou_threshold:g})',
+                label=f'Events matched (IoU ≥ {iou_threshold.value:g})',
             ),
         ], widths='equal'),
         mo.ui.table(results, selection=None),
     ])
-    return
-
-
-@app.cell
-def _(args, predicted_file, results, warnings):
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps({
-            'ground_truth': str(args.ground_truth),
-            'predicted': str(predicted_file.value),
-            'iou_threshold': args.iou_threshold,
-            'results': results.to_dicts(),
-        }, indent=2))
-
-    if not mo.running_in_notebook():
-        for _w in warnings:
-            print(f'warning: {_w}', file=sys.stderr)
-        _metrics = (
-            'num_frames', 'mof', 'edit_score', 'frame_precision', 'frame_recall', 'frame_f1',
-            'gt_events', 'pred_events', 'matched_events',
-        )
-        _table = pl.DataFrame({'metric': _metrics, **{
-            _row['video_id']: [
-                f'{_row[_m]:,}' if isinstance(_row[_m], int) else f'{_row[_m]:.4f}' for _m in _metrics
-            ]
-            for _row in results.iter_rows(named=True)
-        }})
-        with pl.Config(tbl_rows=-1, tbl_cols=-1, tbl_width_chars=200, tbl_hide_dataframe_shape=True,
-                       tbl_hide_column_data_types=True, tbl_cell_alignment='RIGHT'):
-            print(_table)
     return
 
 
