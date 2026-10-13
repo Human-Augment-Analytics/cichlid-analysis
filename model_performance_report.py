@@ -11,10 +11,10 @@
 
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(width="full")
 
-with app.setup:
+with app.setup(hide_code=True):
     from colorsys import hsv_to_rgb
     from io import BytesIO
     from math import isfinite
@@ -89,7 +89,7 @@ def _():
     return
 
 
-@app.function
+@app.function(hide_code=True)
 def download(url, destination):
     """Download to a .part file first so interrupted downloads are retried."""
     if destination.exists():
@@ -106,7 +106,7 @@ def download(url, destination):
     return destination
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     models = prediction_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
@@ -136,14 +136,14 @@ def _(evaluations, predictions):
     return
 
 
-@app.function
+@app.function(hide_code=True)
 def track_color(track_id):
     """Return a stable, distinct BGR color for a TrackID."""
     rgb = hsv_to_rgb((int(track_id) * 0.61803398875) % 1, 0.75, 1.0)
     return tuple(round(channel * 255) for channel in reversed(rgb))
 
 
-@app.function
+@app.function(hide_code=True)
 def overlay_poses(frame, frame_poses, scale=1.0):
     """Draw every track's keypoints, colored by TrackID, on a BGR frame in place."""
     height, width = frame.shape[:2]
@@ -160,7 +160,7 @@ def overlay_poses(frame, frame_poses, scale=1.0):
     return frame
 
 
-@app.function
+@app.function(hide_code=True)
 def overlay_legend(frame, track_ids, labels):
     """Top-left status badges and a top-right TrackID legend, drawn in place."""
     font, scale = cv2.FONT_HERSHEY_SIMPLEX, 0.5
@@ -214,7 +214,7 @@ def _(clip_model, predictions):
     return clip_padding, clip_selection
 
 
-@app.function
+@app.function(hide_code=True)
 def render_clip(video_id, start, end, gt_spans, output_dir, padding=0, width=648):
     """Cache a pose-overlay preview of a predicted span plus padding frames.
 
