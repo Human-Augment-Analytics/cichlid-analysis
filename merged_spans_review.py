@@ -25,9 +25,10 @@ with app.setup:
     import marimo as mo
     import polars as pl
 
-    from pose_overlay import overlay_frame, overlay_track_legend
+    from model_performance_report import overlay_legend, overlay_poses
 
     ROOT = Path(__file__).resolve().parent
+    PREVIEW_DIR = ROOT / "outputs" / "clips" / "merged_spans"
 
 
 @app.function
@@ -65,7 +66,7 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
             f"{video_path.stem}_{start}-{end}_buffer_{buffer_frames}"
             f"_w{max_width}_crf30_overlay.mp4"
         )
-        sources = (video_path, pose_path, Path(__file__), Path(__file__).with_name("pose_overlay.py"))
+        sources = (video_path, pose_path, Path(__file__), ROOT / "model_performance_report.py")
         if preview.exists() and preview.stat().st_mtime_ns >= max(p.stat().st_mtime_ns for p in sources):
             return preview, preview_start, preview_end
 
@@ -96,16 +97,12 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
                 if not ok:
                     raise RuntimeError(f"Could not decode frame {frame_number} from {video_path}")
                 frame_poses = groups.get((frame_number,), empty)
-                annotated = overlay_frame(frame, frame_poses, labels=False)
-                annotated = cv2.resize(annotated, (output_width, output_height),
+                annotated = cv2.resize(frame, (output_width, output_height),
                                        interpolation=cv2.INTER_AREA)
+                overlay_poses(annotated, frame_poses, scale)
                 track_ids = frame_poses["TrackID"].drop_nulls().unique().sort().to_list()
-                annotated = overlay_track_legend(annotated, track_ids)
                 label = f"Frame {frame_number:,} | {'span' if start <= frame_number <= end else 'buffer'}"
-                cv2.rectangle(annotated, (0, 0), (360, 36), (24, 24, 24), -1)
-                cv2.putText(annotated, label, (10, 25), cv2.FONT_HERSHEY_SIMPLEX,
-                            0.65, (255, 255, 255), 1, cv2.LINE_AA)
-                writer.send(annotated)
+                writer.send(overlay_legend(annotated, track_ids, [(label, (40, 40, 40))]))
             writer.close()
             check = cv2.VideoCapture(str(partial))
             try:
@@ -282,10 +279,9 @@ def _(buffer_frames, frame_count, selected, video_path):
     if not 0 <= _start <= _end < frame_count:
         raise ValueError(f"Event {_start}–{_end} is outside {video_path.name} ({frame_count} frames)")
 
-    _preview_dir = ROOT / "outputs" / "merged_spans" / "previews"
     with mo.status.spinner(title=f"Rendering buffered frames around {_start:,}–{_end:,}..."):
         _preview, _preview_start, _preview_end = render_merged_preview(
-            video_path, _start, _end, buffer_frames.value, _preview_dir,
+            video_path, _start, _end, buffer_frames.value, PREVIEW_DIR,
         )
     mo.vstack([
         mo.md(f"Preview frames {selected['EventID']} **{_preview_start:,}–{_preview_end:,}** · "

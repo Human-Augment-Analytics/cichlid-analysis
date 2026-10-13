@@ -220,8 +220,7 @@ __marimo__/
 # Project specific
 data/
 .DS_Store
-outputs/predicted_spans/clips
-outputs/merged_spans/previews/
+outputs/clips/
 
 # Local pair-motion feature engineering artifacts
 outputs/pair_motion/
