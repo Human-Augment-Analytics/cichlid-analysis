@@ -49,13 +49,31 @@ are zero-based and inclusive.
   figure is the average across videos.
 - **Frame precision / recall / F1**: for the circling class, pooled across videos
   for the overall figure.
-- **F1@τ** for τ ∈ {10, 25, 50} (segmental F1, as in MS-TCN): predicted segments
-  are taken in order and each is compared with the ground-truth segment it
-  overlaps most. It is a true positive if that IoU is at least τ/100 and no
-  earlier prediction already claimed the segment; otherwise it is a false
-  positive. Unclaimed ground-truth segments are false negatives, and
-  `F1 = 2·precision·recall / (precision + recall)`. True positives (`tp@τ`) and
-  segment counts are pooled across videos for the overall figure.
+- **IoU** (intersection over union) of a predicted segment P and a ground-truth
+  segment G, both inclusive frame ranges:
+
+  ```
+  |P ∩ G| = max(0, min(P.end, G.end) − max(P.start, G.start) + 1)
+  |P ∪ G| = |P| + |G| − |P ∩ G|        where |P| = P.end − P.start + 1
+  IoU     = |P ∩ G| / |P ∪ G|
+  ```
+
+  1 is an exact match and 0 means no overlap. For example, G = 0–9 and
+  P = 5–14 share 5 of 15 frames, so IoU = 0.33.
+- **F1@τ** for τ ∈ {10, 25, 50} (segmental F1, as in MS-TCN):
+  1. Take the predicted segments in order. Compare each with the ground-truth
+     segment it has the highest IoU with.
+  2. It is a true positive (TP) if that IoU ≥ τ/100 and no earlier prediction
+     has claimed that ground-truth segment; otherwise it is a false positive.
+     So at most one prediction counts per ground-truth segment.
+  3. Ground-truth segments left unclaimed are false negatives.
+  4. `precision = TP / predicted segments`, `recall = TP / ground-truth segments`,
+     `F1@τ = 2 · precision · recall / (precision + recall)` (0 when TP = 0).
+
+  In the example above the prediction is a TP at τ = 10 and 25 but not at 50.
+  Lower τ rewards finding events; higher τ also requires accurate boundaries.
+  True positives (`tp@τ`) and segment counts are pooled across videos for the
+  overall figure.
 
 Predictions for videos without ground truth are ignored with a warning.
 

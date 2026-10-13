@@ -56,6 +56,18 @@ def _():
 
     The logistic regression's predictions include its training frames, and the rule-based
     detector was tuned on video 0031, so neither is a fully held-out evaluation.
+
+    ## Metrics
+    ### Mean over Frames (MoF)
+
+    $$MoF = \frac{\text{\# of correct frames}}{\text{\# of all frames}}$$
+
+    ### Edit Score
+    Based on the Levenshtein or edit distance and tallies the minimum number of
+    insertions, deletions, and replacement operations required
+    to convert one segment sequence into another.
+
+    $$\text{Edit Score} = \big ( 1 - \frac{e[|X|, |Y |]}{ max(|X|, |Y |) } \big ) \cdot 100 $$
     """)
     return
 

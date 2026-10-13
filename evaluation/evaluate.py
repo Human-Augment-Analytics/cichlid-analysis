@@ -48,11 +48,16 @@ def _():
     - **MoF**: fraction of all frames (circling and background) labelled correctly.
     - **Edit score**: `100 × (1 − Levenshtein / max segments)` over the ordered
       circling/background segment sequence; overall is the mean across videos.
-    - **F1@τ** for τ ∈ {10, 25, 50}: each predicted segment is a true positive if
-      its IoU with the ground-truth segment it overlaps most is at least τ/100 and
-      no earlier prediction claimed that segment; otherwise a false positive.
-      Unclaimed ground-truth segments are false negatives. Counts are pooled across
-      videos for the overall figure.
+    - **IoU** (intersection over union) of a predicted segment P and a ground-truth
+      segment G, both inclusive frame ranges: `|P ∩ G| / |P ∪ G|`, where
+      `|P ∪ G| = |P| + |G| − |P ∩ G|`. 1 is an exact match, 0 means no overlap.
+    - **F1@τ** for τ ∈ {10, 25, 50}: each predicted segment, in order, is compared
+      with the ground-truth segment it has the highest IoU with. It is a true
+      positive (TP) if that IoU ≥ τ/100 and no earlier prediction claimed that
+      segment; otherwise a false positive. Unclaimed ground-truth segments are false
+      negatives. Then precision = TP / predicted segments, recall = TP /
+      ground-truth segments and `F1@τ = 2 · precision · recall / (precision + recall)`.
+      Counts are pooled across videos for the overall figure.
     - **Frame precision / recall / F1**: for the circling class.
 
     Pick a model from `outputs/predictions/`; the CSV files in its folder are
