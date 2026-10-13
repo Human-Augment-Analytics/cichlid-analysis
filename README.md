@@ -35,6 +35,8 @@ VSCode with the Marimo extension, just like Jupyter.
   per-frame scoring and post-processing into sustained spans.
 - `models/rule_based/`: rule-based detector (closest-pair distance plus rotation) and the
   data-cleaning rules and notebook it relies on.
+- `models/xgboost/`: marimo training notebook using centered 121-frame windows of
+  the cleaned rule-based distance and rotation features, with 70/30 holdout and full-video evaluation.
 - `model_performance_report.py`: evaluation metrics for every model in `outputs/predictions/`,
   using the functions from `evaluation/evaluate.py`, plus pose-overlay clip previews of
   predicted spans.
@@ -67,6 +69,18 @@ uv run marimo edit models/rule_based/data_cleaning.py  # tracking artifacts remo
 
 Running the detector (`uv run python models/rule_based/detector.py`, or opening it in
 marimo) writes its episodes to `outputs/predictions/rule_based/`.
+
+### XGBoost
+
+```sh
+uv run marimo edit models/xgboost/notebook.py
+```
+
+The notebook samples all positive centers plus nearby negative frames, trains on
+70% of the sampled rows, evaluates the 30% holdout, and scores both full videos.
+It writes artifacts to `outputs/xgboost/` and standard prediction CSVs to
+`outputs/predictions/xgboost/`. On macOS, run `brew install libomp` first.
+See [models/xgboost/README.md](models/xgboost/README.md) for feature and evaluation details.
 
 ### Pair-motion feature pipeline
 

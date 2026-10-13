@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.24.2"
 app = marimo.App(width="full")
 
 with app.setup(hide_code=True):
@@ -209,7 +209,7 @@ def _(clip_model, predictions):
     }
     clip_selection = mo.ui.dropdown(options=_options, value=next(iter(_options)),
                                     label="Predicted span", allow_select_none=False)
-    clip_padding = mo.ui.number(start=0, stop=30, step=1, value=1, label="Padding (s)")
+    clip_padding = mo.ui.number(start=0, stop=30, step=0.25, value=1, label="Padding (s)")
     mo.hstack([clip_selection, clip_padding], justify="start")
     return clip_padding, clip_selection
 

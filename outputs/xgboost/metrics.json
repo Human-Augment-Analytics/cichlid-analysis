@@ -1,0 +1,1001 @@
+{
+  "window_frames": 61,
+  "features": [
+    "centroid_distance_px_offset_-30",
+    "centroid_distance_px_offset_-29",
+    "centroid_distance_px_offset_-28",
+    "centroid_distance_px_offset_-27",
+    "centroid_distance_px_offset_-26",
+    "centroid_distance_px_offset_-25",
+    "centroid_distance_px_offset_-24",
+    "centroid_distance_px_offset_-23",
+    "centroid_distance_px_offset_-22",
+    "centroid_distance_px_offset_-21",
+    "centroid_distance_px_offset_-20",
+    "centroid_distance_px_offset_-19",
+    "centroid_distance_px_offset_-18",
+    "centroid_distance_px_offset_-17",
+    "centroid_distance_px_offset_-16",
+    "centroid_distance_px_offset_-15",
+    "centroid_distance_px_offset_-14",
+    "centroid_distance_px_offset_-13",
+    "centroid_distance_px_offset_-12",
+    "centroid_distance_px_offset_-11",
+    "centroid_distance_px_offset_-10",
+    "centroid_distance_px_offset_-9",
+    "centroid_distance_px_offset_-8",
+    "centroid_distance_px_offset_-7",
+    "centroid_distance_px_offset_-6",
+    "centroid_distance_px_offset_-5",
+    "centroid_distance_px_offset_-4",
+    "centroid_distance_px_offset_-3",
+    "centroid_distance_px_offset_-2",
+    "centroid_distance_px_offset_-1",
+    "centroid_distance_px_offset_+0",
+    "centroid_distance_px_offset_+1",
+    "centroid_distance_px_offset_+2",
+    "centroid_distance_px_offset_+3",
+    "centroid_distance_px_offset_+4",
+    "centroid_distance_px_offset_+5",
+    "centroid_distance_px_offset_+6",
+    "centroid_distance_px_offset_+7",
+    "centroid_distance_px_offset_+8",
+    "centroid_distance_px_offset_+9",
+    "centroid_distance_px_offset_+10",
+    "centroid_distance_px_offset_+11",
+    "centroid_distance_px_offset_+12",
+    "centroid_distance_px_offset_+13",
+    "centroid_distance_px_offset_+14",
+    "centroid_distance_px_offset_+15",
+    "centroid_distance_px_offset_+16",
+    "centroid_distance_px_offset_+17",
+    "centroid_distance_px_offset_+18",
+    "centroid_distance_px_offset_+19",
+    "centroid_distance_px_offset_+20",
+    "centroid_distance_px_offset_+21",
+    "centroid_distance_px_offset_+22",
+    "centroid_distance_px_offset_+23",
+    "centroid_distance_px_offset_+24",
+    "centroid_distance_px_offset_+25",
+    "centroid_distance_px_offset_+26",
+    "centroid_distance_px_offset_+27",
+    "centroid_distance_px_offset_+28",
+    "centroid_distance_px_offset_+29",
+    "centroid_distance_px_offset_+30",
+    "d_orbital_rad_s_offset_-30",
+    "d_orbital_rad_s_offset_-29",
+    "d_orbital_rad_s_offset_-28",
+    "d_orbital_rad_s_offset_-27",
+    "d_orbital_rad_s_offset_-26",
+    "d_orbital_rad_s_offset_-25",
+    "d_orbital_rad_s_offset_-24",
+    "d_orbital_rad_s_offset_-23",
+    "d_orbital_rad_s_offset_-22",
+    "d_orbital_rad_s_offset_-21",
+    "d_orbital_rad_s_offset_-20",
+    "d_orbital_rad_s_offset_-19",
+    "d_orbital_rad_s_offset_-18",
+    "d_orbital_rad_s_offset_-17",
+    "d_orbital_rad_s_offset_-16",
+    "d_orbital_rad_s_offset_-15",
+    "d_orbital_rad_s_offset_-14",
+    "d_orbital_rad_s_offset_-13",
+    "d_orbital_rad_s_offset_-12",
+    "d_orbital_rad_s_offset_-11",
+    "d_orbital_rad_s_offset_-10",
+    "d_orbital_rad_s_offset_-9",
+    "d_orbital_rad_s_offset_-8",
+    "d_orbital_rad_s_offset_-7",
+    "d_orbital_rad_s_offset_-6",
+    "d_orbital_rad_s_offset_-5",
+    "d_orbital_rad_s_offset_-4",
+    "d_orbital_rad_s_offset_-3",
+    "d_orbital_rad_s_offset_-2",
+    "d_orbital_rad_s_offset_-1",
+    "d_orbital_rad_s_offset_+0",
+    "d_orbital_rad_s_offset_+1",
+    "d_orbital_rad_s_offset_+2",
+    "d_orbital_rad_s_offset_+3",
+    "d_orbital_rad_s_offset_+4",
+    "d_orbital_rad_s_offset_+5",
+    "d_orbital_rad_s_offset_+6",
+    "d_orbital_rad_s_offset_+7",
+    "d_orbital_rad_s_offset_+8",
+    "d_orbital_rad_s_offset_+9",
+    "d_orbital_rad_s_offset_+10",
+    "d_orbital_rad_s_offset_+11",
+    "d_orbital_rad_s_offset_+12",
+    "d_orbital_rad_s_offset_+13",
+    "d_orbital_rad_s_offset_+14",
+    "d_orbital_rad_s_offset_+15",
+    "d_orbital_rad_s_offset_+16",
+    "d_orbital_rad_s_offset_+17",
+    "d_orbital_rad_s_offset_+18",
+    "d_orbital_rad_s_offset_+19",
+    "d_orbital_rad_s_offset_+20",
+    "d_orbital_rad_s_offset_+21",
+    "d_orbital_rad_s_offset_+22",
+    "d_orbital_rad_s_offset_+23",
+    "d_orbital_rad_s_offset_+24",
+    "d_orbital_rad_s_offset_+25",
+    "d_orbital_rad_s_offset_+26",
+    "d_orbital_rad_s_offset_+27",
+    "d_orbital_rad_s_offset_+28",
+    "d_orbital_rad_s_offset_+29",
+    "d_orbital_rad_s_offset_+30"
+  ],
+  "seed": 42,
+  "threshold": 0.5,
+  "feature_source": "Rule-based cleaning; closest retained pair's centroid_distance_px and d_orbital_rad_s, offsets -60..+60. Rates with abs >15 or missing become 0; missing distance and boundary context are NaN.",
+  "ground_truth": "ground_truth_annotations/finalized_annotations/merged_spans.csv",
+  "spans": {
+    "0028_vid": [
+      [
+        206356,
+        206596
+      ],
+      [
+        332855,
+        333156
+      ],
+      [
+        334658,
+        334835
+      ],
+      [
+        334952,
+        335118
+      ],
+      [
+        335409,
+        335502
+      ],
+      [
+        336150,
+        336285
+      ],
+      [
+        350997,
+        351254
+      ],
+      [
+        351535,
+        352006
+      ],
+      [
+        352251,
+        352392
+      ],
+      [
+        367693,
+        367772
+      ],
+      [
+        368382,
+        368743
+      ],
+      [
+        368842,
+        369268
+      ],
+      [
+        369806,
+        370412
+      ],
+      [
+        378568,
+        378697
+      ],
+      [
+        380203,
+        380439
+      ],
+      [
+        380655,
+        381085
+      ],
+      [
+        381308,
+        381433
+      ],
+      [
+        382490,
+        382677
+      ],
+      [
+        382852,
+        382994
+      ],
+      [
+        383099,
+        383272
+      ],
+      [
+        383445,
+        384033
+      ],
+      [
+        390789,
+        390931
+      ],
+      [
+        391393,
+        391488
+      ],
+      [
+        391735,
+        391900
+      ],
+      [
+        392369,
+        392777
+      ],
+      [
+        393082,
+        393258
+      ],
+      [
+        393398,
+        393887
+      ],
+      [
+        394321,
+        394834
+      ],
+      [
+        395143,
+        395606
+      ],
+      [
+        395728,
+        396225
+      ],
+      [
+        406958,
+        407096
+      ],
+      [
+        407887,
+        408316
+      ],
+      [
+        420411,
+        420660
+      ],
+      [
+        421053,
+        421424
+      ],
+      [
+        422612,
+        422863
+      ],
+      [
+        423432,
+        423666
+      ],
+      [
+        423987,
+        424238
+      ],
+      [
+        425305,
+        425746
+      ],
+      [
+        426756,
+        427192
+      ],
+      [
+        428136,
+        428461
+      ],
+      [
+        429314,
+        429555
+      ],
+      [
+        431202,
+        431490
+      ],
+      [
+        431617,
+        432266
+      ],
+      [
+        432744,
+        433080
+      ],
+      [
+        434945,
+        435479
+      ],
+      [
+        436604,
+        436917
+      ],
+      [
+        437168,
+        437453
+      ],
+      [
+        439415,
+        440128
+      ],
+      [
+        441677,
+        442324
+      ],
+      [
+        444555,
+        444642
+      ],
+      [
+        445473,
+        445659
+      ],
+      [
+        448891,
+        449487
+      ],
+      [
+        450545,
+        451235
+      ],
+      [
+        462451,
+        462770
+      ],
+      [
+        465752,
+        466075
+      ],
+      [
+        466282,
+        466608
+      ],
+      [
+        466955,
+        467972
+      ],
+      [
+        477527,
+        477990
+      ],
+      [
+        478248,
+        478897
+      ],
+      [
+        489251,
+        489893
+      ],
+      [
+        490382,
+        490613
+      ],
+      [
+        491246,
+        491719
+      ],
+      [
+        504008,
+        504704
+      ],
+      [
+        505058,
+        505779
+      ],
+      [
+        509824,
+        510311
+      ],
+      [
+        510392,
+        510814
+      ],
+      [
+        511141,
+        511674
+      ],
+      [
+        515269,
+        515369
+      ],
+      [
+        515686,
+        516434
+      ],
+      [
+        520287,
+        520560
+      ],
+      [
+        520951,
+        521542
+      ],
+      [
+        525622,
+        526540
+      ],
+      [
+        535485,
+        535600
+      ],
+      [
+        535956,
+        536302
+      ],
+      [
+        536411,
+        536714
+      ],
+      [
+        545312,
+        545826
+      ],
+      [
+        547713,
+        548136
+      ],
+      [
+        559441,
+        559547
+      ],
+      [
+        562473,
+        562897
+      ],
+      [
+        578997,
+        579107
+      ],
+      [
+        713042,
+        713342
+      ]
+    ],
+    "0031_vid": [
+      [
+        98132,
+        98362
+      ],
+      [
+        98980,
+        99205
+      ],
+      [
+        119900,
+        120708
+      ],
+      [
+        121503,
+        121795
+      ],
+      [
+        122748,
+        125284
+      ],
+      [
+        129208,
+        129306
+      ],
+      [
+        130018,
+        130295
+      ],
+      [
+        138159,
+        138700
+      ],
+      [
+        139256,
+        139491
+      ],
+      [
+        178863,
+        179209
+      ],
+      [
+        180660,
+        181538
+      ],
+      [
+        183808,
+        185516
+      ],
+      [
+        189155,
+        189709
+      ],
+      [
+        210496,
+        210641
+      ],
+      [
+        212861,
+        213004
+      ],
+      [
+        214472,
+        215165
+      ],
+      [
+        216987,
+        217110
+      ],
+      [
+        219115,
+        220009
+      ],
+      [
+        247017,
+        247560
+      ],
+      [
+        247862,
+        248868
+      ],
+      [
+        255877,
+        255979
+      ],
+      [
+        262877,
+        263236
+      ],
+      [
+        263555,
+        263687
+      ],
+      [
+        264712,
+        265114
+      ],
+      [
+        265490,
+        266247
+      ],
+      [
+        266827,
+        267102
+      ],
+      [
+        267263,
+        267850
+      ],
+      [
+        269072,
+        271849
+      ],
+      [
+        272241,
+        273053
+      ],
+      [
+        273572,
+        274810
+      ],
+      [
+        275040,
+        275190
+      ],
+      [
+        276439,
+        276533
+      ],
+      [
+        276785,
+        276899
+      ],
+      [
+        277630,
+        278798
+      ],
+      [
+        284308,
+        285248
+      ],
+      [
+        285910,
+        286492
+      ],
+      [
+        287427,
+        287549
+      ],
+      [
+        290415,
+        291967
+      ],
+      [
+        297374,
+        297867
+      ],
+      [
+        298370,
+        298541
+      ],
+      [
+        299070,
+        299342
+      ],
+      [
+        300814,
+        301485
+      ],
+      [
+        302548,
+        303488
+      ],
+      [
+        310706,
+        310821
+      ],
+      [
+        311191,
+        311277
+      ],
+      [
+        311703,
+        311864
+      ],
+      [
+        312403,
+        312678
+      ],
+      [
+        312890,
+        313274
+      ],
+      [
+        314426,
+        314830
+      ],
+      [
+        315500,
+        316123
+      ],
+      [
+        316941,
+        317109
+      ],
+      [
+        317293,
+        317485
+      ],
+      [
+        317914,
+        318607
+      ],
+      [
+        319319,
+        320672
+      ],
+      [
+        323003,
+        323274
+      ],
+      [
+        323989,
+        325440
+      ],
+      [
+        330419,
+        330554
+      ],
+      [
+        336893,
+        337898
+      ]
+    ]
+  },
+  "data_dir": "/Users/ding/omscs-rs/cichlid-analysis/data",
+  "sampling": "All positive centers; ceil(inclusive segment length / 2) negative context frames on each side. Union overlapping buffers; clip to video; positive labels take precedence. One row per (video, center frame).",
+  "split": "Stratified random 70/30 frame split, seed 42; fitted on training rows only.",
+  "postprocessing": {
+    "window_frames": 30,
+    "positive_fraction": 0.5,
+    "description": "Centered rolling vote over thresholded predictions, offsets -15..+14; ties positive. Video boundaries use only available frames. Apply after concatenating full-video scores; export processed spans.",
+    "processed_ranking_metrics": "AP and ROC AUC use the rolling positive-vote fraction, not model probabilities.",
+    "holdout": "Raw classifier predictions; sampled holdout rows are not contiguous."
+  },
+  "limitations": [
+    "Adjacent windows overlap across train/test; holdout is not independent-event or new-video evaluation.",
+    "Full-video evaluation includes training frames and assumes all unannotated frames are negative; annotations may be incomplete.",
+    "Centered windows use future frames. Scores trained on near-balanced data are not calibrated at full-video prevalence."
+  ],
+  "model_parameters": {
+    "objective": "binary:logistic",
+    "base_score": null,
+    "booster": null,
+    "callbacks": null,
+    "colsample_bylevel": null,
+    "colsample_bynode": null,
+    "colsample_bytree": 0.8,
+    "device": null,
+    "early_stopping_rounds": null,
+    "enable_categorical": true,
+    "eval_metric": "logloss",
+    "feature_types": null,
+    "feature_weights": null,
+    "gamma": null,
+    "grow_policy": null,
+    "importance_type": null,
+    "interaction_constraints": null,
+    "learning_rate": 0.05,
+    "max_bin": null,
+    "max_cat_threshold": null,
+    "max_cat_to_onehot": null,
+    "max_delta_step": null,
+    "max_depth": 4,
+    "max_leaves": null,
+    "min_child_weight": 5,
+    "missing": "NaN",
+    "monotone_constraints": null,
+    "multi_strategy": null,
+    "n_estimators": 300,
+    "n_jobs": 4,
+    "num_parallel_tree": null,
+    "random_state": 42,
+    "reg_alpha": null,
+    "reg_lambda": null,
+    "sampling_method": null,
+    "scale_pos_weight": null,
+    "subsample": 0.8,
+    "tree_method": "hist",
+    "validate_parameters": null,
+    "verbosity": null
+  },
+  "sample_counts": [
+    {
+      "VideoID": "0028_vid",
+      "split": "test",
+      "circling": 0,
+      "frames": 7782
+    },
+    {
+      "VideoID": "0028_vid",
+      "split": "test",
+      "circling": 1,
+      "frames": 9010
+    },
+    {
+      "VideoID": "0028_vid",
+      "split": "train",
+      "circling": 0,
+      "frames": 17842
+    },
+    {
+      "VideoID": "0028_vid",
+      "split": "train",
+      "circling": 1,
+      "frames": 20745
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "test",
+      "circling": 0,
+      "frames": 8784
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "test",
+      "circling": 1,
+      "frames": 10224
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "train",
+      "circling": 0,
+      "frames": 20811
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "train",
+      "circling": 1,
+      "frames": 24135
+    }
+  ],
+  "holdout": {
+    "frames": 35800,
+    "positive_frames": 19234,
+    "prevalence": 0.5372625698324023,
+    "accuracy": 0.9513966480446927,
+    "average_precision": 0.9919325215496507,
+    "roc_auc": 0.991217713019287,
+    "precision": 0.9493937525688451,
+    "recall": 0.9607465945721119,
+    "f1": 0.9550364359915241,
+    "tn": 15581,
+    "fp": 985,
+    "fn": 755,
+    "tp": 18479
+  },
+  "full_video": {
+    "frame_metrics": {
+      "0028_vid": {
+        "frames": 1080175,
+        "positive_frames": 29755,
+        "prevalence": 0.027546462378781215,
+        "accuracy": 0.9944184970028005,
+        "average_precision": 0.9700660095498534,
+        "roc_auc": 0.9991518054419732,
+        "precision": 0.8646339214360361,
+        "recall": 0.9453873298605276,
+        "f1": 0.9032092343752508,
+        "tn": 1046016,
+        "fp": 4404,
+        "fn": 1625,
+        "tp": 28130
+      },
+      "0031_vid": {
+        "frames": 1080398,
+        "positive_frames": 34359,
+        "prevalence": 0.0318021692006094,
+        "accuracy": 0.9858968639334764,
+        "average_precision": 0.9114581398368267,
+        "roc_auc": 0.9977094158503381,
+        "precision": 0.6982047348563373,
+        "recall": 0.9802380744491982,
+        "f1": 0.8155259876266693,
+        "tn": 1031481,
+        "fp": 14558,
+        "fn": 679,
+        "tp": 33680
+      }
+    },
+    "segment_metrics": {
+      "0028_vid": {
+        "num_frames": 1080175,
+        "mof": 0.9944184970028005,
+        "edit_score": 13.617376775271516,
+        "frame_tp": 28130,
+        "frame_fp": 4404,
+        "frame_fn": 1625,
+        "frame_precision": 0.8646339214360361,
+        "frame_recall": 0.9453873298605276,
+        "frame_f1": 0.9032092343752508,
+        "gt_segments": 81,
+        "pred_segments": 598,
+        "tp@10": 81,
+        "tp@25": 81,
+        "tp@50": 80,
+        "f1@10": 0.23858615611192932,
+        "f1@25": 0.23858615611192932,
+        "f1@50": 0.23564064801178203
+      },
+      "0031_vid": {
+        "num_frames": 1080398,
+        "mof": 0.9858968639334764,
+        "edit_score": 4.840711625982619,
+        "frame_tp": 33680,
+        "frame_fp": 14558,
+        "frame_fn": 679,
+        "frame_precision": 0.6982047348563373,
+        "frame_recall": 0.9802380744491982,
+        "frame_f1": 0.8155259876266693,
+        "gt_segments": 58,
+        "pred_segments": 1208,
+        "tp@10": 58,
+        "tp@25": 58,
+        "tp@50": 55,
+        "f1@10": 0.09162717219589257,
+        "f1@25": 0.09162717219589257,
+        "f1@50": 0.08688783570300158
+      }
+    },
+    "overall_segments": {
+      "num_frames": 2160573,
+      "mof": 0.9901572406949453,
+      "edit_score": 9.229044200627069,
+      "frame_tp": 61810,
+      "frame_fp": 18962,
+      "frame_fn": 2304,
+      "frame_precision": 0.7652404298519289,
+      "frame_recall": 0.9640640109804411,
+      "frame_f1": 0.8532225335781234,
+      "gt_segments": 139,
+      "pred_segments": 1806,
+      "tp@10": 139,
+      "tp@25": 139,
+      "tp@50": 135,
+      "f1@10": 0.1429305912596401,
+      "f1@25": 0.1429305912596401,
+      "f1@50": 0.13881748071979436
+    },
+    "postprocessed": {
+      "frame_metrics": {
+        "0028_vid": {
+          "frames": 1080175,
+          "positive_frames": 29755,
+          "prevalence": 0.027546462378781215,
+          "accuracy": 0.994701784433078,
+          "average_precision": 0.9294129327315399,
+          "roc_auc": 0.993483616003791,
+          "precision": 0.8713685251576214,
+          "recall": 0.9475382288690977,
+          "f1": 0.9078585113747968,
+          "tn": 1046258,
+          "fp": 4162,
+          "fn": 1561,
+          "tp": 28194
+        },
+        "0031_vid": {
+          "frames": 1080398,
+          "positive_frames": 34359,
+          "prevalence": 0.0318021692006094,
+          "accuracy": 0.9862097116062785,
+          "average_precision": 0.829647241913603,
+          "roc_auc": 0.9953056462571729,
+          "precision": 0.7023794666999459,
+          "recall": 0.9828283710236038,
+          "f1": 0.8192680471147664,
+          "tn": 1031730,
+          "fp": 14309,
+          "fn": 590,
+          "tp": 33769
+        }
+      },
+      "segment_metrics": {
+        "0028_vid": {
+          "num_frames": 1080175,
+          "mof": 0.994701784433078,
+          "edit_score": 54.51505016722409,
+          "frame_tp": 28194,
+          "frame_fp": 4162,
+          "frame_fn": 1561,
+          "frame_precision": 0.8713685251576214,
+          "frame_recall": 0.9475382288690977,
+          "frame_f1": 0.9078585113747968,
+          "gt_segments": 81,
+          "pred_segments": 149,
+          "tp@10": 81,
+          "tp@25": 81,
+          "tp@50": 81,
+          "f1@10": 0.7043478260869566,
+          "f1@25": 0.7043478260869566,
+          "f1@50": 0.7043478260869566
+        },
+        "0031_vid": {
+          "num_frames": 1080398,
+          "mof": 0.9862097116062785,
+          "edit_score": 26.530612244897956,
+          "frame_tp": 33769,
+          "frame_fp": 14309,
+          "frame_fn": 590,
+          "frame_precision": 0.7023794666999459,
+          "frame_recall": 0.9828283710236038,
+          "frame_f1": 0.8192680471147664,
+          "gt_segments": 58,
+          "pred_segments": 220,
+          "tp@10": 58,
+          "tp@25": 58,
+          "tp@50": 55,
+          "f1@10": 0.4172661870503597,
+          "f1@25": 0.4172661870503597,
+          "f1@50": 0.39568345323741005
+        }
+      },
+      "overall_segments": {
+        "num_frames": 2160573,
+        "mof": 0.990455309771991,
+        "edit_score": 40.52283120606102,
+        "frame_tp": 61963,
+        "frame_fp": 18471,
+        "frame_fn": 2151,
+        "frame_precision": 0.7703583061889251,
+        "frame_recall": 0.9664503852512711,
+        "frame_f1": 0.8573345878185794,
+        "gt_segments": 139,
+        "pred_segments": 369,
+        "tp@10": 139,
+        "tp@25": 139,
+        "tp@50": 136,
+        "f1@10": 0.547244094488189,
+        "f1@25": 0.547244094488189,
+        "f1@50": 0.5354330708661418
+      }
+    }
+  }
+}
