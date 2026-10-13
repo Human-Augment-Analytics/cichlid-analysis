@@ -5,7 +5,7 @@
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if needed, then run from the repository root:
 
 ```sh
-uv sync
+uv sync --locked
 ```
 
 `uv sync` installs the locked dependencies and the required Python version. Open the
