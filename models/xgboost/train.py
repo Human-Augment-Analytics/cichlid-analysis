@@ -16,7 +16,7 @@ from xgboost import XGBClassifier
 
 from evaluation.metrics import evaluate_video, summarize
 from models.rule_based.circling_cleaning import default_data_dir
-from .features import (FEATURES, GROUND_TRUTH, ROOT, VIDEO_FRAMES, WINDOW, frame_labels,
+from .features import (FEATURE_DESCRIPTION, FEATURES, GROUND_TRUTH, ROOT, VIDEO_FRAMES, WINDOW, frame_labels,
                        load_series, read_spans, sample_frames, window_features)
 from .postprocess import VOTE_FRACTION, VOTE_WINDOW, majority_vote_fraction
 
@@ -51,7 +51,7 @@ def split_dataset(table):
 def fit_model(x, y):
     if len(np.unique(y)) != 2:
         raise ValueError("Training requires both positive and negative frames")
-    model = XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.05,
+    model = XGBClassifier(n_estimators=400, max_depth=3, learning_rate=0.05,
                           subsample=0.8, colsample_bytree=0.8, min_child_weight=5,
                           objective="binary:logistic", eval_metric="logloss",
                           tree_method="hist", random_state=SEED, n_jobs=4)
@@ -137,7 +137,7 @@ def save_artifacts(model, table, x, test_ids, test_scores, holdout, full, spans,
                  ).sort_values("importance", ascending=False).to_csv(output_dir / "feature_importance.csv", index=False)
     report = {
         "window_frames": WINDOW, "features": FEATURES, "seed": SEED, "threshold": THRESHOLD,
-        "feature_source": "Rule-based cleaning; closest retained pair's centroid_distance_px and d_orbital_rad_s, offsets -60..+60. Rates with abs >15 or missing become 0; missing distance and boundary context are NaN.",
+        "feature_source": FEATURE_DESCRIPTION,
         "ground_truth": str(GROUND_TRUTH.relative_to(ROOT)), "spans": spans,
         "data_dir": str(Path(data_dir).resolve()) if data_dir is not None else None,
         "sampling": "All positive centers; ceil(inclusive segment length / 2) negative context frames on each side. Union overlapping buffers; clip to video; positive labels take precedence. One row per (video, center frame).",

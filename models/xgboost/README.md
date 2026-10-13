@@ -13,11 +13,34 @@ pose/pair Parquet filenames as the rule-based detector.
 
 The notebook loads the finalized usable positive intervals in
 `ground_truth_annotations/finalized_annotations/merged_spans.csv`. It reuses the
-rule-based artifact cleaning and closest-pair selection, using only
+rule-based artifact cleaning and closest-pair selection, retaining
 `centroid_distance_px` and `d_orbital_rad_s`. Each row contains these two signals
-across 121 centered frames (242 columns); its label is the middle frame's label.
+across 121 centered frames; its label is the middle frame's label.
 Missing distances and context beyond video boundaries are NaN. Missing rates or
 rates exceeding 15 rad/s in magnitude become zero, matching the rule baseline.
+
+Three additional XGBoost-only per-frame signals bring the total to 605 features
+(five signals × 121 offsets, from -60 to +60). No window means are computed:
+
+- `centroid_distance_rate_px_s`: signed frame-to-frame distance change
+  multiplied by 30 fps. Positive means the pair moves apart.
+- `d_orbital_rate_rad_s2`: signed frame-to-frame change of
+  `d_orbital_rad_s` multiplied by 30 fps (angular acceleration).
+- `intersection_midpoint_speed_px_s`: frame-to-frame Euclidean
+  displacement of the head-to-head/tail-to-tail intersection multiplied by 30 fps.
+  The finite segments use `Head_x/y` and `TailTip_x/y` for the selected pair. The
+  intersection is the user's defined midpoint; it need not be the geometric center.
+
+Each signal has a separate column for every offset, for example
+`d_orbital_rate_rad_s2_offset_+0`. The rate at frame t uses t-1 and t; the
+window's leftmost rate can use one preceding context frame. Missing measurements,
+pair switches and episode changes produce NaN rates. Invalid orbital rates stay missing when deriving acceleration;
+their zero placeholders in the raw features do not create artificial changes.
+Parallel, collinear, degenerate or non-intersecting segments and missing keypoints
+produce NaN intersections. Shared endpoints count as intersections. The movement
+rate requires a valid intersection at both consecutive frames. Invalid steps
+remain NaN for XGBoost's missing-value handling. These additions do not alter
+the shared feature-engineering pipeline or its dictionary.
 
 Sampling includes every positive frame and ceil(segment length / 2) frames on
 each side of each merged positive segment. Buffers are clipped to the video and

@@ -20,7 +20,7 @@ with app.setup:
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from models.rule_based.circling_cleaning import default_data_dir
-    from models.xgboost.features import FEATURES, read_spans
+    from models.xgboost.features import FEATURES, HALF_WINDOW, SIGNALS, WINDOW, read_spans
     from models.xgboost.train import (OUTPUT_DIR, PREDICTION_DIR, evaluate_full_videos,
                                      fit_model, frame_metrics, prepare_dataset,
                                      save_artifacts, split_dataset)
@@ -28,18 +28,32 @@ with app.setup:
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
+    mo.md(f"""
     # XGBoost circling classifier
 
-    Each row is a **121-frame sliding window**, from center −60 to center +60.
+    Each row is a **{WINDOW}-frame sliding window**, from center −{HALF_WINDOW} to center +{HALF_WINDOW}.
     The label is whether the **center (median) frame** belongs to a usable positive
     interval in `ground_truth_annotations/finalized_annotations/merged_spans.csv`.
 
     The inputs match `models/rule_based/detector.py`: remove reflections, duplicate
     fish and keypoint jumps, then pick the closest retained pair in each frame.
-    Use its **centroid distance (px)** and **orbital rotation rate (rad/s)**. Flatten
-    the window into 242 features: 121 distances followed by 121 rates. Track IDs,
-    video IDs, frame numbers and annotations are excluded from model inputs.
+    Use its **centroid distance (px)** and **orbital rotation rate (rad/s)**. Keep
+    these two signals and three additional per-frame motion signals at every
+    offset, with no averaging, for **{len(FEATURES)} features** in total:
+
+    - `centroid_distance_rate_px_s`: signed distance change in px/s.
+    - `d_orbital_rate_rad_s2`: signed orbital-rate change in rad/s².
+    - `intersection_midpoint_speed_px_s`: speed in px/s of the intersection
+      between the finite head-to-head and tail-to-tail segments. This point need
+      not be the geometric center of the fish.
+
+    Every signal has {WINDOW} columns, with names ending in `_offset_…`. The rate
+    at frame t uses consecutive frames t−1 and t at 30 fps, so the leftmost rate
+    can use one preceding context frame. Steps crossing a pair switch, episode
+    boundary or missing measurement are NaN. Parallel/collinear lines, missing
+    keypoints and intersections outside the segments give NaN. Track IDs are
+    used to validate continuity; identifiers and annotations
+    are excluded from model inputs. These features live only in `models/xgboost/`.
 
     Missing distance stays NaN; missing or implausible rotation rate (|rate| >15)
     becomes zero, matching the rule-based baseline. Context outside either video
@@ -60,14 +74,14 @@ def _():
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
+    mo.md(f"""
     ## Build the training rows
 
     Keep all positive frames. For each positive segment of inclusive length L,
     include ceil(L/2) frames immediately before and after it, clipped to the video.
     Overlapping buffers are unioned; any frame in a positive segment stays positive.
     Each `(video, center frame)` appears once. This gives roughly equal classes;
-    overlapping buffers can reduce the negative count. All 121 context frames come
+    overlapping buffers can reduce the negative count. All {WINDOW} context frames come
     from the original signal series, even when their centers are not sampled.
 
     Loading and cleaning the pose/pair Parquets can take a minute on the first run.
@@ -84,14 +98,14 @@ def _(data_dir, spans):
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
+    mo.md(f"""
     ## Split 70% training / 30% holdout and fit
 
     Stratify by the center-frame label with seed 42. Fit 300 histogram-based trees
     (depth 4, learning rate 0.05) on **training rows only**, with a fixed threshold
     of 0.5. No tuning or early stopping uses the holdout labels.
 
-    Adjacent windows can share 120 of 121 frames across this random split. The
+    Adjacent windows can share {WINDOW - 1} of {WINDOW} frames across this random split. The
     holdout measures sampled-frame performance; it does not establish performance
     on independent events or unseen videos.
     """)
@@ -198,7 +212,7 @@ def _(data_dir, dataset, full, holdout, model, spans, test_ids, test_scores, x):
     ## Saved artifacts
 
     - `{OUTPUT_DIR}/model.ubj`: the model fitted on the 70% training split.
-    - `sampled_frames.parquet`: center frames, labels, split, and all 242 features.
+    - `sampled_frames.parquet`: center frames, labels, split, and all {len(FEATURES)} features.
     - `test_predictions.parquet`: holdout scores and predictions.
     - `feature_importance.csv` and `metrics.json`: importance, configuration and evaluations.
     - `{OUTPUT_DIR}/scores/<video>_scores.parquet`: labels, raw scores/predictions, vote fractions and processed predictions.
