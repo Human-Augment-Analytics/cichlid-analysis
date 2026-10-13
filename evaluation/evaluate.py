@@ -17,7 +17,7 @@ precision/recall/F1. Frame ranges are zero-based and inclusive. Run interactivel
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.24.2"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
@@ -194,11 +194,11 @@ def summary_view(results, warnings):
         mo.hstack([
             mo.stat(f"{overall['mof']:.1%}", label='MoF'),
             mo.stat(f"{overall['edit_score']:.1f}", label='Edit score'),
+            mo.stat(f"{overall['frame_f1']:.1%}", label='Frame F1',
+                    caption=f"P {overall['frame_precision']:.1%} · R {overall['frame_recall']:.1%}"),
             *(mo.stat(f"{100 * overall[f'f1@{tau}']:.1f}", label=f'F1@{tau}',
                       caption=f"{overall[f'tp@{tau}']} / {overall['gt_segments']} segments matched")
               for tau in TAUS),
-            mo.stat(f"{overall['frame_f1']:.1%}", label='Frame F1',
-                    caption=f"P {overall['frame_precision']:.1%} · R {overall['frame_recall']:.1%}"),
         ], widths='equal'),
         mo.ui.table(results, selection=None),
     ])
