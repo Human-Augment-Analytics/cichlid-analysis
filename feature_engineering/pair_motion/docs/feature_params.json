@@ -1,0 +1,11 @@
+{
+  "fps": 30.0,
+  "gap_tolerance_s": 0.2,
+  "proximity_bl": 1.5,
+  "proximity_rule": "centroid_distance_bl <= proximity_bl",
+  "facing_max_rad": 0.7853981633974483,
+  "facing_rule": "abs(wrapped bearing) < facing_max_rad",
+  "smooth_window_frames": 15,
+  "smooth_window_s": 0.5,
+  "smooth_method": "centered rolling median, then centered rolling mean"
+}
