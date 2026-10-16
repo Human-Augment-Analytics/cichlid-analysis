@@ -1,0 +1,19 @@
+{
+  "video_id": "0031_vid",
+  "video": "../data/0031_vid.mp4",
+  "poses": "../data/0031_vid.parquet",
+  "out": "../outputs/visualization/0031_first_event",
+  "fps": 30,
+  "width": 1296,
+  "height": 972,
+  "start_frame": 97980,
+  "end_frame": 98369,
+  "pair": ["30004551", "30004572"],
+  "prediction_scope": "External scene-level intervals; selected pair is for geometry inspection only",
+  "tracks": [
+    {"name": "Second review annotations", "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0031.csv", "verified": true},
+    {"name": "Merged review decisions", "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"},
+    {"name": "Rule-based candidates", "path": "../outputs/predictions/rule_based/0031_vid.csv", "kind": "prediction"},
+    {"name": "Logistic regression", "path": "../outputs/predictions/logistic_regression/0031_vid.csv", "kind": "prediction"}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "fps": 30,
+  "width": 1296,
+  "height": 972,
+  "annotation_context_seconds": 5,
+  "videos": [
+    {
+      "video_id": "0028_vid", "split": "train",
+      "pairs": "../data/0028_vid_pairs.parquet",
+      "annotations": {"path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"}
+    },
+    {
+      "video_id": "0031_vid", "split": "test",
+      "pairs": "../data/0031_vid_pairs.parquet",
+      "annotations": {"path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"}
+    }
+  ]
+}
