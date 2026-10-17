@@ -1,0 +1,8 @@
+{
+  "frames": 1080398,
+  "episode": "mstcn_dinov2",
+  "stride": 2,
+  "prediction": {
+    "0031_vid_mstcn_dinov2_pred_prediction.pickle": 4322115
+  }
+}

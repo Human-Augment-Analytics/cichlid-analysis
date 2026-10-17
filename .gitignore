@@ -228,3 +228,6 @@ outputs/pair_features_frame.parquet
 feature_engineering/pair_motion/data/*.parquet
 feature_engineering/pair_motion/data/*.mp4
 feature_engineering/pair_motion/data/*.part
+outputs/mstcn_dlc2action/*
+gpu_ins
+models/mstcn_dlc2action/README.md

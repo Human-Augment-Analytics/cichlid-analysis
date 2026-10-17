@@ -35,7 +35,8 @@ with app.setup(hide_code=True):
     from models.logistic_regression.train import VIDEO_FRAMES
 
     ROOT = Path(__file__).resolve().parent
-    DATA_DIR = ROOT / "data"
+    # data/ next to this notebook, else ../data; downloads go to ./data if neither exists
+    DATA_DIR = next((d for d in (ROOT / "data", ROOT.parent / "data") if d.is_dir()), ROOT / "data")
     CLIPS_DIR = ROOT / "outputs" / "clips"
     FPS = 30
 

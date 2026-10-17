@@ -20,6 +20,7 @@ uv run marimo edit model_performance_report.py
 You can edit the marimo notebook from the browser with the above command, or just work on it in
 VSCode with the Marimo extension, just like Jupyter.
 
+
 ## Repository layout
 
 - `data/`: video and parquet files
@@ -38,6 +39,8 @@ VSCode with the Marimo extension, just like Jupyter.
 - `model_performance_report.py`: evaluation metrics for every model in `outputs/predictions/`,
   using the functions from `evaluation/evaluate.py`, plus pose-overlay clip previews of
   predicted spans.
+- `models/mstcn_dlc2action/`: MS-TCN action segmentation (DLC2Action) on pose, pair features
+  and DINOv2 crop embeddings
 - `merged_spans_review.py`: review ground-truth circling spans against the source video,
   with buffered pose-overlay previews (drawing functions imported from
   `model_performance_report.py`).
@@ -81,3 +84,12 @@ uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
 quality checks, parameters, and a small committed sample are kept alongside the
 pipeline. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+
+### MST-CN + DINOv2
+Same labels, sampling, split and span post-processing as the logistic regression but includes embeddings
+
+```sh
+uv  run python -m models.mstcn_dlc2action.train
+uv run python -m models.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
+
+```
