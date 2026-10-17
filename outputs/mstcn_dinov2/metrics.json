@@ -1,0 +1,47 @@
+{
+  "label_assumption": "All frames outside the intervals in merged_spans.csv are non-circling.",
+  "annotations": "D:\\rGradSchool\\new_chiclid_analysis\\cichlid-analysis\\ground_truth_annotations\\finalized_annotations\\merged_spans.csv",
+  "sampling": "Every 128-row segment containing circling plus an equal number of segments without circling, sampled without replacement within each source video, seed 42.",
+  "split": "Stratified random 80/20 train/test split of the sampled segments after sampling, random_state=42. Segments do not overlap.",
+  "validation": "DLC2Action validation subset = test segments, used for logging only (no early stopping or model selection).",
+  "limitation": "Neighboring segments and spans can occur in both splits; this is not an independent-event or new-video evaluation.",
+  "score_warning": "Scores describe the balanced sampled dataset, not calibrated probabilities at full-video prevalence.",
+  "threshold": 0.5,
+  "model": "DLC2Action 1.0 MS-TCN3",
+  "episode": "mstcn_dinov2",
+  "features": "pairemb",
+  "len_segment": 128,
+  "overlap": 0,
+  "num_epochs": 100,
+  "segments": {
+    "train": {
+      "with_circling": 306,
+      "without": 305
+    },
+    "test": {
+      "with_circling": 76,
+      "without": 77
+    }
+  },
+  "train_positive_rows": 25439,
+  "test": {
+    "frames": 38990,
+    "positive_frames": 13360,
+    "prevalence": 0.34265196204154913,
+    "average_precision": 0.9817268977822636,
+    "roc_auc": 0.9902468161608892,
+    "precision": 0.9106422811059908,
+    "recall": 0.9466317365269461,
+    "f1": 0.9282883147386964,
+    "tn": 24389,
+    "fp": 1241,
+    "fn": 713,
+    "tp": 12647
+  },
+  "all_negative_baseline": {
+    "accuracy": 0.6573480379584509,
+    "recall": 0.0,
+    "f1": 0.0
+  },
+  "constant_score_average_precision": 0.34265196204154913
+}
