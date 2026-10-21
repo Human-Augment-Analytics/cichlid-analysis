@@ -228,3 +228,8 @@ outputs/pair_features_frame.parquet
 feature_engineering/pair_motion/data/*.parquet
 feature_engineering/pair_motion/data/*.mp4
 feature_engineering/pair_motion/data/*.part
+
+# Regenerable XGBoost frame tables and notebook exports
+outputs/xgboost/*.parquet
+outputs/xgboost/scores/
+outputs/xgboost/*.html
