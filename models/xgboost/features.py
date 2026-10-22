@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from evaluation.evaluate import GROUND_TRUTH
 from models.rule_based import circling_cleaning as cc
 
 WINDOW = 121
@@ -29,21 +30,27 @@ FEATURE_DESCRIPTION = (
 )
 VIDEO_FRAMES = {"0028_vid": 1_080_175, "0031_vid": 1_080_398}
 ROOT = Path(__file__).resolve().parents[2]
-GROUND_TRUTH = ROOT / "ground_truth_annotations/finalized_annotations/merged_spans.csv"
 
 
-def read_spans(path=GROUND_TRUTH):
-    """Read usable positive annotations, merging overlaps before sampling."""
+def read_spans(paths=GROUND_TRUTH):
+    """Read usable positive annotations from one or more CSV files, merging overlaps.
+
+    Header case, spaces and punctuation are ignored ("Start Frame" == "StartFrame");
+    fully blank rows are dropped.
+    """
     from evaluation.metrics import merge
 
-    table = pd.read_csv(path)
-    for flag in ("Circling", "ShouldUse"):
+    if isinstance(paths, (str, Path)):
+        paths = [paths]
+    table = pd.concat([pd.read_csv(path).rename(columns=lambda name: "".join(filter(str.isalpha, name.lower())))
+                       for path in paths], ignore_index=True).dropna(how="all")
+    for flag in ("circling", "shoulduse"):
         if flag in table:
             table = table[table[flag].astype(str).str.lower().isin(("true", "1"))]
     spans = {}
-    for video, rows in table.groupby("VideoID"):
+    for video, rows in table.groupby("videoid"):
         intervals = []
-        for start, end in rows[["StartFrame", "EndFrame"]].itertuples(index=False, name=None):
+        for start, end in rows[["startframe", "endframe"]].itertuples(index=False, name=None):
             if not np.isfinite(start) or not np.isfinite(end) or int(start) != start or int(end) != end:
                 raise ValueError(f"Non-integer annotation for {video}: {start}, {end}")
             if start < 0 or end < start:

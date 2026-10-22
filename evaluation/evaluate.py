@@ -34,7 +34,9 @@ with app.setup(hide_code=True):
 
     ROOT = Path(__file__).resolve().parent.parent
     PREDICTIONS_DIR = ROOT / 'outputs/predictions'
-    GROUND_TRUTH = ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'
+    ANNOTATIONS_DIR = ROOT / 'ground_truth_annotations/finalized_annotations'
+    GROUND_TRUTH = [ANNOTATIONS_DIR / 'circling_annotations_vid0028.csv',
+                    ANNOTATIONS_DIR / 'circling_annotations_vid0031.csv']
     VIDEO_DIR = ROOT / 'data'
 
 
@@ -106,6 +108,12 @@ def read_intervals(path):
 
 
 @app.function(hide_code=True)
+def read_ground_truth(paths=GROUND_TRUTH):
+    """Concatenate the per-video annotation files, dropping their trailing blank rows."""
+    return pl.concat([read_intervals(path) for path in paths]).drop_nulls()
+
+
+@app.function(hide_code=True)
 def read_predictions(model_dir):
     """Concatenate the per-video CSV files in a model's prediction folder."""
     paths = sorted(Path(model_dir).glob('*.csv'))
@@ -150,7 +158,7 @@ def _():
 
 @app.cell
 def _():
-    gt = read_intervals(GROUND_TRUTH)
+    gt = read_ground_truth()
     return (gt,)
 
 
@@ -224,7 +232,7 @@ def _(results):
 @app.cell
 def _(model, results, warnings):
     mo.vstack([
-        mo.md(f'Ground truth: `{display_path(GROUND_TRUTH)}`'),
+        mo.md('Ground truth: ' + ', '.join(f'`{display_path(path)}`' for path in GROUND_TRUTH)),
         mo.md(f'Predictions: `{display_path(model.value)}/*.csv`'),
         summary_view(results, warnings),
     ])

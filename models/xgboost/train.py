@@ -138,7 +138,7 @@ def save_artifacts(model, table, x, test_ids, test_scores, holdout, full, spans,
     report = {
         "window_frames": WINDOW, "features": FEATURES, "seed": SEED, "threshold": THRESHOLD,
         "feature_source": FEATURE_DESCRIPTION,
-        "ground_truth": str(GROUND_TRUTH.relative_to(ROOT)), "spans": spans,
+        "ground_truth": [str(path.relative_to(ROOT)) for path in GROUND_TRUTH], "spans": spans,
         "data_dir": str(Path(data_dir).resolve()) if data_dir is not None else None,
         "sampling": "All positive centers; ceil(inclusive segment length / 2) negative context frames on each side. Union overlapping buffers; clip to video; positive labels take precedence. One row per (video, center frame).",
         "split": "Stratified random 70/30 frame split, seed 42; fitted on training rows only.",

@@ -1,5 +1,5 @@
 {
-  "label_assumption": "All frames outside the 15 annotated inclusive spans are non-circling.",
+  "label_assumption": "All frames outside the 149 annotated inclusive spans are non-circling.",
   "sampling": "All positives plus an equal number of negatives sampled without replacement within each source video, seed 42.",
   "split": "Stratified random 80/20 train/test split after sampling, random_state=42.",
   "limitation": "Neighboring frames and spans can occur in both splits; this is not an independent-event or new-video evaluation.",
@@ -127,32 +127,32 @@
     "d_orbital_rad_s"
   ],
   "source_counts": {
-    "0028_vid.mp4": {
+    "0028_vid": {
       "total_frames": 1080175,
-      "positive_frames": 1224,
-      "sampled_negative_frames": 1224
+      "positive_frames": 30473,
+      "sampled_negative_frames": 30473
     },
-    "0031_vid.mp4": {
+    "0031_vid": {
       "total_frames": 1080398,
-      "positive_frames": 6594,
-      "sampled_negative_frames": 6594
+      "positive_frames": 28926,
+      "sampled_negative_frames": 28926
     }
   },
-  "train_frames": 12508,
-  "train_positive_frames": 6254,
+  "train_frames": 95038,
+  "train_positive_frames": 47519,
   "test": {
-    "frames": 3128,
-    "positive_frames": 1564,
+    "frames": 23760,
+    "positive_frames": 11880,
     "prevalence": 0.5,
-    "average_precision": 0.9551178490432786,
-    "roc_auc": 0.977646829887298,
-    "precision": 0.9377722464219042,
-    "recall": 0.9635549872122762,
-    "f1": 0.9504888047934406,
-    "tn": 1464,
-    "fp": 100,
-    "fn": 57,
-    "tp": 1507
+    "average_precision": 0.9831659087249981,
+    "roc_auc": 0.9846988189980613,
+    "precision": 0.9549928493312021,
+    "recall": 0.9555555555555556,
+    "f1": 0.9552741195775656,
+    "tn": 11345,
+    "fp": 535,
+    "fn": 528,
+    "tp": 11352
   },
   "all_negative_baseline": {
     "accuracy": 0.5,

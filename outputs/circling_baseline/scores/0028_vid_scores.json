@@ -1,9 +1,0 @@
-{
-  "frames": 1080175,
-  "feature_source": "pose_and_pairs_v1",
-  "model_sha256": "37d12bc33bdd4778bffc5711cbfe96a89efa02e588704e7db26a918c6a20fb22",
-  "inputs": {
-    "0028_vid.parquet": 221815222,
-    "0028_vid_pairs.parquet": 43203157
-  }
-}

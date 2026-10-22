@@ -11,8 +11,9 @@ On macOS, install the OpenMP runtime with `brew install libomp` before using
 XGBoost. Inputs use `CIRCLING_DATA_DIR`, `data/`, or `~/Downloads`, with the same
 pose/pair Parquet filenames as the rule-based detector.
 
-The notebook loads the finalized usable positive intervals in
-`ground_truth_annotations/finalized_annotations/merged_spans.csv`. It reuses the
+The notebook loads the finalized positive intervals in
+`ground_truth_annotations/finalized_annotations/circling_annotations_vid0028.csv` and
+`circling_annotations_vid0031.csv` (`evaluation.evaluate.GROUND_TRUTH`). It reuses the
 rule-based artifact cleaning and closest-pair selection, retaining
 `centroid_distance_px` and `d_orbital_rad_s`. Each row contains these two signals
 across 121 centered frames; its label is the middle frame's label.

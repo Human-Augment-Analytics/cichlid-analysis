@@ -46,15 +46,14 @@ VSCode with the Marimo extension, just like Jupyter.
 
 ### Logistic regression
 
-The committed model is `outputs/circling_baseline/model.joblib`. To retrain it (writes the
-model, metrics and report to `outputs/circling_baseline/`):
+The committed model is `outputs/logistic_regression/model.joblib`. To retrain it (writes the
+model, metrics and report to `outputs/logistic_regression/`):
 
 ```sh
 uv run python -m models.logistic_regression.train
 ```
 
-To score every frame (cached in `outputs/circling_baseline/scores/`) and write the
-predicted spans to `outputs/predictions/logistic_regression/`:
+To score every frame and write the predicted spans to `outputs/predictions/logistic_regression/`:
 
 ```sh
 uv run python -m models.logistic_regression.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]

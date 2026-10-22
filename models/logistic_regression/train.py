@@ -25,6 +25,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from evaluation.evaluate import read_ground_truth
+from evaluation.metrics import merge
+
 from .features import (FEATURE_SOURCE, PAIR_ANGLES, PAIR_DISTANCES, PAIR_RATES, WINDOW,
                        frame_features)
 
@@ -32,19 +35,13 @@ ROOT = Path(__file__).resolve().parents[2]
 THRESHOLD = 0.5
 # Frame counts of the source videos, so the 31 GB files are not needed.
 VIDEO_FRAMES = {'0028_vid': 1_080_175, '0031_vid': 1_080_398}
-# The 15 inclusive spans the committed model was trained on.
-CIRCLING_SPANS_BY_VIDEO = {
-    '0028_vid': [
-        (334703, 334830), (334985, 335118), (335409, 335502),
-        (336153, 336285), (436636, 436895), (437259, 437437),
-        (713035, 713330),
-    ],
-    '0031_vid': [
-        (265510, 266227), (266809, 267100), (267242, 267837),
-        (269089, 271817), (272241, 273018), (273550, 274787),
-        (275040, 275190), (276439, 276530),
-    ],
-}
+
+
+def circling_spans_by_video():
+    """Merged inclusive ground-truth spans per video, from `evaluation.evaluate.GROUND_TRUTH`."""
+    gt = read_ground_truth()
+    return {video: merge(gt.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
+            for video in VIDEO_FRAMES}
 
 
 def frame_labels(frames, spans):
@@ -91,7 +88,9 @@ def train(data_dir, output_dir):
     rng = np.random.default_rng(42)
     sampled = []
     source_counts = {}
-    for video, spans in CIRCLING_SPANS_BY_VIDEO.items():
+    spans_by_video = circling_spans_by_video()
+    span_count = sum(map(len, spans_by_video.values()))
+    for video, spans in spans_by_video.items():
         print(f'Building features: {video}', flush=True)
         count = VIDEO_FRAMES[video]
         if any(end >= count for _, end in spans):
@@ -113,16 +112,12 @@ def train(data_dir, output_dir):
     features = [c for c in table.columns if c not in ('FrameNum', 'video', 'circling')]
     x, y = table.select(features).to_numpy(), table['circling'].to_numpy()
     train_ids, test_ids = train_test_split(np.arange(len(y)), test_size=0.2, random_state=42, stratify=y)
-    split = np.full(len(y), 'train', dtype='<U5')
-    split[test_ids] = 'test'
-    table = table.with_columns(pl.Series('split', split))
-    table.write_parquet(output_dir / 'sampled_frames.parquet')
     print(f'Fitting {len(train_ids):,} train frames; evaluating {len(test_ids):,} test frames', flush=True)
     model = fit_model(x[train_ids], y[train_ids])
     scores = model.predict_proba(x[test_ids])[:, 1]
     result = metrics(y[test_ids], scores)
     report = {
-        'label_assumption': 'All frames outside the 15 annotated inclusive spans are non-circling.',
+        'label_assumption': f'All frames outside the {span_count} annotated inclusive spans are non-circling.',
         'sampling': 'All positives plus an equal number of negatives sampled without replacement within each source video, seed 42.',
         'split': 'Stratified random 80/20 train/test split after sampling, random_state=42.',
         'limitation': 'Neighboring frames and spans can occur in both splits; this is not an independent-event or new-video evaluation.',
@@ -136,9 +131,6 @@ def train(data_dir, output_dir):
         'all_negative_baseline': {'accuracy': float((y[test_ids] == 0).mean()), 'recall': 0.0, 'f1': 0.0},
         'constant_score_average_precision': float(y[test_ids].mean()),
     }
-    metadata = table[test_ids].select('video', 'FrameNum', 'circling')
-    metadata.with_columns(pl.Series('circling_score', scores),
-                          pl.Series('predicted_circling', scores >= THRESHOLD)).write_parquet(output_dir / 'test_predictions.parquet')
     joblib.dump({'model': model, 'features': features, 'threshold': THRESHOLD,
                  'training_split': 'train only; test frames excluded', 'seed': 42,
                  'feature_source': FEATURE_SOURCE,
@@ -165,8 +157,8 @@ def train(data_dir, output_dir):
         lines.append(f'| {name} | {result[name]:.4f} |')
     lines += ['', f'Confusion matrix: TN={result["tn"]}, FP={result["fp"]}, FN={result["fn"]}, TP={result["tp"]}.', '',
               report['limitation'], '', report['score_warning'], '',
-              'Only two videos and 15 spans are available. Frames with no pair rows remain in the dataset with pair_count=0 and missing measurements. Missing measurements are imputed; tracking and measurement errors can affect predictions.', '',
-              '`sampled_frames.parquet` records every selected frame, its label, features and split. `test_predictions.parquet` contains test-only predictions. `model.joblib` is the exact evaluated model, trained only on the training split.', '',
+              f'Only two videos and {span_count} spans are available. Frames with no pair rows remain in the dataset with pair_count=0 and missing measurements. Missing measurements are imputed; tracking and measurement errors can affect predictions.', '',
+              '`model.joblib` is the exact evaluated model, trained only on the training split.', '',
               'Implementation reference: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html', '']
     (output_dir / 'report.md').write_text('\n'.join(lines))
     print(json.dumps(result, indent=2), flush=True)
@@ -175,6 +167,6 @@ def train(data_dir, output_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data-dir', type=Path, default=ROOT / 'data')
-    parser.add_argument('--output-dir', type=Path, default=ROOT / 'outputs' / 'circling_baseline')
+    parser.add_argument('--output-dir', type=Path, default=ROOT / 'outputs' / 'logistic_regression')
     args = parser.parse_args()
     train(args.data_dir, args.output_dir)

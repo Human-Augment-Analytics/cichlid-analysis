@@ -11,16 +11,17 @@ uv run marimo edit evaluation/evaluate.py
 ```
 
 Pick a model from `outputs/predictions/`; the per-video CSV files in its folder
-are concatenated and compared with
-`ground_truth_annotations/finalized_annotations/merged_spans.csv`.
+are concatenated and compared with the finalized per-video annotations,
+`ground_truth_annotations/finalized_annotations/circling_annotations_vid0028.csv` and
+`circling_annotations_vid0031.csv` (`GROUND_TRUTH`).
 
 Other notebooks can import these functions, as `model_performance_report.py` does:
 
 ```python
-from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_intervals,
+from evaluation.evaluate import (evaluate, prediction_models, read_ground_truth,
                                  read_predictions, summary_view)
 
-gt = read_intervals(GROUND_TRUTH)
+gt = read_ground_truth()
 for name, folder in prediction_models().items():  # e.g. {'rule_based': Path(...)}
     results, warnings = evaluate(gt, read_predictions(folder))
     summary_view(results, warnings)
@@ -36,7 +37,8 @@ Write a file for every video, even if it only has the header row. Files are CSV
 with a video ID column plus start/end frame columns, e.g. `VideoID`, `StartFrame`,
 `EndFrame` (header case, spaces and punctuation are ignored, so `Video ID` and
 `Start Frame` also work). Other columns are ignored and every row
-is used, so ground truth must contain only valid circling events. Frame ranges
+is used (`read_ground_truth` drops fully blank rows), so ground truth must contain
+only valid circling events. Frame ranges
 are zero-based and inclusive.
 
 ## Metrics

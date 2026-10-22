@@ -29,7 +29,7 @@ with app.setup(hide_code=True):
     from matplotlib.patches import Patch
     from matplotlib.ticker import StrMethodFormatter
 
-    from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_intervals,
+    from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_ground_truth,
                                      read_predictions, summary_view)
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES
@@ -46,7 +46,7 @@ def _():
     # Model performance report
 
     Evaluates every model with predictions in `outputs/predictions/<model_name>/<video_id>.csv`
-    against the merged ground-truth spans, using the metrics from `evaluation/evaluate.py`.
+    against the finalized circling annotations for each video, using the metrics from `evaluation/evaluate.py`.
     Regenerate a model's predictions with:
 
     | Model | Command |
@@ -110,7 +110,7 @@ def download(url, destination):
 def _():
     models = prediction_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
-    gt = read_intervals(GROUND_TRUTH)
+    gt = read_ground_truth()
     predictions = {_name: read_predictions(_dir) for _name, _dir in models.items()}
     evaluations = {_name: evaluate(gt, _predicted, num_frames=VIDEO_FRAMES)
                    for _name, _predicted in predictions.items()}
@@ -128,7 +128,7 @@ def _(evaluations, predictions):
     ])
     mo.vstack([
         mo.md(f"## Model comparison\n\nOverall metrics across both videos · ground truth "
-              f"`{GROUND_TRUTH.relative_to(ROOT)}`"),
+              + ", ".join(f"`{_path.relative_to(ROOT)}`" for _path in GROUND_TRUTH)),
         mo.ui.table(_comparison, selection=None, pagination=False),
         mo.ui.tabs({_name: summary_view(_results, _warnings)
                     for _name, (_results, _warnings) in evaluations.items()}),
