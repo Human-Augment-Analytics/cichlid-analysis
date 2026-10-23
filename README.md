@@ -11,8 +11,9 @@ uv sync --locked
 `uv sync` installs the locked dependencies and the required Python version. Open the
 local URL printed by marimo to use the notebook. `model_performance_report.py` evaluates
 the committed predictions in `outputs/predictions/`. On first launch it downloads the source
-videos and the pose and pair Parquet files into `data/` for clip previews; the two videos are
-about 31 GB each, so allow time and disk space for the initial download.
+videos and the pose and pair Parquet files into `data/` for clip previews; the three videos are
+about 31 GB each, so allow time and disk space for the initial download. The additional
+`YH-norm_681_t015_tr1_day18` data downloads directly as `0018_vid.mp4` and `0018_vid.parquet`.
 
 ```sh
 uv run marimo edit model_performance_report.py
@@ -40,7 +41,7 @@ VSCode with the Marimo extension, just like Jupyter.
 - `model_performance_report.py`: evaluation metrics for every model in `outputs/predictions/`,
   using the functions from `evaluation/evaluate.py`, plus pose-overlay clip previews of
   predicted spans.
-- `merged_spans_review.py`: review ground-truth circling spans against the source video,
+- `merged_spans_review.py`: review circling CSVs in `outputs/auto_annotations/` against the source video,
   with buffered pose-overlay previews (drawing functions imported from
   `model_performance_report.py`).
 

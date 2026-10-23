@@ -53,6 +53,21 @@ Temporal post-processing after per-frame flags:
 
 These thresholds live in `src/circling.py` as module-level constants and can be overridden at the call site.
 
+To run the notebook's circling detector on another video, place its matching pose
+Parquet beside it and run from the repository root:
+
+```sh
+uv run python ground_truth_annotations/auto_annotate.py data/0018_vid.mp4
+```
+
+This writes `outputs/auto_annotations/0018_vid.csv` with `VideoID`, `EventID`,
+`StartFrame`, `EndFrame`, `Behavior`, `FishIDs`, and `Confidence/Notes`.
+Frame bounds are inclusive and preserve the source pose frame numbers. The runner
+uses the matching `_pairs.parquet` when available; otherwise it derives the pair
+features from the pose table using the existing pair-table episode settings
+(0.2-second gap tolerance, at least five observations). These are automatic
+candidate intervals for human review, not finalized ground-truth annotations.
+
 ## EDAs and other analyses
 
 ### Pose overlay clips

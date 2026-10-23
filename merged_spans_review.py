@@ -9,11 +9,11 @@
 # ]
 # ///
 
-"""Review merged circling spans against their source videos."""
+"""Review automatic circling annotations against their source videos."""
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.24.2"
 app = marimo.App(width="full")
 
 with app.setup:
@@ -29,6 +29,22 @@ with app.setup:
 
     ROOT = Path(__file__).resolve().parent
     PREVIEW_DIR = ROOT / "outputs" / "clips" / "merged_spans"
+
+
+@app.function
+def load_review_spans(path):
+    """Load frame annotations and supply optional manual-review fields."""
+    spans = pl.read_csv(path, schema_overrides={
+        "VideoID": pl.String, "EventID": pl.String,
+        "StartFrame": pl.Int64, "EndFrame": pl.Int64,
+        "Source": pl.String, "Circling": pl.String,
+        "ShouldUse": pl.String, "Notes": pl.String,
+    })
+    defaults = {"Source": "auto_annotations", "Circling": "", "ShouldUse": "", "Notes": ""}
+    return spans.with_columns([
+        pl.lit(value).alias(column) for column, value in defaults.items()
+        if column not in spans.columns
+    ])
 
 
 @app.function
@@ -134,13 +150,13 @@ def _():
 
 @app.cell(hide_code=True)
 def _():
-    _span_dir = ROOT / "ground_truth_annotations"
-    # Search recursively, keeping only CSVs with the merged-span columns read below.
-    _span_columns = {"VideoID", "EventID", "StartFrame", "EndFrame", "Source", "Circling", "ShouldUse", "Notes"}
+    _span_dir = ROOT / "outputs" / "auto_annotations"
+    # Review metadata is optional for automatically detected intervals.
+    _span_columns = {"VideoID", "EventID", "StartFrame", "EndFrame"}
     _span_files = [path for path in sorted(_span_dir.rglob("*.csv"))
                    if _span_columns <= set(pl.read_csv(path, n_rows=0, infer_schema=False, encoding="utf8-lossy").columns)]
     _video_files = sorted((ROOT / "data").glob("*_vid.mp4"))
-    mo.stop(not _span_files, mo.md("No merged-span CSV files under `ground_truth_annotations/`."))
+    mo.stop(not _span_files, mo.md(f"No frame-annotation CSV files under `{_span_dir}/`."))
     mo.stop(not _video_files, mo.md("Put the source videos in `data/` to preview the spans."))
 
     spans_file = mo.ui.dropdown(
@@ -159,12 +175,7 @@ def _():
 def _(spans_file, video_file):
     _csv_path = Path(spans_file.value)
     video_path = Path(video_file.value)
-    _all_spans = pl.read_csv(_csv_path, schema_overrides={
-        "VideoID": pl.String, "EventID": pl.String,
-        "StartFrame": pl.Int64, "EndFrame": pl.Int64,
-        "Source": pl.String, "Circling": pl.String,
-        "ShouldUse": pl.String, "Notes": pl.String,
-    })
+    _all_spans = load_review_spans(_csv_path)
     spans = _all_spans.filter(pl.col("VideoID") == video_path.stem).sort("StartFrame", "EndFrame")
     mo.stop(spans.is_empty(), mo.md(
         f"`{_csv_path.name}` has no events for `{video_path.name}`. Select the matching video."
@@ -235,9 +246,12 @@ def _(buffer_frames, frame_count, selected, spans):
     from matplotlib.patches import Patch as _Patch
     from matplotlib.ticker import StrMethodFormatter as _StrMethodFormatter
 
-    _colors = {"finalized": "#2563eb", "merged_spans": "#16a34a", "labeled_repo": "#d97706",
-               "original": "#9333ea"}
-    _lanes = {_source: _lane * 0.25 for _lane, _source in enumerate(reversed(_colors))}
+    _palette = {"finalized": "#2563eb", "merged_spans": "#16a34a", "labeled_repo": "#d97706",
+                "original": "#9333ea", "auto_annotations": "#0891b2"}
+    _colors = {_source: _palette.get(_source, "#64748b")
+               for _source in spans["Source"].unique().sort().to_list()}
+    _lane_height = 0.95 / len(_colors)
+    _lanes = {_source: _lane * _lane_height for _lane, _source in enumerate(reversed(_colors))}
     _start, _end = selected["StartFrame"], selected["EndFrame"]
     _preview_start, _preview_end = buffered_bounds(_start, _end, buffer_frames.value, frame_count)
     _radius = max(3000, (_end - _start + 1) * 3)
@@ -252,7 +266,7 @@ def _(buffer_frames, frame_count, selected, spans):
         for _row in spans.iter_rows(named=True):
             _axis.broken_barh(
                 [(_row["StartFrame"], _row["EndFrame"] - _row["StartFrame"] + 1)],
-                (_lanes[_row["Source"]], 0.2), facecolors=_colors[_row["Source"]],
+                (_lanes[_row["Source"]], _lane_height * 0.8), facecolors=_colors[_row["Source"]],
             )
         _axis.axvspan(_preview_start, _preview_end + 1, color="#f59e0b", alpha=0.15)
         _axis.axvspan(_start, _end + 1, color="#e11d48", alpha=0.2, linewidth=2)

@@ -7,10 +7,33 @@ import imageio_ffmpeg
 import numpy as np
 import polars as pl
 
-from merged_spans_review import buffered_bounds, render_merged_preview
+from merged_spans_review import buffered_bounds, load_review_spans, render_merged_preview
 
 
 class MergedSpanPreviewTest(unittest.TestCase):
+    def test_auto_annotations_supply_optional_review_fields(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / '0018_vid.csv'
+            path.write_text('VideoID,EventID,StartFrame,EndFrame,Behavior,FishIDs,Confidence/Notes\n'
+                            '0018_vid,event_1,10,69,circling,1|2,0.5\n')
+            spans = load_review_spans(path)
+            self.assertEqual(spans['Source'].to_list(), ['auto_annotations'])
+            self.assertEqual(spans['Notes'].to_list(), [''])
+            self.assertEqual(spans['FishIDs'].to_list(), ['1|2'])
+            self.assertEqual(spans['StartFrame'].dtype, pl.Int64)
+            self.assertEqual(spans['EndFrame'].to_list(), [69])
+
+    def test_existing_review_fields_are_preserved(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / 'reviewed.csv'
+            path.write_text('VideoID,EventID,StartFrame,EndFrame,Source,Circling,ShouldUse,Notes\n'
+                            '0018_vid,event_1,10,69,finalized,true,false,check bounds\n')
+            row = load_review_spans(path).row(0, named=True)
+            self.assertEqual(row['Source'], 'finalized')
+            self.assertEqual(row['Circling'], 'true')
+            self.assertEqual(row['ShouldUse'], 'false')
+            self.assertEqual(row['Notes'], 'check bounds')
+
     def test_buffer_clamps_to_video(self):
         self.assertEqual(buffered_bounds(1, 3, 5, 10), (0, 8))
         self.assertEqual(buffered_bounds(7, 9, 5, 10), (2, 9))

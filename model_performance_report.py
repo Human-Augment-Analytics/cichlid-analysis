@@ -75,7 +75,7 @@ def _():
 @app.cell
 def _():
     # Download the source videos (~31 GB each, for clip previews) and the pose and
-    # pair tables when missing.
+    # pair tables, including the additional YH video and pose table, when missing.
     _downloads = {
         "0028_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AMkLWMbEcHxMGEXGPuxG1NI/0028_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=m42jq5db&dl=1",
         "0031_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ADCA61tJU9SWYSnh9DNWkkk/0031_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=xmrzc3hs&dl=1",
@@ -83,6 +83,8 @@ def _():
         "0028_vid_pairs.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AL6msxoSPODIp3jfuXxWb6Q/0028_vid_pairs.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=nb7wminh&dl=1",
         "0031_vid_pairs.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AOLNU5Q-ydFtOxPr3Bppvss/0031_vid_pairs.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=pkqm83so&dl=1",
         "0031_vid.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ACNtNV3xM1k06lXgc4zpB0o/0031_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=nox9c3q0&dl=1",
+        "0018_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/APNqk2TGYAfHsOTQeWa8dHA/MorePoseData/YH/YH-norm_681_t015_tr1_day18/0018_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=1",
+        "0018_vid.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AEEX8lDCJZizcOWzSPKWwXI/MorePoseData/YH/YH-norm_681_t015_tr1_day18/0018_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=1",
     }
 
     data_files = [download(_url, DATA_DIR / _filename) for _filename, _url in _downloads.items()]
@@ -104,6 +106,11 @@ def download(url, destination):
         partial.unlink(missing_ok=True)
         raise
     return destination
+
+
+@app.cell
+def _():
+    return
 
 
 @app.cell(hide_code=True)
