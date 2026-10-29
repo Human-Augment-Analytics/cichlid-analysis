@@ -233,3 +233,4 @@ feature_engineering/pair_motion/data/*.part
 outputs/xgboost/*.parquet
 outputs/xgboost/scores/
 outputs/xgboost/*.html
+annotations_0007/0007_vid.parquet
