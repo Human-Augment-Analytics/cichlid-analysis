@@ -222,6 +222,8 @@ __marimo__/
 data/
 .DS_Store
 outputs/clips/
+/outputs/visualization/
+
 
 # Local pair-motion feature engineering artifacts
 outputs/pair_motion/

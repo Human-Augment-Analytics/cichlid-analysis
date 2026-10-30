@@ -1,0 +1,16 @@
+{
+  "title": "Circling detection | video, poses and pair movement",
+  "video_id": "0031_vid",
+  "expected_project_id": "MCYHF1-P-613_t011_tr2",
+  "video": "../data/0031_vid.mp4",
+  "poses": "../data/0031_vid.parquet",
+  "out": "../outputs/visualization/exports/0031_rule_results.mp4",
+  "fps": 30,
+  "start_frame": 97830,
+  "end_frame": 98729,
+  "pair": ["30004551", "30004572"],
+  "detector_name": "Rule-based detector | existing team output",
+  "prediction_scope": "Scene-level intervals; not attributed to selected pair",
+  "predictions": {"path": "../outputs/predictions/rule_based/0031_vid.csv"},
+  "annotations": {"path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"}
+}

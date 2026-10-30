@@ -1,0 +1,2 @@
+VideoID,EventID,StartFrame,EndFrame,Source,Circling,ShouldUse,Notes
+0007_vid,0007_candidate_001,46050,48479,proximity_candidate,false,false,Unreviewed inspection window

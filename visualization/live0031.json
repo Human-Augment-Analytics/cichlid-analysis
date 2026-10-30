@@ -1,0 +1,20 @@
+{
+  "video_id": "0031_vid",
+  "expected_project_id": "MCYHF1-P-613_t011_tr2",
+  "video": "../data/0031_vid.mp4",
+  "poses": "../data/0031_vid.parquet",
+  "fps": 30,
+  "start_frame": 97830,
+  "tracks": [
+    {
+      "name": "Human reference",
+      "kind": "annotation",
+      "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
+    },
+    {
+      "name": "Rule-based detector",
+      "kind": "prediction",
+      "path": "../outputs/predictions/rule_based/0031_vid.csv"
+    }
+  ]
+}

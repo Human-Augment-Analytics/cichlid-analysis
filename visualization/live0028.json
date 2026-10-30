@@ -1,0 +1,12 @@
+{
+  "video_id": "0028_vid",
+  "expected_project_id": "MC_920_t001_tr1",
+  "video": "../data/0028_vid.mp4",
+  "poses": "../data/0028_vid.parquet",
+  "fps": 30,
+  "start_frame": 206206,
+  "tracks": [
+    {"name": "Human reference", "kind": "annotation", "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"},
+    {"name": "Rule-based detector", "kind": "prediction", "path": "../outputs/predictions/rule_based/0028_vid.csv"}
+  ]
+}

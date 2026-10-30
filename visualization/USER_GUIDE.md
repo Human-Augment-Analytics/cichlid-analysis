@@ -54,7 +54,6 @@ python -m visualization.training train --epochs 10
 The training command will stop with a clear error if the prepared training set has no labeled negatives. Add independently reviewed non-circling intervals to your own annotation CSV and point the config to it. Supported frame columns: VideoID, StartFrame, EndFrame, Circling, ShouldUse, Notes. Use Circling=false and ShouldUse=true for accepted negatives; positive rows use both true; rejected rows remain unknown. Do not overwrite shared source annotations to invent labels. Include both positive and negative rows in that selected source.
 
 ### Explicit exploratory option (same assumption as the old seed-learn command)
-
 If you want to reproduce positive-only experimentation, explicitly prepare with:
 
 ```bash
