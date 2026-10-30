@@ -31,6 +31,9 @@ VSCode with the Marimo extension, just like Jupyter.
   documentation, checked-in sample data, and ignored generated outputs.
 - `tests/`: regression tests for the model feature, span and evaluation functions.
 - `evaluation/`: library for action segmentation evaluation
+- `experiments/shared_features/`: leave-one-video-out comparison of feature sets and
+  learners on the shared pair-motion features (additive; the `models/` detectors are
+  unchanged). See [experiments/README.md](experiments/README.md).
 - `models/logistic_regression/`: frame-level logistic regression: features, training,
   per-frame scoring and post-processing into sustained spans.
 - `models/rule_based/`: rule-based detector (closest-pair distance plus rotation) and the
@@ -84,9 +87,11 @@ See [models/xgboost/README.md](models/xgboost/README.md) for feature and evaluat
 
 ### Pair-motion feature pipeline
 
-`feature_engineering/pair_motion/` creates a frame-level pair table for distance,
-orientation, and speed. It expects the four validated pose parquets in `data/`;
-they are local inputs and are not committed.
+`feature_engineering/pair_motion/` creates a frame-level pair table. It covers
+body-length-normalized distance, facing, speed and closing rate, angular movement
+(orbital and heading rates, corotation), and 0.5, 1, 2 and 4 s window summaries
+(close fraction, orbit turns, mean distance). It expects the four validated pose
+parquets in `data/`; they are local inputs and are not committed.
 
 ```sh
 uv run python -m feature_engineering.pair_motion.build_features --data-dir data
@@ -95,3 +100,18 @@ uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
 quality checks, parameters, and a small committed sample are kept alongside the
 pipeline. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+Nothing in `models/` imports these features; any model can read the parquet and use
+the columns it wants (`feature_groups.py` lists them by group).
+
+### Shared-feature experiments
+
+`experiments/shared_features/` scores these features, and the existing models' feature
+sets, with leave-one-video-out validation (each video held out once) using the
+same `evaluation/` metrics and the same `outputs/predictions/<name>/` format.
+
+```sh
+uv run python -m experiments.shared_features.dataset --data-dir ~/Downloads
+uv run python -m experiments.shared_features.lovo --variants all
+```
+
+See [experiments/README.md](experiments/README.md) for the protocol, variants and results.
