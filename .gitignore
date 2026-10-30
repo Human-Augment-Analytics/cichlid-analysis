@@ -233,3 +233,10 @@ feature_engineering/pair_motion/data/*.part
 outputs/xgboost/*.parquet
 outputs/xgboost/scores/
 outputs/xgboost/*.html
+
+# Local-only assistant context
+PROJECT_CONTEXT.md
+
+# Leave-one-video-out experiment artifacts (regenerable)
+outputs/experiments/
+outputs/predictions/lovo_*/
