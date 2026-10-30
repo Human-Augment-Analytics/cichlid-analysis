@@ -1,49 +1,88 @@
-# Cichlid visualization and experiments
+# Cichlid visualization
 
-Tools for inspecting existing pose data, testing proximity-based candidate generation, and optionally training a scene-level DLC2Action MS-TCN model.
+Review full recordings with pose overlays, selected-pair movement plots, human annotations and detector predictions. Optionally export short annotated MP4s for presentations.
 
-**Start with [USER_GUIDE.md](USER_GUIDE.md)** for installation and complete commands. Run all commands from the shared repository root. The examples reference annotation and prediction CSVs in the repository; research videos and Parquet inputs must be obtained separately through the team's approved data location.
+These tools display existing project results. They do not train a model, estimate poses from raw video, or run a live behavior detector. OpenCV, DLC2Action and Marimo are not required.
 
-| Workflow | Required inputs | Command |
-| --- | --- | --- |
-| Visual review | Matching video and individual pose Parquet; optional labels/predictions | `python -m visualization.review visualization/seed0031.json` |
-| Proximity experiment | Individual pose Parquet and reviewed labels; video for clips | `python -m visualization.experiment visualization/hypothesis0031.json --clips 3` |
-| Optional learning | Pair Parquets and positive/negative labels, with explicit splits | See training commands in USER_GUIDE.md |
+## Start the full-video player
 
-## Package contents
-
-| File | Responsibility |
-| --- | --- |
-| review.py | Adapt data, extract a short clip, and export a review bundle |
-| viewer.html | Playback, pose overlays, geometry plots, comparison timelines, and notes |
-| core.py | Shared pose and viewer-data utilities |
-| experiment.py | Proximity-rule sweep, label coverage, review workload, and representative clips |
-| training.py | Optional preparation, training, inference, and learned-review integration |
-| training_backend/ | DLC2Action model wrapper, preprocessing, and scene feature aggregation |
-| seed0031.json | Example review configuration |
-| hypothesis0031.json | Example experiment configuration |
-| training_seed.json | Explicit seed-video train/test configuration |
-| demo.py / demo_training.py | Synthetic examples without research inputs |
-| requirements.txt | Visualization and experiment dependencies |
-| requirements-learning.txt | Additional optional training dependencies |
-| test_*.py | Adapter and workflow checks |
-
-## Data contract and interpretation
-
-Review and proximity experiments expect individual pose columns FrameNum, TrackUID, X_center, Y_center, and keypoint coordinate columns such as Nose_x/Nose_y. Optional training expects the original pair-table distance, angle, and angular-rate fields; an individual pose file alone is insufficient for that training adapter.
-
-Frame intervals default to zero-based inclusive bounds. Timestamp labels are interpreted as elapsed video time with an exclusive end and converted at configured FPS. Confirm these conventions with the source author. Config file paths are relative to the JSON config; command-line output paths are relative to the working directory.
-
-Unannotated time is unknown, not automatically negative. Explicit assumed-background training is available for exploratory use and documented in USER_GUIDE.md. Reviewer comments are preserved rather than automatically applied. Fish IDs can switch; labels/sex and reflections require visual verification. Scene-level scores do not identify the responsible fish pair.
-
-For custom interval columns, set start/end in each track configuration; set end_exclusive=true when appropriate. Use kind=prediction for detector intervals. Add verified=true only when deliberately treating the selected source as accepted human labels. A frame-score source may be supplied through scores with path/frame/score/video column mappings. Interval mean_score or positive_fraction must not be substituted for frame probabilities.
-
-## Test and review status
+From the **repository root**, on macOS:
 
 ```bash
-python -m unittest visualization.test_review visualization.test_experiment visualization.test_training -v
+python3.11 -m venv .venv-viz  # only if the environment does not exist
+source .venv-viz/bin/activate
+python -m pip install -r visualization/requirements.txt
+python -m visualization.live visualization/live0028.json
 ```
 
-Thirteen tests and synthetic model training, inference, and learned-view export passed. Real-video alignment and browser playback require local verification. Synthetic examples establish software functionality, not research performance. New dataset schemas require an explicit adapter.
+Open **http://localhost:8001** and leave Terminal running. Stop with Ctrl+C. Do not launch a separate `http.server`.
 
-[REPOSITORY_REVIEW.md](REPOSITORY_REVIEW.md) records the branch snapshot reviewed for integration. [USER_GUIDE.md](USER_GUIDE.md) includes assumptions, output definitions, held-out evaluation guidance, and attribution.
+FFprobe must be available. If missing, install FFmpeg with `brew install ffmpeg`.
+
+The 0028 example opens near frame 206206, but the player covers the entire recording. For 0031, stop the server and run:
+
+```bash
+python -m visualization.live visualization/live0031.json
+```
+
+## Inputs
+
+| Input | 0028 example | Purpose |
+|---|---|---|
+| Original video | `data/0028_vid.mp4` | Full recording |
+| Individual pose Parquet | `data/0028_vid.parquet` | TrackUID, centers and keypoint coordinates |
+| Human annotations | `ground_truth_annotations/finalized_annotations/merged_spans.csv` | Accepted reference intervals |
+| Existing predictions | `outputs/predictions/rule_based/0028_vid.csv` | Detector intervals |
+
+The videos/Parquets must be obtained separately and kept local. The CSVs are shared repository outputs. No pairwise Parquet is required by the viewer; it calculates diagnostic distance and angular velocity from centers. The upstream detector may itself use pairwise files.
+
+Annotations and predictions are optional: remove their entries from `tracks` for pose-only viewing. Numeric frame scores are optional and must be supplied explicitly. See [LIVE_GUIDE.md](LIVE_GUIDE.md) for another recording, additional detector tracks and scores.
+
+## Optional: export an annotated MP4
+
+```bash
+python -m pip install -r visualization/requirements-export.txt
+python -m visualization.export_video visualization/export0028.json --check
+python -m visualization.export_video visualization/export0028.json
+open outputs/visualization/exports/0028_rule_results.mp4
+```
+
+The example exports a 30-second excerpt. This is separate from full-recording playback and can be slow because the exporter decodes from the beginning to preserve source-frame selection. See [EXPORT_GUIDE.md](EXPORT_GUIDE.md).
+
+## Files
+
+| Files | Purpose |
+|---|---|
+| `live.py`, `live.html`, `live_intervals.py` | Local video server, browser player and interval adapter |
+| `live0028.json`, `live0031.json` | Full-recording configurations |
+| `export_video.py`, `export0028.json`, `export0031.json` | Optional MP4 exporter and examples |
+| `demo_export.py` | Clearly synthetic exporter demo |
+| `test_live.py`, `test_export_video.py` | Automated checks |
+| `requirements*.txt` | Player and optional export dependencies |
+| `LIVE_GUIDE.md`, `EXPORT_GUIDE.md` | Detailed usage |
+
+## Interpretation
+
+- Frame intervals default to zero-based inclusive endpoints. Confirm the producer convention.
+- Browser frame counters/steps are time-based estimates, not decoder-verified source indices.
+- Unlabeled time is unknown, not a verified negative.
+- Track IDs can fragment; sex and biological identity are not inferred by this viewer.
+- A scene-level prediction does not identify the selected pair as the participants.
+- Numeric model scores are not necessarily calibrated probabilities.
+- Playback and pose-section loading depend on the video encoding, disk and Parquet row groups.
+
+## Checks
+
+Install the optional export dependencies before running both suites:
+
+```bash
+python -m unittest visualization.test_live visualization.test_export_video -v
+```
+
+Tests cover video byte ranges, pose gaps, interval handling, pair geometry, automatic pair selection and synthetic MP4 export. Real fish-video alignment and long-recording performance must be checked locally. This is software validation, not a detector accuracy benchmark.
+
+## Scope and credit
+
+This folder supersedes the earlier visualization bundle: proximity experiments, optional training, the old extracted-clip viewer and the standalone annotation player are intentionally omitted. They remain recoverable from earlier Git commits; their old commands do not apply to this folder.
+
+Video/poses, annotations and detector predictions are the respective project contributors' work. Visualization code was prepared with OpenAI Codex assistance. This complements the project's Marimo review/evaluation tools rather than replacing their formal evaluation.

@@ -1,3 +1,0 @@
--r requirements.txt
-dlc2action==1.0
-torch>=2.6,<3

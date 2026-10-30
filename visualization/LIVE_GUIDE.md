@@ -4,7 +4,7 @@ This extends the visualization folder with an interactive player. The browser pl
 
 ## Install and run on Mac
 
-Keep your visualization branch updated with main. Copy the files from this package's `visualization` directory into your existing `visualization` directory. These are new files; keep your earlier viewer and exporter.
+Keep your visualization branch updated with main. Copy the files from this package's `visualization` directory into your existing `visualization` directory. This replacement package contains the player and optional MP4 exporter. Older experiment/training workflows are omitted; they remain in Git history.
 
 From the repository root:
 

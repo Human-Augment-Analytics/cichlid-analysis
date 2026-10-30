@@ -1,93 +1,62 @@
-# Shareable pipeline-results videos
+# Optional annotated MP4 export
 
-For a clean 0028 setup, start with [SETUP_0028.md](SETUP_0028.md).
+Use this when you want a shareable clip; use the live player for interactive full-recording review.
 
-The exporter turns existing team data into a silent, presentation-ready H.264 MP4. A recipient only needs a video player. It does not train a detector, generate poses from pixels, or improve model performance.
+## Setup and run
 
-## Install
-
-Copy the additive files in this update into the existing visualization/ package. Run from the repository root:
+From the repository root with `.venv-viz` active:
 
 ```bash
-source .venv-viz/bin/activate
 python -m pip install -r visualization/requirements-export.txt
+python -m visualization.export_video visualization/export0028.json --check
+python -m visualization.export_video visualization/export0028.json
+open outputs/visualization/exports/0028_rule_results.mp4
 ```
 
-If that environment does not exist, create it first with `python3.11 -m venv .venv-viz`. FFmpeg and ffprobe must be installed and on PATH (`brew install ffmpeg` on macOS if needed). OpenCV, Marimo, DLC2Action and PyTorch are not required to export already-existing results. This file uses Pillow to draw text, so FFmpeg's drawtext filter is not needed.
+FFmpeg and FFprobe must be installed (`brew install ffmpeg` if missing). No separate HTTP server is needed. Existing outputs are protected; append `--overwrite` to regenerate.
 
-## Generate the configured 0031 result video
+For 0031 use `visualization/export0031.json` and its matching local source files. The configuration's `out` field gives the output path.
 
-Required local files:
+## Inputs and output
 
-| Input | Default path | Purpose |
-| --- | --- | --- |
-| Original recording | data/0031_vid.mp4 | Video pixels |
-| Matching individual pose Parquet | data/0031_vid.parquet | Centers, keypoints and TrackUIDs |
-| Team's rule-based predictions | outputs/predictions/rule_based/0031_vid.csv | Predicted circling intervals |
-| Human reference decisions | ground_truth_annotations/finalized_annotations/merged_spans.csv | Accepted labels and explicit unknowns |
+Inputs are the original video, individual pose Parquet, detector interval CSV and optional accepted human annotations. Default 0028 paths match those documented in README.md. Numeric scores are optional. No pose/behavior inference or training occurs.
 
-The CSVs are from the shared repository; the large video/Parquet must be local. No pairs Parquet is required: the two displayed diagnostic features are computed from box centers. The default verifies pose project_id MCYHF1-P-613_t011_tr2, not only the video basename.
+Output is a silent H.264 MP4 with video, selected-pair pose overlays, distance/angular-velocity plots, reference/prediction status and interval timelines. Sidecar `.provenance.json`, `.frames.csv` and `.features.csv` record settings, label states and measurements. Keep generated files local under `outputs/visualization/`.
 
-```bash
-python -m visualization.export_video visualization/export0031.json
-```
+The default 0028 example covers frames 206206–207105, inclusive (30 seconds at 30 FPS). It automatically chooses a diagnostic pair within that excerpt. This is not actor identification. The default 0031 example specifies its pair explicitly; do not reuse old IDs on other recordings.
 
-Open `outputs/visualization/exports/0031_rule_results.mp4` in QuickTime, VLC, a browser, or a slide deck. No localhost server is needed to watch it.
+## Change settings
 
-The configured excerpt is 30 seconds: source frames 97830–98729, approximately 00:54:21–00:54:51. Endpoints are inclusive. TrackUIDs 30004551 and 30004572 are the explicitly selected diagnostic pair; they need not remain visible for the whole excerpt. Missing poses/geometry remain missing, rather than changing fish identities silently.
+Copy an example JSON and update recording/project IDs, video/pose paths, source-frame bounds, detector name and prediction CSV. Paths are relative to the JSON file. Use `pair: "auto"` or specify two TrackUIDs. Run `--check` before rendering to review the selected pair and available intervals. This exporter permits up to 18001 frames; it is not a full ten-hour recording renderer.
 
-The file shows:
-- Video with the selected fish's skeletons and IDs in consistent colors.
-- Original source frame and elapsed time.
-- Scene-level detector interval status (predicted circling / no predicted interval).
-- Human reference status (circling / explicit non-circling / unknown).
-- Full-excerpt distance and angular-velocity plots with synchronized cursors.
-- Human and predicted interval timelines.
-- A numeric score only if an actual per-frame score file is supplied.
+Frame CSVs support `VideoID`/`video_id`/`video`, and `StartFrame`/`EndFrame`, spaced `Start Frame`/`End Frame`, or lowercase `start_frame`/`end_frame`. Endpoints default to inclusive; set `end_exclusive: true` in a source specification when required. Timestamp-only source labels must first be converted using an agreed frame mapping.
 
-The output is a static MP4 with the overlays burned in, unlike the interactive HTML viewers. It is suitable for demonstrations, reports, and short error-analysis clips. The `.provenance.json`, `.frames.csv`, and `.features.csv` beside it record inputs/settings and support inspection. Keep large results and source data out of source-code commits unless the team agrees on artifact storage.
+For merged references, `ShouldUse=true` and `Circling=true/false` supply explicit positive/negative decisions. Rejected/incomplete/approximate or conflicting references are not silently treated as verified negatives. For another accepted label source, use `Verified` fields or explicitly set `verified: true` in its annotation specification. Confirm the label schema before doing so. Missing annotations mean unknown.
 
-## Adjust a clip, model, or recording
-
-Copy export0031.json to a local JSON configuration. Every path is relative to the JSON file. Set video_id, expected_project_id (or omit only after confirming identity), video/pose/output paths, source-frame bounds, selected TrackUIDs (or pair="auto"), detector name and prediction file. Use --check to validate inputs and print the resolved pair/export plan before decoding video. Never reuse old IDs or labels on a new recording. Use the existing review command with --list-tracks if ID discovery is needed, or inspect the matching pose file.
-
-Frame-based CSV inputs support VideoID/video_id/video; StartFrame/EndFrame, Start Frame/End Frame, or start_frame/end_frame. Defaults are zero-based inclusive bounds; set end_exclusive=true inside the relevant predictions or annotations object for exclusive-end producer output. Timestamp-only annotation CSVs are deliberately not guessed here; use a reviewed frame-based export.
-
-For merged review files, ShouldUse=true and Circling=true/false explicitly determine positive/negative reference status. Rejected rows are unknown. For other human-label files, set verified=true inside annotations only when that source is an accepted human-reviewed export, or provide Verified/verified fields. Primary label/behavior, Behavior and behavior are supported. Approximate circling remains unknown here; it is not silently converted to a negative. Conflicting positive/negative/unknown overlaps render as unknown.
-
-Delete the annotations entry if no human reference exists; the video then displays reference unknown, not an accuracy judgement. New videos require matching poses and existing detector predictions. The exporter does not run a model on a new video.
-
-For a trained model's real per-frame scores, optionally add:
+Optional numeric scores can be configured as:
 
 ```json
 "scores": {
-  "path": "../outputs/visualization/learning/predictions/predictions.csv",
+  "path": "../outputs/my_model/frame_scores.csv",
   "video": "video_id",
   "frame": "frame",
   "score": "score"
 }
 ```
 
-Also point predictions to that same run's predicted_segments.csv and label detector_name accordingly. Scores and intervals should come from the same model/run; the exporter cannot establish this automatically. Interval mean_score and positive_fraction are not frame probabilities and must not be substituted. Rule-based interval files have no probability: “Model score: not supplied” is intentional.
+Use scores and interval predictions from the same model/run. Do not substitute interval averages for per-frame scores or interpret uncalibrated scores as certain probabilities.
 
-The prediction scope may be scene-level, while geometry is for one selected pair. Do not claim that the displayed pair produced the detector output. Neither circling nor a high score confirms spawning/fertilization. Direction and turn counts are not inferred by this exporter.
+## Performance and limitations
 
-## Performance and output conventions
+The exporter decodes from source frame zero to reach the excerpt, then draws overlays with Pillow and encodes a new MP4. Late clips can take minutes even when the final clip is short. Prefer the live player to navigate recordings without export.
 
-FFmpeg decodes from source frame zero to select exact source indices; it stops after the excerpt is decoded. A late clip in a 10-hour recording can therefore take several minutes. Start with the 30-second example; do not launch hundreds of late clips independently. Streaming avoids retaining all video frames in RAM, but this version does not implement optimized multi-clip batching. Output plays at the configured nominal FPS and contains no audio. FPS must agree with the video average within .01; nominal agreement does not prove every timestamp is uniformly spaced. Pose/video alignment still needs visual verification on research footage.
+FPS is checked against video average FPS, but that does not prove constant-rate source timestamps or correct pose alignment. Missing geometry remains missing. Pair movement is calculated independently of upstream detector cleaning and smoothing. Circling predictions do not confirm spawning/fertilization. Direction and circle counts are not inferred here.
 
-Existing outputs are protected unless --overwrite is passed. Do not use an output path equal to a source. Model/pose inference is expected upstream. The renderer uses exactly one detector for a clean presentation; the separate comparison dashboard supports multiple-detector analysis.
-
-## Try without research data
-
-The download includes a pre-rendered, clearly marked synthetic results_demo.mp4. It demonstrates the layout, not real fish or trained-model results. To regenerate:
+## Synthetic example and checks
 
 ```bash
 python -m visualization.demo_export
+python -m unittest visualization.test_export_video -v
 ```
 
-The generated synthetic source/labels/predictions live under outputs/visualization/export_demo/. Five tests (`python -m unittest visualization.test_export_video -v`) verify label states, missing-data geometry, approximate-label policy and FFmpeg output frame count/range. Actual footage is not available here; alignment must be checked locally.
-
-## Attribution
-
-Video and tracking data are from the lab; annotation and detector results are the respective contributors' work. Credit the detector by name and source version in a presentation. The exporter and example were generated with OpenAI Codex assistance, using Pillow, NumPy/pandas/pyarrow, and FFmpeg. This is a visualization/export contribution, not a new behavioral model. Existing repository licensing applies.
+The demo generates synthetic video, poses and invented predictions under `outputs/visualization/export_demo/`. It is a software demonstration, not research evidence. The package does not bundle source research data or a pre-rendered demo.
