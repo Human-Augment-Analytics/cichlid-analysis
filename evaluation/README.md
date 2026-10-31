@@ -43,7 +43,7 @@ are zero-based and inclusive.
 
 - **MoF**: fraction of all frames (circling and background) labelled correctly.
   It needs each video's total frame count, which comes from `num_frames`, else
-  `data/<video>.mp4`, else the last frame in any interval + 1 (with a warning).
+  `VIDEO_FRAMES`, else `data/<video>.mp4`, else the last frame in any interval + 1 (with a warning).
 - **Edit score**: `100 × (1 − Levenshtein / max segments)` over the ordered
   circling/background segment sequence, so it ignores exact timing. The overall
   figure is the average across videos.

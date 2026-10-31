@@ -36,6 +36,8 @@ with app.setup(hide_code=True):
     PREDICTIONS_DIR = ROOT / 'outputs/predictions'
     GROUND_TRUTH = ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'
     VIDEO_DIR = ROOT / 'data'
+    # So MoF does not depend on the source videos, which are normally streamed.
+    VIDEO_FRAMES = {'0028_vid': 1_080_175, '0031_vid': 1_080_398}
 
 
 @app.cell(hide_code=True)
@@ -165,8 +167,8 @@ def _(model):
 def evaluate(gt, predicted, num_frames=None):
     """Per-video and overall metrics plus warnings.
 
-    `num_frames` maps video ID to frame count; otherwise it is read from
-    `data/<video>.mp4`, else the last annotated or predicted frame + 1.
+    `num_frames` maps video ID to frame count; otherwise it comes from `VIDEO_FRAMES`,
+    then `data/<video>.mp4`, else the last annotated or predicted frame + 1.
     """
     num_frames = num_frames or {}
     warnings = []
@@ -179,7 +181,7 @@ def evaluate(gt, predicted, num_frames=None):
         gt_spans = list(gt.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
         pred_spans = list(predicted.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
         last = max(end for _, end in gt_spans + pred_spans) + 1
-        frames = num_frames.get(video) or video_frame_count(video, VIDEO_DIR)
+        frames = num_frames.get(video) or VIDEO_FRAMES.get(video) or video_frame_count(video, VIDEO_DIR)
         if frames is None:
             frames = last
             warnings.append(f'{video}: frame count unknown, using last interval frame + 1 ({last:,}) for MoF')

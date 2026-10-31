@@ -10,9 +10,10 @@ uv sync --locked
 
 `uv sync` installs the locked dependencies and the required Python version. Open the
 local URL printed by marimo to use the notebook. `model_performance_report.py` evaluates
-the committed predictions in `outputs/predictions/`. On first launch it downloads the source
-videos and the pose and pair Parquet files into `data/` for clip previews; the two videos are
-about 31 GB each, so allow time and disk space for the initial download.
+the committed predictions in `outputs/predictions/`. On first launch it downloads the pose and
+pair Parquet files into `data/` (about 260 MB per video). Clip previews stream only the frames
+they need from the source videos (about 13 s to start, then cached in `outputs/clips/`); a video
+already in `data/` is used instead. Scripts that scan whole videos still need local copies.
 
 ```sh
 uv run marimo edit model_performance_report.py

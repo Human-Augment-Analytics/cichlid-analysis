@@ -19,7 +19,6 @@ with app.setup(hide_code=True):
     from io import BytesIO
     from math import isfinite
     from pathlib import Path
-    from urllib.request import urlretrieve
 
     import cv2
     import imageio_ffmpeg
@@ -33,6 +32,7 @@ with app.setup(hide_code=True):
                                      read_predictions, summary_view)
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES
+    from video_source import TABLE_URLS, VideoReader, download
 
     ROOT = Path(__file__).resolve().parent
     DATA_DIR = ROOT / "data"
@@ -74,36 +74,10 @@ def _():
 
 @app.cell
 def _():
-    # Download the source videos (~31 GB each, for clip previews) and the pose and
-    # pair tables when missing.
-    _downloads = {
-        "0028_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AMkLWMbEcHxMGEXGPuxG1NI/0028_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=m42jq5db&dl=1",
-        "0031_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ADCA61tJU9SWYSnh9DNWkkk/0031_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=xmrzc3hs&dl=1",
-        "0028_vid.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AIzGAhjimK-vvUN1IRetNrI/0028_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=zd96dl6g&dl=1",
-        "0028_vid_pairs.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AL6msxoSPODIp3jfuXxWb6Q/0028_vid_pairs.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=nb7wminh&dl=1",
-        "0031_vid_pairs.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AOLNU5Q-ydFtOxPr3Bppvss/0031_vid_pairs.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=pkqm83so&dl=1",
-        "0031_vid.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ACNtNV3xM1k06lXgc4zpB0o/0031_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=nox9c3q0&dl=1",
-    }
-
-    data_files = [download(_url, DATA_DIR / _filename) for _filename, _url in _downloads.items()]
+    # Download the pose and pair tables when missing; source videos are streamed for clip
+    # previews unless they are already in `data/`.
+    data_files = [download(_url, DATA_DIR / _filename) for _filename, _url in TABLE_URLS.items()]
     return
-
-
-@app.function(hide_code=True)
-def download(url, destination):
-    """Download to a .part file first so interrupted downloads are retried."""
-    if destination.exists():
-        return destination
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    partial = destination.with_suffix(destination.suffix + ".part")
-    print(f"Downloading {destination.name}...")
-    try:
-        urlretrieve(url, partial)
-        partial.replace(destination)
-    except Exception:
-        partial.unlink(missing_ok=True)
-        raise
-    return destination
 
 
 @app.cell(hide_code=True)
@@ -230,44 +204,36 @@ def render_clip(video_id, start, end, gt_spans, output_dir, padding=0, width=648
              .filter(pl.col("FrameNum").is_between(first, last)).collect())
     groups = poses.partition_by("FrameNum", as_dict=True)
     empty = poses.head(0)
-    capture = cv2.VideoCapture(str(DATA_DIR / f"{video_id}.mp4"))
-    if not capture.isOpened():
-        capture.release()
-        raise RuntimeError(f"Could not open {video_id}.mp4")
-    scale = width / capture.get(cv2.CAP_PROP_FRAME_WIDTH)
-    size = (width, round(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) * scale / 2) * 2)
-    bitrate = max(1000, min(250_000, int(12_000_000 / ((last - first + 1) / FPS))))
-    output_dir.mkdir(parents=True, exist_ok=True)
-    partial = output.with_suffix(".part.mp4")
-    writer = imageio_ffmpeg.write_frames(
-        str(partial), size, fps=FPS, pix_fmt_in="bgr24", codec="libx264",
-        quality=None, macro_block_size=1, ffmpeg_log_level="error",
-        output_params=["-preset", "fast", "-b:v", str(bitrate), "-maxrate", str(bitrate),
-                       "-bufsize", str(2 * bitrate), "-movflags", "+faststart"],
-    )
-    try:
-        writer.send(None)
-        capture.set(cv2.CAP_PROP_POS_FRAMES, first)
-        for frame_number in range(first, last + 1):
-            ok, frame = capture.read()
-            if not ok:
-                raise RuntimeError(f"Could not decode {video_id} frame {frame_number}")
-            frame = cv2.resize(frame, size, interpolation=cv2.INTER_AREA)
-            frame_poses = groups.get((frame_number,), empty)
-            overlay_poses(frame, frame_poses, scale)
-            labels = [(f"Frame {frame_number:,}", (40, 40, 40))]
-            if start <= frame_number <= end:
-                labels.append(("Predicted circling", (199, 84, 121)))
-            if any(s <= frame_number <= e for s, e in gt_spans):
-                labels.append(("Ground truth circling", (142, 155, 21)))
-            track_ids = sorted(frame_poses["TrackID"].drop_nulls().to_list())
-            writer.send(overlay_legend(frame, track_ids, labels))
-        writer.close()
-        partial.replace(output)
-    finally:
-        capture.release()
-        writer.close()
-        partial.unlink(missing_ok=True)
+    with VideoReader(DATA_DIR / f"{video_id}.mp4") as reader:
+        scale = width / reader.width
+        size = (width, round(reader.height * scale / 2) * 2)
+        bitrate = max(1000, min(250_000, int(12_000_000 / ((last - first + 1) / FPS))))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        partial = output.with_suffix(".part.mp4")
+        writer = imageio_ffmpeg.write_frames(
+            str(partial), size, fps=FPS, pix_fmt_in="bgr24", codec="libx264",
+            quality=None, macro_block_size=1, ffmpeg_log_level="error",
+            output_params=["-preset", "fast", "-b:v", str(bitrate), "-maxrate", str(bitrate),
+                           "-bufsize", str(2 * bitrate), "-movflags", "+faststart"],
+        )
+        try:
+            writer.send(None)
+            for frame_number, frame in reader.frames(first, last):
+                frame = cv2.resize(frame, size, interpolation=cv2.INTER_AREA)
+                frame_poses = groups.get((frame_number,), empty)
+                overlay_poses(frame, frame_poses, scale)
+                labels = [(f"Frame {frame_number:,}", (40, 40, 40))]
+                if start <= frame_number <= end:
+                    labels.append(("Predicted circling", (199, 84, 121)))
+                if any(s <= frame_number <= e for s, e in gt_spans):
+                    labels.append(("Ground truth circling", (142, 155, 21)))
+                track_ids = sorted(frame_poses["TrackID"].drop_nulls().to_list())
+                writer.send(overlay_legend(frame, track_ids, labels))
+            writer.close()
+            partial.replace(output)
+        finally:
+            writer.close()
+            partial.unlink(missing_ok=True)
     return output
 
 
