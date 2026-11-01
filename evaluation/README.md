@@ -49,6 +49,9 @@ are zero-based and inclusive.
   figure is the average across videos.
 - **Frame precision / recall / F1**: for the circling class, pooled across videos
   for the overall figure.
+- **Frame IoU**: `|A ∩ B| / |A ∪ B|`, where A is all frames predicted as circling
+  in a video and B is all frames annotated as circling, so it is `TP / (TP + FP + FN)`
+  over frames. The overall figure is the average across videos.
 - **IoU** (intersection over union) of a predicted segment P and a ground-truth
   segment G, both inclusive frame ranges:
 

@@ -10,7 +10,7 @@
 """Evaluate predicted circling intervals against ground-truth intervals.
 
 Reports MoF, segmental edit score, segmental F1@{10, 25, 50} and frame
-precision/recall/F1. Frame ranges are zero-based and inclusive. Run interactively:
+precision/recall/F1/IoU. Frame ranges are zero-based and inclusive. Run interactively:
 
     uv run marimo edit evaluation/evaluate.py
 """
@@ -61,6 +61,9 @@ def _():
       ground-truth segments and `F1@τ = 2 · precision · recall / (precision + recall)`.
       Counts are pooled across videos for the overall figure.
     - **Frame precision / recall / F1**: for the circling class.
+    - **Frame IoU**: `|A ∩ B| / |A ∪ B|`, where A is all frames predicted as circling
+      in a video and B is all frames annotated as circling. Overall is the mean across
+      videos.
 
     Pick a model from `outputs/predictions/`; the CSV files in its folder are
     concatenated. Frame counts are read from `data/<video>.mp4`, else the last
@@ -203,6 +206,7 @@ def summary_view(results, warnings):
             mo.stat(f"{overall['edit_score']:.1f}", label='Edit score'),
             mo.stat(f"{overall['frame_f1']:.1%}", label='Frame F1',
                     caption=f"P {overall['frame_precision']:.1%} · R {overall['frame_recall']:.1%}"),
+            mo.stat(f"{overall['frame_iou']:.1%}", label='Frame IoU'),
             *(mo.stat(f"{100 * overall[f'f1@{tau}']:.1f}", label=f'F1@{tau}',
                       caption=f"{overall[f'tp@{tau}']} / {overall['gt_segments']} segments matched")
               for tau in TAUS),

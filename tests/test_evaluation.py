@@ -13,6 +13,7 @@ class EvaluationTest(unittest.TestCase):
         self.assertEqual(result['mof'], 1)
         self.assertEqual(result['edit_score'], 100)
         self.assertEqual(result['frame_f1'], 1)
+        self.assertEqual(result['frame_iou'], 1)
         self.assertEqual([result[f'f1@{tau}'] for tau in (10, 25, 50)], [1, 1, 1])
 
     def test_partial_prediction(self):
@@ -23,6 +24,8 @@ class EvaluationTest(unittest.TestCase):
         self.assertAlmostEqual(result['frame_precision'], .5)
         self.assertAlmostEqual(result['frame_recall'], .25)
         self.assertAlmostEqual(result['frame_f1'], 1 / 3)
+        # Video-level IoU spans both ground-truth segments: 5 shared of 25 frames.
+        self.assertAlmostEqual(result['frame_iou'], 5 / 25)
         # IoU 5/15: a true positive at tau 10 and 25, not 50. One of one predicted
         # and two ground-truth segments gives F1 = 2 * 1 / (1 + 2).
         self.assertEqual([result[f'tp@{tau}'] for tau in (10, 25, 50)], [1, 1, 0])
@@ -33,7 +36,12 @@ class EvaluationTest(unittest.TestCase):
         result = evaluate_video([(0, 9)], [], 20)
         self.assertTrue(math.isnan(result['frame_precision']))
         self.assertEqual(result['frame_f1'], 0)
+        self.assertEqual(result['frame_iou'], 0)
         self.assertEqual(result['f1@10'], 0)
+
+    def test_frame_iou_ignores_overlapping_duplicates(self):
+        result = evaluate_video([(0, 9)], [(0, 4), (3, 9), (10, 14)], 20)
+        self.assertAlmostEqual(result['frame_iou'], 10 / 15)
 
     def test_edit_score_counts_segments(self):
         # GT: bg c bg c bg; prediction: bg c bg -> two deletions over five segments.
@@ -53,9 +61,15 @@ class EvaluationTest(unittest.TestCase):
         overall = summarize(rows)
         self.assertAlmostEqual(overall['mof'], 30 / 40)
         self.assertAlmostEqual(overall['frame_recall'], .5)
+        self.assertAlmostEqual(overall['frame_iou'], .5)
         self.assertEqual(overall['edit_score'], (100 + 50) / 2)
         # Pooled: one true positive, one predicted and two ground-truth segments.
         self.assertAlmostEqual(overall['f1@50'], 2 / 3)
+
+    def test_summary_averages_frame_iou(self):
+        # IoUs of 1 and 1/3; pooling the frames would give 20/40 instead.
+        rows = [evaluate_video([(0, 9)], [(0, 9)], 10), evaluate_video([(0, 29)], [(0, 9)], 30)]
+        self.assertAlmostEqual(summarize(rows)['frame_iou'], 2 / 3)
 
     def test_reads_frame_csvs(self):
         with TemporaryDirectory() as directory:

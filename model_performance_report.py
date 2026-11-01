@@ -68,6 +68,12 @@ def _():
     to convert one segment sequence into another.
 
     $$\text{Edit Score} = \big ( 1 - \frac{e[|X|, |Y |]}{ max(|X|, |Y |) } \big ) \cdot 100 $$
+
+    ### Frame IoU
+    With $A$ the frames a model predicts as circling in a video and $B$ the frames annotated
+    as circling:
+
+    $$\text{IoU} = \frac{|A \cap B|}{|A \cup B|}$$
     """)
     return
 
@@ -96,7 +102,8 @@ def _(evaluations, predictions):
     _comparison = pl.DataFrame([
         {"model": _name, "predicted_spans": predictions[_name].height,
          **{_key: _overall[_key] for _key in ("mof", "edit_score", "f1@10", "f1@25", "f1@50",
-                                             "frame_precision", "frame_recall", "frame_f1")}}
+                                             "frame_precision", "frame_recall", "frame_f1",
+                                             "frame_iou")}}
         for _name, (_results, _) in evaluations.items()
         for _overall in [_results.row(-1, named=True)]
     ])
