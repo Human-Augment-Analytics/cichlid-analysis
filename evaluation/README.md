@@ -43,12 +43,15 @@ are zero-based and inclusive.
 
 - **MoF**: fraction of all frames (circling and background) labelled correctly.
   It needs each video's total frame count, which comes from `num_frames`, else
-  `data/<video>.mp4`, else the last frame in any interval + 1 (with a warning).
+  `VIDEO_FRAMES`, else `data/<video>.mp4`, else the last frame in any interval + 1 (with a warning).
 - **Edit score**: `100 × (1 − Levenshtein / max segments)` over the ordered
   circling/background segment sequence, so it ignores exact timing. The overall
   figure is the average across videos.
 - **Frame precision / recall / F1**: for the circling class, pooled across videos
   for the overall figure.
+- **Frame IoU**: `|A ∩ B| / |A ∪ B|`, where A is all frames predicted as circling
+  in a video and B is all frames annotated as circling, so it is `TP / (TP + FP + FN)`
+  over frames. The overall figure is the average across videos.
 - **IoU** (intersection over union) of a predicted segment P and a ground-truth
   segment G, both inclusive frame ranges:
 

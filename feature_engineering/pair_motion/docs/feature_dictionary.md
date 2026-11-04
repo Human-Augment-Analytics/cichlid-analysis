@@ -56,5 +56,44 @@ the mean of `body_length_px_1` and `body_length_px_2`.
 | `qc_missing_nose_or_tail` | `true` if either fish has a missing nose or tail coordinate. |
 | `is_track_start_1`, `is_track_end_1`, `is_track_start_2`, `is_track_end_2` | Start or end of a source fish track. |
 
-Color and behavior labels are not present in the provided parquets. The raw
-track and pair parquets retain bend and turning columns for later work.
+## Angular movement
+
+Rates are radians per second. Rates with an absolute value above 15 rad/s are
+tracking artifacts: they are flagged and replaced by NaN in the `_clean` columns
+(the raw columns are kept).
+
+| Column | Meaning |
+| --- | --- |
+| `d_orbital_rad_s`, `d_heading_1_rad_s`, `d_heading_2_rad_s`, `bend_angle_rad_1`, `bend_angle_rad_2` | Source values from the pair and track parquets. |
+| `d_orbital_rad_s_clean`, `d_heading_1_rad_s_clean`, `d_heading_2_rad_s_clean` | Same rates with `abs > 15` set to NaN. |
+| `abs_d_orbital_rad_s` | Absolute cleaned orbital rate: how fast the line between the fish rotates. |
+| `orbital_step_rad` | Wrapped change in `orbital_rad` since the previous row of the same segment. Safe across the +/- pi seam. |
+| `orbital_rate_derived_rad_s` | `orbital_step_rad` divided by elapsed time. On these files it equals the provided `d_orbital_rad_s` (correlation 1.0), which confirms its definition. |
+| `orbital_accel_rad_s2` | Change in the cleaned orbital rate per second. |
+| `corotation` | Mean over the two fish of `sign(d_heading) * sign(d_orbital)`. +1 when both turn the way the pair rotates, -1 when against it. |
+| `heading_rate_abs_mean_rad_s`, `bend_abs_mean_rad` | Mean absolute heading rate and bend angle of the two fish. |
+| `rel_heading_sin/cos`, `bearing_1_sin/cos`, `bearing_2_sin/cos` | Angle encodings without the +/- pi seam. `orbital_rad` is not encoded because it depends on the arbitrary pair order. |
+| `qc_bad_body_length` | A body length that is not positive or is outside 0.5x to 2x the video median. Flagged, not removed. |
+| `qc_angular_rate_clipped` | Any of the three rates above exceeded 15 rad/s on this row. |
+
+## Time-windowed features
+
+Columns are named `w<seconds>s_<statistic>` for 0.5, 1, 2 and 4 s (`w0p5s_`,
+`w1s_`, `w2s_`, `w4s_`). Windows are measured in frames, centered on the row by
+default (`trailing` is available for causal use), and stop at pair-episode and
+gap boundaries. Rows missing from a window count as "not close" in the fractions
+and are left out of the means.
+
+| Statistic | Meaning |
+| --- | --- |
+| `close_frac` | Fraction of window frames with `proximity` true. |
+| `mutual_facing_frac` | Fraction of window frames with `mutual_facing` true. |
+| `coverage` | Fraction of window frames that have a row for this pair. |
+| `distance_bl_mean`, `speed_mean_bl_s_mean`, `closing_speed_bl_s_mean`, `bend_abs_mean` | Window means over available rows. |
+| `abs_d_orbital_mean`, `d_orbital_std`, `corotation_mean` | Orbital rate size, variability and corotation over close rows. |
+| `orbit_turns_net`, `orbit_turns_abs` | Signed and total orbital rotation over close rows, in full turns (1 = 2 pi). |
+
+Model-facing groups for ablations live in `feature_groups.py`. Sex, track ids and
+pixel columns are never model features.
+
+Color and behavior labels are not present in the provided parquets.

@@ -97,6 +97,7 @@ def evaluate_video(gt_events, pred_events, num_frames):
         'frame_tp': tp, 'frame_fp': pred_frames - tp, 'frame_fn': gt_frames - tp,
         'frame_precision': precision, 'frame_recall': recall,
         'frame_f1': ratio(2 * precision * recall, precision + recall) if tp else 0.,
+        'frame_iou': ratio(tp, gt_frames + pred_frames - tp),
         'gt_segments': len(gt_spans), 'pred_segments': len(pred_spans),
         **{f'tp@{tau}': tps[tau] for tau in TAUS},
         **{f'f1@{tau}': segment_f1(tps[tau], len(pred_spans), len(gt_spans)) for tau in TAUS},
@@ -104,7 +105,7 @@ def evaluate_video(gt_events, pred_events, num_frames):
 
 
 def summarize(per_video):
-    """Pool frame and segment counts across videos; edit score is the mean."""
+    """Pool frame and segment counts across videos; edit score and frame IoU are means."""
     total = {key: sum(row[key] for row in per_video) for key in (
         'num_frames', 'frame_tp', 'frame_fp', 'frame_fn', 'gt_segments', 'pred_segments',
         *(f'tp@{tau}' for tau in TAUS),
@@ -118,6 +119,7 @@ def summarize(per_video):
         **{key: total[key] for key in ('frame_tp', 'frame_fp', 'frame_fn')},
         'frame_precision': precision, 'frame_recall': recall,
         'frame_f1': ratio(2 * precision * recall, precision + recall) if tp else 0.,
+        'frame_iou': sum(row['frame_iou'] for row in per_video) / len(per_video),
         'gt_segments': total['gt_segments'], 'pred_segments': total['pred_segments'],
         **{f'tp@{tau}': total[f'tp@{tau}'] for tau in TAUS},
         **{f'f1@{tau}': segment_f1(total[f'tp@{tau}'], total['pred_segments'], total['gt_segments'])

@@ -12,6 +12,8 @@ import math
 import numpy as np
 import pandas as pd
 
+from . import angular_temporal as at
+
 FPS = 30.0
 GAP_TOLERANCE_S = 0.2
 PROXIMITY_BL = 1.5
@@ -28,6 +30,7 @@ PARAMETERS = {
     "smooth_window_frames": SMOOTH_WINDOW_FRAMES,
     "smooth_window_s": SMOOTH_WINDOW_FRAMES / FPS,
     "smooth_method": "centered rolling median, then centered rolling mean",
+    **at.PARAMETERS,
 }
 
 GROUP_KEYS = [
@@ -74,6 +77,7 @@ def _fish_frame(tracks: pd.DataFrame, suffix: str) -> pd.DataFrame:
         "TrackUID": f"TrackUID_{suffix}",
         "body_length_px": f"body_length_px_{suffix}",
         "speed_bl_s": f"speed_bl_s_{suffix}",
+        "bend_angle_rad": f"bend_angle_rad_{suffix}",
         "Nose_x": f"Nose_x_{suffix}",
         "Nose_y": f"Nose_y_{suffix}",
         "TailTip_x": f"TailTip_x_{suffix}",
@@ -300,6 +304,9 @@ OUTPUT_COLUMNS = (
         "is_track_start_2",
         "is_track_end_2",
     ]
+    + at.RAW_ANGULAR_COLUMNS
+    + at.ANGULAR_COLUMNS
+    + at.window_columns()
 )
 
 
@@ -310,11 +317,21 @@ def build_motion_features(pairs: pd.DataFrame, tracks: pd.DataFrame) -> tuple[pd
     add_speed_and_orientation(ordered)
     add_approach_rate(ordered)
     add_smoothed_columns(ordered)
+    segment_ids = ordered.groupby(SMOOTH_KEYS, sort=False).ngroup().to_numpy()
+    at.add_angular_features(ordered, segment_ids)
+    at.add_window_features(ordered, segment_ids)
+    ordered = ordered.copy()  # defragment after many column inserts
     add_qc_flags(ordered)
     missing = [column for column in OUTPUT_COLUMNS if column not in ordered.columns]
     if missing:
         raise RuntimeError(f"Feature table is missing columns: {missing}")
     return ordered.loc[:, OUTPUT_COLUMNS].reset_index(drop=True), join_stats
+
+
+def _with_toy_angular(pairs: pd.DataFrame) -> pd.DataFrame:
+    for column in at.RAW_ANGULAR_COLUMNS[:3]:
+        pairs[column] = 0.0
+    return pairs
 
 
 def run_synthetic_checks() -> None:
@@ -385,7 +402,7 @@ def run_synthetic_checks() -> None:
                 "dt_frames": np.nan if offset == 0 else 1.0,
             }
         )
-    pairs = pd.DataFrame(rows)
+    pairs = _with_toy_angular(pd.DataFrame(rows))
     tracks = []
     for frame_number in list(range(6)) + list(range(100, 104)):
         for track_uid, speed in ((1, 1.0), (2, 3.0)):
@@ -422,7 +439,9 @@ def run_synthetic_checks() -> None:
             "is_track_end": True,
         }
     )
-    track_df = pd.DataFrame(tracks).drop_duplicates(
+    track_df = pd.DataFrame(tracks)
+    track_df["bend_angle_rad"] = 0.0
+    track_df = track_df.drop_duplicates(
         ["project_id", "day_label", "FrameNum", "TrackUID"], keep="last"
     )
     features, join_stats = build_motion_features(pairs, track_df)
@@ -500,7 +519,7 @@ def run_synthetic_checks() -> None:
                 "dt_frames": dt,
             }
         )
-    gap_pairs = pd.DataFrame(gap_rows)
+    gap_pairs = _with_toy_angular(pd.DataFrame(gap_rows))
     gap_tracks = []
     for frame_number in (0, 1, 2, 20, 21):
         for track_uid in (1, 2):
@@ -520,12 +539,92 @@ def run_synthetic_checks() -> None:
                     "is_track_end": False,
                 }
             )
-    gap_features, _ = build_motion_features(gap_pairs, pd.DataFrame(gap_tracks))
+    gap_track_df = pd.DataFrame(gap_tracks)
+    gap_track_df["bend_angle_rad"] = 0.0
+    gap_features, _ = build_motion_features(gap_pairs, gap_track_df)
     near = gap_features.loc[gap_features["FrameNum"] <= 2, "centroid_distance_bl_smooth"]
     if near.max() > 2:
         raise AssertionError("Smoothing crossed a gap longer than 0.2 s")
     if gap_features["smooth_segment"].nunique() != 2:
         raise AssertionError("A 0.6 s gap did not open a new smooth segment")
+    run_angular_temporal_checks()
+
+
+def _orbit_toy(frames: int = 120, rate: float = 1.0) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """One pair circling at a constant rate, one body length apart, plus a far episode."""
+    rows, tracks = [], []
+    spans = [(1, range(frames), 100.0), (2, range(1000, 1010), 900.0)]
+    for episode, frame_range, distance in spans:
+        for index, frame_number in enumerate(frame_range):
+            angle = float(wrap_rad(frame_number / FPS * rate))
+            rows.append(
+                {
+                    "project_id": "toy", "day_index": 1, "day_label": "toy",
+                    "Time_s": frame_number / FPS, "FrameNum": frame_number,
+                    "TrackID_1": 1, "TrackID_2": 2, "TrackUID_1": 1, "TrackUID_2": 2,
+                    "centroid_distance_px": distance, "dist_nose1_nose2_px": distance,
+                    "dist_nose1_tailtip2_px": distance, "dist_nose2_tailtip1_px": distance,
+                    "dist_nose1_spine4of2_px": distance, "dist_nose2_spine4of1_px": distance,
+                    "orbital_rad": angle, "rel_heading_rad": 0.0,
+                    "bearing_1_rad": 0.0, "bearing_2_rad": 0.0,
+                    "sex_1": "male", "sex_2": "female", "pair_sex": "FM",
+                    "qc_n_missing_kp_1": 0, "qc_n_missing_kp_2": 0,
+                    "pair_episode_id": episode,
+                    "dt_frames": np.nan if index == 0 else 1.0,
+                    "d_orbital_rad_s": rate, "d_heading_1_rad_s": rate, "d_heading_2_rad_s": rate,
+                }
+            )
+            for uid in (1, 2):
+                tracks.append(
+                    {
+                        "project_id": "toy", "day_label": "toy", "FrameNum": frame_number,
+                        "TrackUID": uid, "body_length_px": 100.0, "speed_bl_s": 1.0,
+                        "bend_angle_rad": 0.1, "Nose_x": 0.0, "Nose_y": 0.0,
+                        "TailTip_x": 1.0, "TailTip_y": 1.0,
+                        "is_track_start": False, "is_track_end": False,
+                    }
+                )
+    return pd.DataFrame(rows), pd.DataFrame(tracks)
+
+
+def run_angular_temporal_checks() -> None:
+    """Orbit rotation, corotation, clipping, and window boundaries on a toy circling pair."""
+    pairs, tracks = _orbit_toy()
+    outlier = (pairs["pair_episode_id"] == 1) & (pairs["FrameNum"] == 30)
+    pairs.loc[outlier, "d_orbital_rad_s"] = 50.0
+    features, _ = build_motion_features(pairs, tracks)
+    episode = features.loc[features["pair_episode_id"] == 1].set_index("FrameNum")
+
+    if not episode.loc[30, "qc_angular_rate_clipped"] or np.isfinite(episode.loc[30, "d_orbital_rad_s_clean"]):
+        raise AssertionError("A 50 rad/s orbital rate was not flagged and blanked")
+    if episode["qc_angular_rate_clipped"].sum() != 1:
+        raise AssertionError("Only the outlier frame should be flagged")
+    derived = episode["orbital_rate_derived_rad_s"].iloc[1:]
+    if not np.allclose(derived, 1.0, atol=1e-5):
+        raise AssertionError("Derived orbital rate should match the toy rate of 1 rad/s")
+    if not np.allclose(episode["corotation"].dropna(), 1.0) or not np.isclose(episode.loc[10, "corotation"], 1.0):
+        raise AssertionError("Fish turning with the orbit should have corotation +1")
+
+    # The 4 s window at frame 60 spans frames 0..120, i.e. all 120 rows of the
+    # episode: 119 one-frame steps of 1/30 rad each.
+    expected_turns = 119 / FPS / (2.0 * np.pi)
+    if not np.isclose(episode.loc[60, "w4s_orbit_turns_net"], expected_turns, rtol=1e-4):
+        raise AssertionError(f"Orbit turns {episode.loc[60, 'w4s_orbit_turns_net']} != {expected_turns}")
+    if not np.isclose(episode.loc[60, "w4s_close_frac"], 120 / 121, rtol=1e-4):
+        raise AssertionError("Close fraction should count missing frames as not close")
+    far = features.loc[features["pair_episode_id"] == 2]
+    if far["w4s_close_frac"].max() != 0 or far["w4s_orbit_turns_net"].notna().any():
+        raise AssertionError("A far episode picked up the orbiting episode in its window")
+    if episode.loc[60, "w4s_coverage"] < 0.99 or far["w4s_coverage"].max() > 10 / 121 + 1e-6:
+        raise AssertionError("Window coverage leaked across episodes")
+
+    # Trailing windows never look ahead: the first frame sees only itself.
+    segment_ids = features.groupby(SMOOTH_KEYS, sort=False).ngroup().to_numpy()
+    trailing = features.copy()
+    at.add_window_features(trailing, segment_ids, direction="trailing")
+    first = trailing.loc[(trailing["pair_episode_id"] == 1) & (trailing["FrameNum"] == 0)]
+    if not np.isclose(first["w4s_coverage"].iloc[0], 1 / 121):
+        raise AssertionError("Trailing window looked ahead of the current frame")
 
 
 def spot_check_features(features: pd.DataFrame) -> None:

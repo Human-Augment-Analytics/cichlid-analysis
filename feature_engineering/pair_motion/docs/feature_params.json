@@ -7,5 +7,20 @@
   "facing_rule": "abs(wrapped bearing) < facing_max_rad",
   "smooth_window_frames": 15,
   "smooth_window_s": 0.5,
-  "smooth_method": "centered rolling median, then centered rolling mean"
+  "smooth_method": "centered rolling median, then centered rolling mean",
+  "angular_rate_max_rad_s": 15.0,
+  "angular_rate_rule": "abs(rate) > max is flagged and set to NaN in *_clean columns",
+  "body_length_ratio_range": [
+    0.5,
+    2.0
+  ],
+  "body_length_rule": "either body length outside range x the video median (or not positive) is flagged",
+  "window_seconds": [
+    0.5,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "window_direction": "centered",
+  "window_unit": "frames; windows stop at smooth-segment boundaries"
 }

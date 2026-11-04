@@ -28,7 +28,7 @@ def write_feature_table(features, path: Path) -> None:
     table = pa.Table.from_pandas(features, preserve_index=False)
     existing = dict(table.schema.metadata or {})
     custom = {key: str(value) for key, value in PARAMETERS.items()}
-    custom["feature_set"] = "distance_orientation_speed_v1"
+    custom["feature_set"] = "distance_orientation_speed_angular_temporal_v2"
     merged = {**existing, **{key.encode(): value.encode() for key, value in custom.items()}}
     table = table.replace_schema_metadata(merged)
     pq.write_table(table, path)
