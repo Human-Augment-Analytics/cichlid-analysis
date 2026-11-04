@@ -1,88 +1,81 @@
 # Cichlid visualization
 
-Review full recordings with pose overlays, selected-pair movement plots, human annotations and detector predictions. Optionally export short annotated MP4s for presentations.
+A local browser viewer for complete recordings, pose overlays, diagnostic pair movement, human annotations, detector timelines and saved model scores. It supports local video files and direct Dropbox playback without downloading the entire MP4 first.
 
-These tools display existing project results. They do not train a model, estimate poses from raw video, or run a live behavior detector. OpenCV, DLC2Action and Marimo are not required.
+## Install and open
 
-## Start the full-video player
-
-From the **repository root**, on macOS:
+From the **repository root** on your visualization branch, merge the latest main first so the shared annotations and model outputs are available. Replace the previous `visualization/` folder with this folder (back up custom configurations first).
 
 ```bash
-python3.11 -m venv .venv-viz  # only if the environment does not exist
 source .venv-viz/bin/activate
 python -m pip install -r visualization/requirements.txt
-python -m visualization.live visualization/live0028.json
+python -m visualization.live
 ```
 
-Open **http://localhost:8001** and leave Terminal running. Stop with Ctrl+C. Do not launch a separate `http.server`.
+Open **http://localhost:8001** and leave Terminal running. Stop with Ctrl+C. Do not run a separate `http.server`. If the virtual environment does not exist, create it with `python3.11 -m venv .venv-viz` first. FFprobe is needed for local video metadata: `brew install ffmpeg` if missing.
 
-FFprobe must be available. If missing, install FFmpeg with `brew install ffmpeg`.
+## What's new
 
-The 0028 example opens near frame 206206, but the player covers the entire recording. For 0031, stop the server and run:
+- **Recording selector:** choose registered recordings without restarting. The catalog includes 0028 and 0031; it also discovers local `data/*_vid.mp4` recordings.
+- **Local / Dropbox / Auto:** Auto prefers a local video and uses the configured remote source if no local file exists. A local playback error can trigger one remote fallback. You can explicitly choose Dropbox even when a local copy exists.
+- **Multiple detectors:** standard `outputs/predictions/<model>/<video_id>.csv` files are discovered for the two registered seed recordings. This includes rule-based, logistic regression, XGBoost, and other folders you obtain later.
+- **Model scores:** dropdown and synchronized score plot discover `outputs/<run>/scores/<video_id>_scores.parquet`. Logistic-regression scores on main work directly. MS-TCN/DINOv2 scores work when you obtain that branch's output files; they are not bundled or generated here.
+- **Shared pairwise feature plots:** if `outputs/pair_motion/pair_features_frame.parquet` exists, select shared distance, angular velocity, proximity fraction, turns, facing or speed. Values are matched to the displayed pair by frame and TrackUIDs.
+- **Original / Cleaned poses:** optional cleaned-layer selector if a matching cleaned pose file is configured and exists. Default clean paths are `data/clean/<video_id>.parquet`; change them to your actual cleaning output directory.
+- **Availability and input notes:** missing optional files do not prevent playback. Refresh after adding outputs or editing the catalog.
 
-```bash
-python -m visualization.live visualization/live0031.json
-```
+No model is trained or run by the viewer. Streaming a saved Dropbox video is not live camera behavior detection.
 
 ## Inputs
 
-| Input | 0028 example | Purpose |
+| Input | Purpose | Required? |
 |---|---|---|
-| Original video | `data/0028_vid.mp4` | Full recording |
-| Individual pose Parquet | `data/0028_vid.parquet` | TrackUID, centers and keypoint coordinates |
-| Human annotations | `ground_truth_annotations/finalized_annotations/merged_spans.csv` | Accepted reference intervals |
-| Existing predictions | `outputs/predictions/rule_based/0028_vid.csv` | Detector intervals |
+| Local video or direct remote video URL | Full recording playback | One video source |
+| `data/<video_id>.parquet` | Skeletons, IDs, box-center geometry | Optional; otherwise video only |
+| Finalized annotation CSV | Reference timeline/event list | Optional |
+| `outputs/predictions/<model>/<video_id>.csv` | Detector status/timeline/event list | Optional |
+| Per-frame score CSV/Parquet | Named score readout and graph | Optional |
+| Shared pair feature Parquet | Additional team-feature graph | Optional |
+| Cleaned individual pose Parquet | Inspect cleaned overlays | Optional |
 
-The videos/Parquets must be obtained separately and kept local. The CSVs are shared repository outputs. No pairwise Parquet is required by the viewer; it calculates diagnostic distance and angular velocity from centers. The upstream detector may itself use pairwise files.
+The default human reference is `ground_truth_annotations/finalized_annotations/merged_spans.csv`. No research video, Parquet or model artifacts are included in this download. Merge main for its committed outputs; obtain branch-specific or ignored outputs from the producing teammate or run their pipeline separately.
 
-Annotations and predictions are optional: remove their entries from `tracks` for pose-only viewing. Numeric frame scores are optional and must be supplied explicitly. See [LIVE_GUIDE.md](LIVE_GUIDE.md) for another recording, additional detector tracks and scores.
+## Daily use
 
-## Optional: export an annotated MP4
+1. Select the recording and source. Auto chooses local first; Dropbox streams the recording via the local server.
+2. Play, seek, change speed, or jump to a known source frame. The whole-recording timeline and event list also seek the video.
+3. Select a score source to inspect saved scores. Predictions remain scene-level unless the producer explicitly supplies actor assignments; this viewer does not infer those assignments.
+4. Pick two tracks or click **Closest pair now**. Disable All tracks to show only that pair. Pair choice stays fixed across playback until changed; old IDs may become absent.
+5. If a cleaned pose file exists, switch layers. This changes skeletons and box-center plots only, not saved detector predictions or the independent shared feature table.
+
+Details: [LIVE_GUIDE.md](LIVE_GUIDE.md).
+
+## Optional MP4 export
+
+The separate exporter is retained for shareable short clips:
 
 ```bash
 python -m pip install -r visualization/requirements-export.txt
 python -m visualization.export_video visualization/export0028.json --check
 python -m visualization.export_video visualization/export0028.json
-open outputs/visualization/exports/0028_rule_results.mp4
 ```
 
-The example exports a 30-second excerpt. This is separate from full-recording playback and can be slow because the exporter decodes from the beginning to preserve source-frame selection. See [EXPORT_GUIDE.md](EXPORT_GUIDE.md).
+See [EXPORT_GUIDE.md](EXPORT_GUIDE.md). This exporter still uses local source files and selected short excerpts; Dropbox/catalog features apply to the interactive player, not the exporter.
 
-## Files
-
-| Files | Purpose |
-|---|---|
-| `live.py`, `live.html`, `live_intervals.py` | Local video server, browser player and interval adapter |
-| `live0028.json`, `live0031.json` | Full-recording configurations |
-| `export_video.py`, `export0028.json`, `export0031.json` | Optional MP4 exporter and examples |
-| `demo_export.py` | Clearly synthetic exporter demo |
-| `test_live.py`, `test_export_video.py` | Automated checks |
-| `requirements*.txt` | Player and optional export dependencies |
-| `LIVE_GUIDE.md`, `EXPORT_GUIDE.md` | Detailed usage |
-
-## Interpretation
-
-- Frame intervals default to zero-based inclusive endpoints. Confirm the producer convention.
-- Browser frame counters/steps are time-based estimates, not decoder-verified source indices.
-- Unlabeled time is unknown, not a verified negative.
-- Track IDs can fragment; sex and biological identity are not inferred by this viewer.
-- A scene-level prediction does not identify the selected pair as the participants.
-- Numeric model scores are not necessarily calibrated probabilities.
-- Playback and pose-section loading depend on the video encoding, disk and Parquet row groups.
-
-## Checks
-
-Install the optional export dependencies before running both suites:
+## Checks and scope
 
 ```bash
 python -m unittest visualization.test_live visualization.test_export_video -v
 ```
 
-Tests cover video byte ranges, pose gaps, interval handling, pair geometry, automatic pair selection and synthetic MP4 export. Real fish-video alignment and long-recording performance must be checked locally. This is software validation, not a detector accuracy benchmark.
+Install optional export dependencies and FFmpeg to run both suites. Integration tests cover catalog isolation, optional inputs, pose identity metadata, byte-range seeking and proxy behavior. Synthetic browser checks cover playback, recording switches, pose layers, detector/score selectors, shared features, missing-data gaps and proxy seeking. Actual Dropbox links were tested with small range requests, not ten-hour playback or research pose alignment.
 
-## Scope and credit
+Your final annotation boundaries still need exact-frame verification. Model scores are not necessarily calibrated probabilities or held-out results; consult each model's run report. Unlabeled reference time is unknown. See LIVE_GUIDE.md for further interpretation and performance limitations.
 
-This folder supersedes the earlier visualization bundle: proximity experiments, optional training, the old extracted-clip viewer and the standalone annotation player are intentionally omitted. They remain recoverable from earlier Git commits; their old commands do not apply to this folder.
+## Files and credit
 
-Video/poses, annotations and detector predictions are the respective project contributors' work. Visualization code was prepared with OpenAI Codex assistance. This complements the project's Marimo review/evaluation tools rather than replacing their formal evaluation.
+`live.py` serves the player/video; `catalog.py` loads catalog and scoped data; `live_intervals.py` adapts interval CSVs; `live.html` renders the interface. `recordings.json` is the main catalog. `live0028.json` and `live0031.json` retain single-recording launches. The exporter, demo and tests are separate.
+
+This supersedes older experiment/training and standalone annotation-player bundles; those older workflows remain in Git history. Existing team Marimo evaluation/review tools are unchanged.
+
+Visualization implementation prepared with OpenAI Codex assistance. Videos, tracking, cleaned data, annotations, features, models and predictions belong to their respective project contributors. The default source links follow the repository's `video_source.py`; this browser viewer uses its own HTTP range proxy and does not import OpenCV. No OpenCV, Marimo, PyTorch or DLC2Action is required to view existing outputs.

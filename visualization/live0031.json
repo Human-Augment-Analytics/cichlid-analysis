@@ -1,20 +1,23 @@
 {
+  "id": "0031_vid",
   "video_id": "0031_vid",
+  "label": "0031_vid",
   "expected_project_id": "MCYHF1-P-613_t011_tr2",
   "video": "../data/0031_vid.mp4",
+  "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ADCA61tJU9SWYSnh9DNWkkk/0031_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=xmrzc3hs&dl=1",
   "poses": "../data/0031_vid.parquet",
+  "cleaned_poses": "../data/clean/0031_vid.parquet",
   "fps": 30,
+  "width": 1296,
+  "height": 972,
+  "frame_count": 1080398,
   "start_frame": 97830,
+  "discover_predictions": true,
   "tracks": [
     {
       "name": "Human reference",
       "kind": "annotation",
       "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
-    },
-    {
-      "name": "Rule-based detector",
-      "kind": "prediction",
-      "path": "../outputs/predictions/rule_based/0031_vid.csv"
     }
   ]
 }
