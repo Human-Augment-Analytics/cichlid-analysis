@@ -10,7 +10,7 @@
 """Evaluate predicted circling intervals against ground-truth intervals.
 
 Reports MoF, segmental edit score, segmental F1@{10, 25, 50} and frame
-precision/recall/F1. Frame ranges are zero-based and inclusive. Run interactively:
+precision/recall/F1/IoU. Frame ranges are zero-based and inclusive. Run interactively:
 
     uv run marimo edit evaluation/evaluate.py
 """
@@ -36,6 +36,8 @@ with app.setup(hide_code=True):
     PREDICTIONS_DIR = ROOT / 'outputs/predictions'
     GROUND_TRUTH = ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'
     VIDEO_DIR = ROOT / 'data'
+    # So MoF does not depend on the source videos, which are normally streamed.
+    VIDEO_FRAMES = {'0028_vid': 1_080_175, '0031_vid': 1_080_398}
 
 
 @app.cell(hide_code=True)
@@ -59,6 +61,9 @@ def _():
       ground-truth segments and `F1@τ = 2 · precision · recall / (precision + recall)`.
       Counts are pooled across videos for the overall figure.
     - **Frame precision / recall / F1**: for the circling class.
+    - **Frame IoU**: `|A ∩ B| / |A ∪ B|`, where A is all frames predicted as circling
+      in a video and B is all frames annotated as circling. Overall is the mean across
+      videos.
 
     Pick a model from `outputs/predictions/`; the CSV files in its folder are
     concatenated. Frame counts are read from `data/<video>.mp4`, else the last
@@ -165,8 +170,8 @@ def _(model):
 def evaluate(gt, predicted, num_frames=None):
     """Per-video and overall metrics plus warnings.
 
-    `num_frames` maps video ID to frame count; otherwise it is read from
-    `data/<video>.mp4`, else the last annotated or predicted frame + 1.
+    `num_frames` maps video ID to frame count; otherwise it comes from `VIDEO_FRAMES`,
+    then `data/<video>.mp4`, else the last annotated or predicted frame + 1.
     """
     num_frames = num_frames or {}
     warnings = []
@@ -179,7 +184,7 @@ def evaluate(gt, predicted, num_frames=None):
         gt_spans = list(gt.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
         pred_spans = list(predicted.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
         last = max(end for _, end in gt_spans + pred_spans) + 1
-        frames = num_frames.get(video) or video_frame_count(video, VIDEO_DIR)
+        frames = num_frames.get(video) or VIDEO_FRAMES.get(video) or video_frame_count(video, VIDEO_DIR)
         if frames is None:
             frames = last
             warnings.append(f'{video}: frame count unknown, using last interval frame + 1 ({last:,}) for MoF')
@@ -201,6 +206,7 @@ def summary_view(results, warnings):
             mo.stat(f"{overall['edit_score']:.1f}", label='Edit score'),
             mo.stat(f"{overall['frame_f1']:.1%}", label='Frame F1',
                     caption=f"P {overall['frame_precision']:.1%} · R {overall['frame_recall']:.1%}"),
+            mo.stat(f"{overall['frame_iou']:.1%}", label='Frame IoU'),
             *(mo.stat(f"{100 * overall[f'f1@{tau}']:.1f}", label=f'F1@{tau}',
                       caption=f"{overall[f'tp@{tau}']} / {overall['gt_segments']} segments matched")
               for tau in TAUS),
