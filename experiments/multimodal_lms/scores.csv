@@ -1,0 +1,16 @@
+clip,model,reference_event,clip_start_frame,clip_end_frame,reference_start_frame,reference_end_frame,exact_bounds,reference_circling,predicted_circling,circling_correct,reference_direction,predicted_direction,direction_match,reference_event_circles,predicted_clip_circles,count_signed_difference_provisional,count_absolute_difference_provisional
+data/clips/F1_613_266809-267100.mp4,Gemma 4 E4B,0031_vid_evt_0029,266809,267100,266850,267030,False,True,True,1,clockwise,clockwise,1,2.0,0.25,-1.75,1.75
+data/clips/F1_613_266809-267100.mp4,Qwen3.5 4B,0031_vid_evt_0029,266809,267100,266850,267030,False,True,True,1,clockwise,clockwise,1,2.0,4.75,2.75,2.75
+data/clips/F1_613_266809-267100.mp4,Bonsai 27B,0031_vid_evt_0029,266809,267100,266850,267030,False,True,True,1,clockwise,clockwise,1,2.0,1.25,-0.75,0.75
+data/clips/F1_613_275040-275190.mp4,Gemma 4 E4B,0031_vid_evt_0043,275040,275190,275040,275160,False,True,True,1,anticlockwise,clockwise,0,1.0,0.25,-0.75,0.75
+data/clips/F1_613_275040-275190.mp4,Qwen3.5 4B,0031_vid_evt_0043,275040,275190,275040,275160,False,True,True,1,anticlockwise,clockwise,0,1.0,1.5,0.5,0.5
+data/clips/F1_613_275040-275190.mp4,Bonsai 27B,0031_vid_evt_0043,275040,275190,275040,275160,False,True,True,1,anticlockwise,clockwise,0,1.0,1.25,0.25,0.25
+data/clips/MC920_334703-334830.mp4,Gemma 4 E4B,0028_vid_evt_0002,334703,334830,334650,334830,False,True,False,0,anticlockwise,none,0,2.0,0.0,-2.0,2.0
+data/clips/MC920_334703-334830.mp4,Qwen3.5 4B,0028_vid_evt_0002,334703,334830,334650,334830,False,True,True,1,anticlockwise,anticlockwise,1,2.0,1.5,-0.5,0.5
+data/clips/MC920_334703-334830.mp4,Bonsai 27B,0028_vid_evt_0002,334703,334830,334650,334830,False,True,True,1,anticlockwise,clockwise,0,2.0,1.25,-0.75,0.75
+data/clips/MC920_437259-437437.mp4,Gemma 4 E4B,0028_vid_evt_0048,437259,437437,437190,437460,False,True,True,1,anticlockwise,anticlockwise,1,2.0,0.25,-1.75,1.75
+data/clips/MC920_437259-437437.mp4,Qwen3.5 4B,0028_vid_evt_0048,437259,437437,437190,437460,False,True,True,1,anticlockwise,anticlockwise,1,2.0,1.5,-0.5,0.5
+data/clips/MC920_437259-437437.mp4,Bonsai 27B,0028_vid_evt_0048,437259,437437,437190,437460,False,True,True,1,anticlockwise,clockwise,0,2.0,1.25,-0.75,0.75
+data/clips/MC920_713035-713330.mp4,Gemma 4 E4B,0028_vid_evt_0083,713035,713330,712980,713310,False,True,True,1,anticlockwise,anticlockwise,1,3.5,0.25,-3.25,3.25
+data/clips/MC920_713035-713330.mp4,Qwen3.5 4B,0028_vid_evt_0083,713035,713330,712980,713310,False,True,True,1,anticlockwise,clockwise,0,3.5,1.5,-2.0,2.0
+data/clips/MC920_713035-713330.mp4,Bonsai 27B,0028_vid_evt_0083,713035,713330,712980,713310,False,True,True,1,anticlockwise,clockwise,0,3.5,1.25,-2.25,2.25
