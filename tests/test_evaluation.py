@@ -3,8 +3,11 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from evaluation.evaluate import read_intervals, read_predictions
-from evaluation.metrics import edit_score, evaluate_video, segment_true_positives, summarize
+import polars as pl
+
+from evaluation.evaluate import evaluate, read_intervals, read_predictions
+from evaluation.metrics import (edit_score, evaluate_labels, evaluate_video, label_spans,
+                                segment_true_positives, summarize, summarize_labels)
 
 
 class EvaluationTest(unittest.TestCase):
@@ -88,6 +91,80 @@ class EvaluationTest(unittest.TestCase):
             self.assertEqual(read_predictions(directory).rows(), [('0028_vid', 3, 7)])
         with TemporaryDirectory() as directory, self.assertRaises(FileNotFoundError):
             read_predictions(directory)
+
+    def test_label_spans_prorates_cycles_and_takes_majority_direction(self):
+        events = [(0, 9, 'CW', 2), (10, 29, 'CCW', 4), (30, 39, 'CW', 1)]
+        # Span 0-19 holds all of the CW event and half of the CCW one.
+        self.assertEqual(label_spans([(0, 19), (50, 59)], events),
+                         [(0, 19, 'CW', 4), (50, 59, None, None)])
+        self.assertEqual(label_spans([(10, 39)], events), [(10, 39, 'CCW', 5)])
+
+    def test_direction_counts(self):
+        gt = [(0, 9, 'CW', 2), (20, 29, 'CCW', 3), (40, 49, None, None), (60, 69, 'CW', 1)]
+        # Correct CW, wrong direction on the CCW segment, a prediction on the
+        # unlabelled segment (ignored), a spurious CCW and a missed CW segment.
+        pred = [(0, 9, 'CW', 3), (20, 29, 'CW', 1), (40, 49, 'CCW', 5), (80, 89, 'CCW', 2)]
+        result = evaluate_labels(gt, pred)
+        self.assertEqual((result['cw_tp'], result['cw_fp'], result['cw_fn']), (1, 1, 1))
+        self.assertEqual((result['ccw_tp'], result['ccw_fp'], result['ccw_fn']), (0, 1, 1))
+        self.assertAlmostEqual(result['cw_precision'], .5)
+        self.assertAlmostEqual(result['cw_f1'], .5)
+        self.assertEqual(result['ccw_f1'], 0)
+        self.assertAlmostEqual(result['direction_f1'], .25)
+        self.assertAlmostEqual(result['direction_accuracy'], .5)
+        # Cycle errors over the two paired segments with known counts: +1 and -2.
+        self.assertEqual(result['cycle_pairs'], 2)
+        self.assertAlmostEqual(result['cycle_mae'], 1.5)
+        self.assertAlmostEqual(result['cycle_rmse'], (5 / 2) ** .5)
+        self.assertAlmostEqual(result['cycle_bias'], -.5)
+        self.assertEqual((result['gt_cycles'], result['pred_cycles']), (6, 11))
+
+    def test_unpredicted_labels_are_missing(self):
+        result = evaluate_labels([(0, 9, 'CW', 2)], [(0, 9, None, None)])
+        self.assertIsNone(result['cw_tp'])
+        self.assertIsNone(result['pred_cycles'])
+        self.assertTrue(math.isnan(result['direction_f1']))
+        self.assertTrue(math.isnan(result['cycle_mae']))
+        overall = summarize_labels([result, result])
+        self.assertTrue(math.isnan(overall['direction_f1']))
+        self.assertTrue(math.isnan(overall['cycle_mae']))
+
+    def test_summary_pools_labels(self):
+        rows = [evaluate_labels([(0, 9, 'CW', 2)], [(0, 9, 'CW', 3)]),
+                evaluate_labels([(0, 9, 'CCW', 2), (20, 29, 'CW', 2)],
+                                [(0, 9, 'CW', 2), (20, 29, 'CW', 6)])]
+        overall = summarize_labels(rows)
+        self.assertEqual((overall['cw_tp'], overall['cw_fp'], overall['cw_fn']), (2, 1, 0))
+        self.assertAlmostEqual(overall['direction_accuracy'], 2 / 3)
+        # Errors +1, 0 and +4.
+        self.assertAlmostEqual(overall['cycle_mae'], 5 / 3)
+        self.assertAlmostEqual(overall['cycle_rmse'], (17 / 3) ** .5)
+        self.assertAlmostEqual(overall['cycle_bias'], 5 / 3)
+
+    def test_evaluate_labels_ground_truth_spans_from_events(self):
+        gt = pl.DataFrame({'video_id': ['v', 'v'], 'start': [0, 20], 'end': [9, 29]})
+        # One annotated event spans both ground-truth spans; they must stay separate.
+        gt_labels = pl.DataFrame({'video_id': ['v'], 'start': [0], 'end': [29],
+                                  'direction': ['CCW'], 'cycles': [3.]})
+        predicted = pl.DataFrame({'video_id': ['v'], 'start': [0], 'end': [9],
+                                  'direction': ['CCW'], 'cycles': [1.]})
+        results, _ = evaluate(gt, predicted, num_frames={'v': 40}, gt_labels=gt_labels)
+        overall = results.row(-1, named=True)
+        self.assertEqual((overall['ccw_tp'], overall['ccw_fn']), (1, 1))
+        self.assertAlmostEqual(overall['cycle_bias'], 0)
+
+    def test_reads_labels(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory, 'labels.csv')
+            path.write_text('VideoID,Start Frame,End Frame,Rotation direction,No. of turns/circles\n'
+                            '0028_vid,0,9,CW,2.5\n0028_vid,20,29,ccw,\n,,,,\n')
+            self.assertEqual(read_intervals(path, labels=True).rows(),
+                             [('0028_vid', 0, 9, 'CW', 2.5), ('0028_vid', 20, 29, 'CCW', None)])
+            path.write_text('VideoID,StartFrame,EndFrame\n0028_vid,0,9\n')
+            self.assertEqual(read_intervals(path, labels=True).rows(), [('0028_vid', 0, 9, None, None)])
+            path.write_text('VideoID,StartFrame,EndFrame,Direction\n0028_vid,0,9,left\n')
+            with self.assertRaises(ValueError):
+                read_intervals(path, labels=True)
 
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 
 ## Evaluation
 - [ ] Split video segments into training and test splits + holdout for all model training and evaluation
-- [ ] Add evaluation metrics for direction and circle count.
+- [x] Add evaluation metrics for direction and circle count.
 
 ## Traditional ML
 - [ ] Improve XGBoost performance
