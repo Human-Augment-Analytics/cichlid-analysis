@@ -1,42 +1,4 @@
-#!/usr/bin/env python3
-"""
-DINOv2 embeddings for the MS-TCN circling model (models/mstcn_dlc2action).
 
-  extract-full  EVERY H5 row (or every --row-step-th) of each video: crop the
-            video around the male (ind0), centred on his centroid, rotated so
-            his head points up, side = --crop-bl x his median body length,
-            fish mask by default; embed with a frozen DINOv2 (CLS token).
-            Streams the video once (decode in a background thread), writes
-            <out>/<video>_embfull.npy (float16, NaN where the male pose is
-            unusable) and resumes after an interruption.
-
-  features  Builds the DLC2Action feature file <data>/<video>_pairemb.pickle:
-            the 17 pair features + --pca embedding PCs (per-video centred
-            unless --no-center, PCA fit label-free on a sample of rows of
-            all videos, whitened, clipped at +-6) + emb_present.
-
-  probe     Per-frame linear probe on the same data and split as the MS-TCN:
-            the repository's logistic regression pipeline
-            (models/logistic_regression/train.new_model) trained on every
-            row of the TRAIN segments of repo_split, scored with the
-            repository's metrics() on every frame of the TEST segments, i.e.
-            the same test frames and labels as outputs/mstcn_dinov2/metrics.json.
-            Column sets: pair (first --pair-cols), emb (the rest), all.
-            Answers: do the embeddings add anything over the pair features,
-            and how much does the MS-TCN's temporal context add?
-
-`python -m models.mstcn_dlc2action.train` runs extract-full and features
-itself when the feature files are missing. Standalone, from the repository root:
-
-  python models/mstcn_dlc2action/scripts/embed_probe.py extract-full \\
-      --video 0028_vid=data/0028_vid.mp4 --video 0031_vid=data/0031_vid.mp4
-  python models/mstcn_dlc2action/scripts/embed_probe.py features
-  python models/mstcn_dlc2action/scripts/embed_probe.py probe        # after train
-
-Folders default to outputs/mstcn_dlc2action/ (data/, emb_fish_full/).
-Needs torch + the DINOv2 weights (torch.hub downloads them once, ~90 MB for
-ViT-S/14), opencv-python, scikit-learn, pandas, tables; probe also polars.
-"""
 
 import argparse
 import json
@@ -58,16 +20,10 @@ REPO = Path(__file__).resolve().parents[3]
 WORKDIR = REPO / "outputs" / "mstcn_dlc2action"
 OUTPUT_DIR = REPO / "outputs" / "mstcn_dinov2"
 
-
-# --------------------------------------------------------------------------- shared
-
 def load_meta(data_dir):
     return json.loads(Path(data_dir, "_conversion_meta.json").read_text(encoding="utf-8"))
 
-
-
 def row_labels(data_dir, video, n):
-    """Per H5 row: 1 circling, 0 other, -1 unknown (from data/<video>.csv)."""
     lab = np.zeros(n, np.int8)
     p = Path(data_dir, f"{video}.csv")
     if not p.exists():
@@ -81,11 +37,7 @@ def row_labels(data_dir, video, n):
             lab[int(s):int(e)] = -1
     return lab
 
-
-# --------------------------------------------------------------------------- extract
-
 def load_male_pose(h5, lik=0.5, ind="ind0", df=None):
-    """(xy[rows, bodyparts, 2] with NaN for missing, bodypart names) for one slot."""
     if df is None:
         df = pd.read_hdf(h5)
     if df.columns.nlevels == 4:
@@ -99,15 +51,13 @@ def load_male_pose(h5, lik=0.5, ind="ind0", df=None):
         xy[ok, b, 0], xy[ok, b, 1] = x[ok], y[ok]
     return xy, bps
 
-
 def male_geometry(xy, bps):
-    """Centroid, unit heading (tail -> head) and validity per row."""
     idx = {b: i for i, b in enumerate(bps)}
     valid = np.isfinite(xy[..., 0])
     cnt = valid.sum(1, keepdims=True)
     cen = np.where(cnt > 0, np.nansum(xy, axis=1) / np.maximum(cnt, 1), np.nan)
     head = np.full((len(xy), 2), np.nan, np.float32)
-    # most reliable axis first: head/peduncle, then nose/tailtip, then spine
+
     for front, back in (("Head", "Peduncle"), ("Nose", "TailTip"),
                         ("Spine1", "Spine4"), ("Nose", "Peduncle"),
                         ("Head", "TailTip")):
@@ -121,7 +71,6 @@ def male_geometry(xy, bps):
     ok = np.isfinite(cen).all(1) & np.isfinite(head).all(1) & (norm[:, 0] > 1)
     return cen, head, ok
 
-
 def body_length(xy, bps):
     idx = {b: i for i, b in enumerate(bps)}
     for a, b in (("Nose", "TailTip"), ("Head", "Peduncle")):
@@ -132,13 +81,11 @@ def body_length(xy, bps):
                 return float(np.median(d)), f"{a}-{b}"
     sys.exit("cannot estimate the male's body length from the H5")
 
-
 def crop(frame, c, h, side, size):
-    """Square crop centred at c, rotated so heading h points up."""
     k = side / size
     up = h
     down = -up
-    right = np.array([-up[1], up[0]], np.float32)   # image coords, y down
+    right = np.array([-up[1], up[0]], np.float32)
     m = np.array([
         [k * right[0], k * down[0], c[0] - size / 2 * k * (right[0] + down[0])],
         [k * right[1], k * down[1], c[1] - size / 2 * k * (right[1] + down[1])],
@@ -148,26 +95,24 @@ def crop(frame, c, h, side, size):
                          borderMode=cv2.BORDER_CONSTANT, borderValue=MASK_FILL)
     return out, m
 
-
-MASK_FILL = (128, 128, 128)          # neutral grey for everything masked
+MASK_FILL = (128, 128, 128)
 BODY_CHAIN = ["Nose", "Head", "Spine1", "Spine2", "Spine3", "Spine4",
               "Peduncle", "TailTip"]
-
 
 def apply_mask(img, mode, m, fish_xy, bps, bl, side, a):
     if mode == "none":
         return img
     size = img.shape[0]
-    px = size / side                             
+    px = size / side
     mask = np.zeros(img.shape[:2], np.uint8)
     if mode == "circle":
         cv2.circle(mask, (size // 2, size // 2), int(a.mask_radius_bl * bl * px), 255, -1)
     else:
-        inv = cv2.invertAffineTransform(m)        # video pixels -> crop pixels
+        inv = cv2.invertAffineTransform(m)
         idx = {b: i for i, b in enumerate(bps)}
         chain = [idx[b] for b in BODY_CHAIN if b in idx] or list(range(len(bps)))
         width = max(2, int(a.fish_width_bl * bl * px))
-        for pts in fish_xy:                      
+        for pts in fish_xy:
             p = pts[chain]
             p = p[np.isfinite(p).all(1)]
             if len(p) == 0:
@@ -181,7 +126,6 @@ def apply_mask(img, mode, m, fish_xy, bps, bl, side, a):
     out = img.copy()
     out[mask == 0] = MASK_FILL
     return out
-
 
 class FrameReader:
     def __init__(self, path, max_skip=600):
@@ -204,7 +148,6 @@ class FrameReader:
         ok, img = self.cap.read()
         self.pos += 1
         return img if ok else None
-
 
 def load_encoder(name, device):
     import torch
@@ -229,11 +172,7 @@ def load_encoder(name, device):
     print(f"encoder {name} on {device}{' (fp16)' if half else ''}")
     return encode
 
-
-
-
 def cmd_extract_full(a):
-    """Embed every --row-step-th H5 row of each video (resumable)."""
     meta = load_meta(a.data_dir)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -317,7 +256,7 @@ def cmd_extract_full(a):
                         batch, brows = [], []
                 if batch:
                     q.put((brows, batch))
-            except Exception as ex:     
+            except Exception as ex:
                 err.append(ex)
             finally:
                 q.put(None)
@@ -381,7 +320,7 @@ def cmd_features(a):
         ok = np.zeros(len(e), bool)
         for i in range(0, len(e), CH):
             ok[i:i + CH] = np.isfinite(np.asarray(e[i:i + CH, 0], np.float32))
-        src = np.arange(len(e)) - np.arange(len(e)) % step   
+        src = np.arange(len(e)) - np.arange(len(e)) % step
         return ok, src
 
     means, sample = {}, []
@@ -462,9 +401,6 @@ def cmd_features(a):
     print(f"\nNext: python -m models.mstcn_dlc2action.train (uses <video>_{a.name}.pickle). "
           "Do NOT re-run features after training: it refits the PCA.")
 
-
-
-
 def cmd_probe(a):
     sys.path.insert(0, str(REPO))
     import polars as pl
@@ -478,7 +414,7 @@ def cmd_probe(a):
         if not p.exists():
             sys.exit(f"missing {p}: run python -m models.mstcn_dlc2action.train first")
     segments = pl.read_parquet(seg_path)
-    spans = mstcn.read_annotations(spans_csv)        
+    spans = mstcn.read_annotations(spans_csv)
     X, Y = {}, {}
     for v in VIDEO_FRAMES:
         p = Path(a.data_dir, f"{v}_{a.feature_file}.pickle")
@@ -521,8 +457,6 @@ def cmd_probe(a):
     out = Path(a.output_dir, f"probe_{a.feature_file}.csv")
     res.to_csv(out, index=False)
     print(f"\nSaved {out}")
-
-
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
@@ -576,7 +510,6 @@ def main(argv=None):
         a.data_dir = str(Path(a.workdir, "data"))
     {"extract-full": cmd_extract_full, "features": cmd_features,
      "probe": cmd_probe, "probe-file": cmd_probe}[a.cmd](a)
-
 
 if __name__ == "__main__":
     main()

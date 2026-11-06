@@ -1,13 +1,4 @@
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#     "marimo",
-#     "matplotlib",
-#     "numpy",
-#     "pandas",
-#     "pyarrow",
-# ]
-# ///
+
 
 import marimo
 
@@ -24,10 +15,9 @@ with app.setup:
 
     import circling_cleaning as cc
 
-    DATA_DIR = cc.default_data_dir(cc.ROOT)           # $CIRCLING_DATA_DIR, <repo>/data or ~/Downloads
+    DATA_DIR = cc.default_data_dir(cc.ROOT)
     FIG_DIR = Path(__file__).resolve().parent / "figures"
     FPS = 30
-
 
 @app.cell(hide_code=True)
 def _():
@@ -49,14 +39,12 @@ def _():
     """)
     return
 
-
 @app.cell
 def _():
-    # Flag every pair row in both videos (reads the full tracking tables: about a minute).
+
     flagged = {_v: cc.load_flagged(DATA_DIR, _v, ["FrameNum", "TrackID_1", "TrackID_2", "centroid_distance_px"])
                for _v in cc.VIDEOS}
     return (flagged,)
-
 
 @app.cell
 def _(flagged):
@@ -65,7 +53,6 @@ def _(flagged):
 
     rates = {_v: {"fish": flagged[_v][0], "pairs": flagged[_v][1]} for _v in cc.VIDEOS}
     return pct, rates
-
 
 @app.cell(hide_code=True)
 def _(pct, rates):
@@ -106,7 +93,6 @@ def _(pct, rates):
     ])
     return
 
-
 @app.cell(hide_code=True)
 def _(rates):
     _rows = []
@@ -127,7 +113,6 @@ def _(rates):
         pd.DataFrame(_rows),
     ])
     return
-
 
 @app.cell(hide_code=True)
 def _(rates):
@@ -164,7 +149,6 @@ def _(rates):
         pd.DataFrame(_rows),
     ])
     return
-
 
 @app.cell(hide_code=True)
 def _():
@@ -218,7 +202,6 @@ def _():
     ])
     return
 
-
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
@@ -231,7 +214,6 @@ def _():
     The rule-based circling detector (`models/rule_based/detector.py`) uses this same module.
     """)
     return
-
 
 if __name__ == "__main__":
     app.run()

@@ -22,7 +22,6 @@ sys.path.insert(0, str(HERE.parent))
 import dlc2action_circling as cli
 from dlc_yolo_converter import dlc2action_bridge as br
 
-
 class Report:
     def __init__(self):
         self.errors = 0
@@ -45,17 +44,10 @@ class Report:
         self.errors += 1
         print(f"  [FAIL] {msg}")
 
-
-# ---------------------------------------------------------------------------
-# 0. finalized annotations (train.py)
-# ---------------------------------------------------------------------------
-
 def repo_train_module():
-    """models/mstcn_dlc2action/train.py (constants, FINALIZED_ANNOTATIONS)."""
     if str(REPO) not in sys.path:
         sys.path.insert(0, str(REPO))
     return importlib.import_module("models.mstcn_dlc2action.train")
-
 
 def check_finalized_annotations(r, paths):
     r.section("0. finalized annotations")
@@ -64,7 +56,7 @@ def check_finalized_annotations(r, paths):
     except Exception as e:
         r.fail(f"cannot import models/mstcn_dlc2action/train.py: {e!r}")
         return
-   
+
     source = os.getenv("MSTCN_FINALIZED_ANNOTATIONS") or t.FINALIZED_ANNOTATIONS
     try:
         spans = t.read_annotations(source)
@@ -77,7 +69,6 @@ def check_finalized_annotations(r, paths):
          "all checks below use this file")
     return spans
 
-
 def convert_annotations(r, spans, meta, out_dir):
     out_dir = Path(out_dir)
     src = out_dir / "finalized_annotations.csv"
@@ -89,7 +80,6 @@ def convert_annotations(r, spans, meta, out_dir):
         r.fail(f"FINALIZED_ANNOTATIONS cannot be converted to H5 rows: {e}")
         return None
     return out_dir
-
 
 def check_environment(r, args):
     r.section("1. environment")
@@ -111,7 +101,7 @@ def check_environment(r, args):
             r.fail(f"cannot import {mod}: {e} {why}")
     try:
         br.ensure_dlc2action_importable()
-        from dlc2action.project import Project  # noqa: F401
+        from dlc2action.project import Project
         ver = br.dlc2action_version()
         if ver in br.SUPPORTED_DLC2ACTION:
             r.ok(f"dlc2action {ver}")
@@ -141,7 +131,6 @@ def check_environment(r, args):
     except Exception:
         pass
 
-
 def check_paths(r, paths):
     r.section("2. paths")
     r.info(f"project root : {paths.root}")
@@ -168,7 +157,6 @@ def check_paths(r, paths):
         f"{free_gb:.0f} GB free (DLC2Action caches features per segment; "
         "allow tens of GB for hour-long videos)")
     return True
-
 
 def check_pose(r, paths, args, ann_dir=None):
     r.section("3. pose data (H5)")
@@ -207,7 +195,7 @@ def check_pose(r, paths, args, ann_dir=None):
             r.fail(f"{v}: column levels {names}, DLC2Action needs "
                    "[scorer, individuals, bodyparts, coords]")
             continue
-        df = df.droplevel("scorer", axis=1)          # as DLC2Action does
+        df = df.droplevel("scorer", axis=1)
         inds = sorted(df.columns.get_level_values("individuals").unique())
         coords = set(df.columns.get_level_values("coords"))
         if inds != ["ind0", "ind1"]:
@@ -275,8 +263,6 @@ def check_pose(r, paths, args, ann_dir=None):
                        f"{100 * f:.0f}% of rows (pair features interpolated)")
     return meta
 
-
-
 def check_annotations(r, paths, args, meta, ann_dir, for_training=False):
     r.section("4. annotations (FINALIZED_ANNOTATIONS)")
     behaviors = set(args.behaviors.split(","))
@@ -286,7 +272,7 @@ def check_annotations(r, paths, args, meta, ann_dir, for_training=False):
         d = pd.read_csv(Path(ann_dir) / f"{v}.csv")
         d.columns = [c.strip().lower() for c in d.columns]
         if d.empty:
-            r.fail(f"{v}: no circling intervals in FINALIZED_ANNOTATIONS")
+            r.warn(f"{v}: no circling intervals in FINALIZED_ANNOTATIONS (all its segments are negative)")
             continue
         dpos = d[d["behavior"].isin(behaviors)]
         short = dpos[(dpos["end"] - dpos["start"]) < args.min_frames_action]
@@ -305,7 +291,6 @@ def check_annotations(r, paths, args, meta, ann_dir, for_training=False):
                "each video's first detected frame (frame_min); FrameNum in the parquet "
                "must be the real video frame number")
 
-    # DLC2Action reads data/<video>.csv, which train writes from the same file
     missing = [v for v in videos if not (paths.data / f"{v}.csv").exists()]
     stale = [v for v in videos if v not in missing and not
              pd.read_csv(paths.data / f"{v}.csv").equals(pd.read_csv(Path(ann_dir) / f"{v}.csv"))]
@@ -317,7 +302,6 @@ def check_annotations(r, paths, args, meta, ann_dir, for_training=False):
     else:
         r.info(f"data/<video>.csv {'not written yet' if missing else 'out of date'} for "
                f"{missing + stale}; {TRAIN} writes them from FINALIZED_ANNOTATIONS")
-
 
 def check_label_alignment(r, paths, args, meta, ann_dir):
     r.section("5. label alignment (DLC2Action's own annotation store)")
@@ -367,7 +351,7 @@ def check_label_alignment(r, paths, args, meta, ann_dir):
         r.warn(f"class dictionary {bdict}")
     else:
         r.ok(f"classes {bdict}")
-    # rebuild full-length labels from segments and compare to the csvs
+
     data = store.data.numpy() if hasattr(store.data, "numpy") else store.data
     full = {v: np.full(meta[v]["n_frames"], -999) for v in videos}
     for (vid_clip, i), lab in zip(coords, data):
@@ -395,7 +379,6 @@ def check_label_alignment(r, paths, args, meta, ann_dir):
             r.ok(f"{v}: DLC2Action labels == csv for all "
                  f"{meta[v]['n_frames']} rows "
                  f"({int((exp > 0).sum())} circling, rest other)")
-
 
 def check_split(r, paths, args, meta, ann_dir, for_training=False):
     r.section("6. train / val / test split")
@@ -507,14 +490,12 @@ def check_split(r, paths, args, meta, ann_dir, for_training=False):
     else:
         r.ok("no row is shared between train and val/test")
 
-
 def _walk(d, prefix=""):
     if isinstance(d, dict):
         for k, v in d.items():
             yield from _walk(v, f"{prefix}{k}.")
     else:
         yield prefix.rstrip("."), d
-
 
 def check_project(r, paths, args, for_training):
     r.section("7. DLC2Action project")
@@ -545,6 +526,10 @@ def check_project(r, paths, args, for_training):
     proj = paths.projects / args.project_name
     if not proj.exists():
         r.ok(f"project '{args.project_name}' will be created in {paths.projects}")
+        return
+    if not cli.project_is_complete(paths, args.project_name):
+        r.warn(f"project folder {proj} has no meta/episodes.pickle (copied without its "
+               "saved state?): train moves it aside and creates a new project")
         return
     from ruamel.yaml import YAML
     cfg = proj / "config"
@@ -580,7 +565,7 @@ def check_project(r, paths, args, for_training):
         project = cli._project(paths, args.project_name)
         names = list(project._episodes().data.index)
         try:
-            ep = cli.default_episode(args)   # same name `train` will use
+            ep = cli.default_episode(args)
         except SystemExit as e:
             r.fail(str(e))
             return
@@ -592,7 +577,6 @@ def check_project(r, paths, args, for_training):
                  f"episode '{ep}' will be overwritten")
     except Exception as e:
         r.warn(f"could not open the project to check episodes: {e}")
-
 
 def smoke_test(r, paths, args, meta, ann_dir, keep=False):
     r.section("8. smoke test (crop -> train 2 epochs -> predict -> score)")
@@ -784,8 +768,6 @@ def smoke_test(r, paths, args, meta, ann_dir, keep=False):
         r.info(f"smoke test took {time.time() - t0:.0f}s"
                + (f"; kept in {smoke}" if keep else ""))
 
-
-
 def run_preflight(args, paths, smoke=False, for_training=False, keep=False):
     import tempfile
     r = Report()
@@ -823,7 +805,6 @@ def run_preflight(args, paths, smoke=False, for_training=False, keep=False):
           f"{r.errors} error(s), {r.warnings} warning(s)")
     return r.errors
 
-
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -837,14 +818,13 @@ def main(argv=None):
         ap.set_defaults(workdir=str(t.WORKDIR), split=t.SPLIT, overlap=t.OVERLAP,
                         len_segment=t.LEN_SEGMENT, canvas=t.CANVAS, project_name=t.PROJECT,
                         episode=t.NAME, feature_file="pairemb", overwrite=True)
-    except Exception as e:      # reported again in section 0
+    except Exception as e:
         print(f"  (could not read train.py defaults: {e!r})")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.WARNING, format="  %(message)s")
     paths = cli.Paths(args.workdir)
     return min(run_preflight(args, paths, smoke=args.smoke,
                              keep=args.keep_smoke), 255)
-
 
 if __name__ == "__main__":
     sys.exit(main())

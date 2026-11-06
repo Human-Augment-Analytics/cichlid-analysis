@@ -1,10 +1,3 @@
-"""Train the frame-level circling logistic regression.
-
-Uses pose and pair-Parquet features, balanced sampling and a stratified
-train/test split. Run from the repository root:
-
-    uv run python -m models.logistic_regression.train
-"""
 
 import argparse
 import json
@@ -30,9 +23,9 @@ from .features import (FEATURE_SOURCE, PAIR_ANGLES, PAIR_DISTANCES, PAIR_RATES, 
 
 ROOT = Path(__file__).resolve().parents[2]
 THRESHOLD = 0.5
-# Frame counts of the source videos, so the 31 GB files are not needed.
+
 VIDEO_FRAMES = {'0028_vid': 1_080_175, '0031_vid': 1_080_398}
-# The 15 inclusive spans the committed model was trained on.
+
 CIRCLING_SPANS_BY_VIDEO = {
     '0028_vid': [
         (334703, 334830), (334985, 335118), (335409, 335502),
@@ -46,9 +39,7 @@ CIRCLING_SPANS_BY_VIDEO = {
     ],
 }
 
-
 def frame_labels(frames, spans):
-    """Inclusive annotated spans are positive; other frames are assumed negative."""
     labels = np.zeros(len(frames), dtype=np.int8)
     for start, end in spans:
         if start < 0 or end < start:
@@ -56,13 +47,11 @@ def frame_labels(frames, spans):
         labels[(frames >= start) & (frames <= end)] = 1
     return labels
 
-
 def new_model():
-    # Fit every preprocessing step on training frames only.
+
     return make_pipeline(SimpleImputer(strategy='median', add_indicator=True, keep_empty_features=True),
                          StandardScaler(),
                          LogisticRegression(C=1.0, max_iter=1000, solver='lbfgs'))
-
 
 def fit_model(x, y):
     if len(np.unique(y)) != 2:
@@ -72,7 +61,6 @@ def fit_model(x, y):
         warnings.simplefilter('error', ConvergenceWarning)
         model.fit(x, y)
     return model
-
 
 def metrics(y, score):
     predicted = score >= THRESHOLD
@@ -84,7 +72,6 @@ def metrics(y, score):
                 recall=float(recall_score(y, predicted, zero_division=0)),
                 f1=float(f1_score(y, predicted, zero_division=0)),
                 tn=int(tn), fp=int(fp), fn=int(fn), tp=int(tp))
-
 
 def train(data_dir, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -100,7 +87,7 @@ def train(data_dir, output_dir):
         positive = np.flatnonzero(labels)
         negative = rng.choice(np.flatnonzero(labels == 0), size=len(positive), replace=False)
         selected = np.sort(np.concatenate([positive, negative]))
-        # Aggregate all pairs within each frame before selecting training examples.
+
         table = frame_features(
             pl.read_parquet(data_dir / f'{video}.parquet'),
             pl.read_parquet(data_dir / f'{video}_pairs.parquet'), 0, count - 1)
@@ -170,7 +157,6 @@ def train(data_dir, output_dir):
               'Implementation reference: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html', '']
     (output_dir / 'report.md').write_text('\n'.join(lines))
     print(json.dumps(result, indent=2), flush=True)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

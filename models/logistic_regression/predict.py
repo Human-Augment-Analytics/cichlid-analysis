@@ -1,10 +1,3 @@
-"""Score every frame with the trained model and write predicted circling spans.
-
-Writes one CSV per video to outputs/predictions/logistic_regression/. Run from
-the repository root:
-
-    uv run python -m models.logistic_regression.predict
-"""
 
 import argparse
 import hashlib
@@ -20,9 +13,7 @@ from .train import ROOT, VIDEO_FRAMES
 
 FPS = 30
 
-
 def score_window(bundle, data_dir, video_id, start, end):
-    """Circling score for every frame in an inclusive range."""
     data_dir = Path(data_dir)
     poses = (pl.scan_parquet(data_dir / f"{video_id}.parquet")
              .filter(pl.col("FrameNum").is_between(max(0, start - WINDOW), end)).collect())
@@ -32,9 +23,7 @@ def score_window(bundle, data_dir, video_id, start, end):
     scores = bundle["model"].predict_proba(features.select(bundle["features"]).to_numpy())[:, 1]
     return features.select("FrameNum").with_columns(pl.Series("circling_score", scores))
 
-
 def score_video(model_path, data_dir, video_id, frame_count, output_dir):
-    """Score in bounded chunks; cache by model hash and input file sizes."""
     data_dir, output_dir = Path(data_dir), Path(output_dir)
     inputs = [data_dir / f"{video_id}.parquet", data_dir / f"{video_id}_pairs.parquet"]
     signature = {
@@ -55,9 +44,7 @@ def score_video(model_path, data_dir, video_id, frame_count, output_dir):
     meta.write_text(json.dumps(signature, indent=2) + "\n")
     return result
 
-
 def predict(model_path, data_dir, scores_dir, output_dir, threshold=.5, seconds=7.5, fraction=.9):
-    """Write `<video_id>.csv` with one row per sustained predicted span."""
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     paths = []
@@ -72,7 +59,6 @@ def predict(model_path, data_dir, scores_dir, output_dir, threshold=.5, seconds=
         print(f"{video_id}: {spans.height} spans -> {path}", flush=True)
         paths.append(path)
     return paths
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
