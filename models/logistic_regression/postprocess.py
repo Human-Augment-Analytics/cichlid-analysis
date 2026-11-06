@@ -1,19 +1,10 @@
-"""Turn per-frame circling scores into sustained predicted spans."""
 
 import math
 
 import numpy as np
 import polars as pl
 
-
 def find_positive_spans(predictions, fps=30., threshold=.5, fraction=.9, seconds=5.):
-    """Greedily merge qualifying windows, retaining >=fraction over each union.
-
-    Start from the shortest window strictly longer than `seconds`. Merge
-    overlapping or touching windows only when the combined interval qualifies.
-    Skip overlapping windows that would invalidate the previous interval.
-    Results are disjoint and every returned interval satisfies both conditions.
-    """
     if not np.isfinite(fps) or fps <= 0 or seconds < 0 or not 0 < fraction <= 1 or not 0 <= threshold <= 1:
         raise ValueError("Invalid span detection settings")
     frames = predictions["FrameNum"].to_numpy()
@@ -21,8 +12,7 @@ def find_positive_spans(predictions, fps=30., threshold=.5, fraction=.9, seconds
     if not np.isfinite(scores).all() or (len(frames) > 1 and not np.all(np.diff(frames) == 1)):
         raise ValueError("Need finite scores for consecutive frames")
     length = math.floor(seconds * fps) + 1
-    # Source FPS is approximately 29.999994; use the nominal 30 FPS so that
-    # 300 frames (10 seconds) do not pass the strict limit.
+
     prefix = np.r_[0, np.cumsum(scores >= threshold)]
     candidates = np.flatnonzero(prefix[length:] - prefix[:-length] >= math.ceil(fraction * length))
     intervals = []

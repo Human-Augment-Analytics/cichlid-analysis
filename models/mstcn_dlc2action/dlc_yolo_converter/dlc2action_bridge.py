@@ -17,6 +17,7 @@ try:
 except ImportError:
     try:
         from convert import BODYPARTS as _CONVERT_BODYPARTS
+    except ImportError:
         _CONVERT_BODYPARTS = None
 
 logger = logging.getLogger("dlc_yolo_converter.dlc2action")
@@ -27,7 +28,7 @@ DEFAULT_BODYPARTS = list(_CONVERT_BODYPARTS or FALLBACK_BODYPARTS)
 
 N_INDIVIDUALS = 2
 PAIR_CLIP = "ind0+ind1"
-ERROR_CLASS = "unknown"  
+ERROR_CLASS = "unknown"
 SUPPORTED_DLC2ACTION = ("1.0",)
 
 ANN_COL_BEHAVIOR = "behavior"
@@ -48,15 +49,13 @@ _GT_ALIASES = {
 }
 _TRUE_STRINGS = {"true", "1", "yes", "y", "t"}
 
-
 def _truthy(series: pd.Series) -> pd.Series:
     return series.fillna("").astype(str).str.strip().str.lower().isin(_TRUE_STRINGS)
 
 META_FILENAME = "_conversion_meta.json"
-SLOTS_SUFFIX = "_slots.npz"           
-PAIR_FEATURE_SUFFIX = "_pairfeat.pickle"  
-FEATURE_FILES = ("pairemb",)
-
+SLOTS_SUFFIX = "_slots.npz"
+PAIR_FEATURE_SUFFIX = "_pairfeat.pickle"
+FEATURE_FILES = ("pairemb", "pairvmae")
 
 def feature_file_suffix(name: Optional[str]) -> Optional[str]:
     if not name:
@@ -64,8 +63,6 @@ def feature_file_suffix(name: Optional[str]) -> Optional[str]:
     if name not in FEATURE_FILES:
         raise ValueError(f"unknown feature file {name!r}; known: {FEATURE_FILES}")
     return f"_{name}.pickle"
-
-
 
 def ensure_dlc2action_importable():
     try:
@@ -75,9 +72,8 @@ def ensure_dlc2action_importable():
             _cm.get_cmap = matplotlib.colormaps.get_cmap
     except ImportError:
         pass
-    import dlc2action  # noqa: F401
+    import dlc2action
     return dlc2action
-
 
 def dlc2action_version() -> Optional[str]:
     try:
@@ -86,14 +82,7 @@ def dlc2action_version() -> Optional[str]:
     except Exception:
         return None
 
-
 def install_dlc2action_patches() -> bool:
-    """Register a csv annotation store that honours ``interactive``.
-
-    Must be called in the process that builds the dataset (train, evaluate,
-    predict) BEFORE the Project/Task creates it. Idempotent. Returns True if
-    the patch is active.
-    """
     ensure_dlc2action_importable()
     from dlc2action import options
     from dlc2action.data.annotation_store import CSVActionSegStore
@@ -107,16 +96,8 @@ def install_dlc2action_patches() -> bool:
                  "loading, SSL-free evaluation)")
     return True
 
-
 def _install_csv_store_patch(options, CSVActionSegStore) -> None:
     class InteractiveCSVActionSegStore(CSVActionSegStore):
-        """CSV store that forwards ``interactive`` (DLC2Action 1.0 drops it).
-
-        ``interactive`` must be a named argument so the task dispatcher
-        fills it from ``general.interactive``. ``use_hard_negatives`` is
-        deliberately NOT forwarded: with exclusive labels DLC2Action would
-        write hard negatives as positives.
-        """
         _circling_patched = True
 
         def __init__(self, video_order=None, min_frames=None, max_frames=None,
@@ -153,7 +134,6 @@ def _install_csv_store_patch(options, CSVActionSegStore) -> None:
 
     options.annotation_stores["csv"] = InteractiveCSVActionSegStore
 
-
 def _install_sequential_loading_patch() -> None:
     import dlc2action.data.input_store as _input_store
     if not getattr(_input_store.p_map, "_circling_sequential", False):
@@ -161,7 +141,6 @@ def _install_sequential_loading_patch() -> None:
             return [fn(x) for x in items]
         _sequential_map._circling_sequential = True
         _input_store.p_map = _sequential_map
-
 
 def _install_ssl_eval_patch() -> None:
     from dlc2action.model.base_model import Model
@@ -183,7 +162,6 @@ def _install_ssl_eval_patch() -> None:
     forward._circling_ssl_safe = True
     Model.forward = forward
 
-
 def detect_bodyparts(columns: Iterable[str]) -> List[str]:
     cols = set(columns)
     out = []
@@ -193,7 +171,6 @@ def detect_bodyparts(columns: Iterable[str]) -> List[str]:
             if f"{bp}_y" in cols and not bp.startswith(("midline_", "qc_")):
                 out.append(bp)
     return out
-
 
 def check_keypoint_parquet_schema(columns: Sequence[str],
                                   path: Union[str, Path] = "") -> None:
@@ -209,7 +186,6 @@ def check_keypoint_parquet_schema(columns: Sequence[str],
         raise ValueError(f"{path} is missing columns {sorted(need - cols)}")
     if not detect_bodyparts(columns):
         raise ValueError(f"{path} has no <bodypart>_x/<bodypart>_y columns")
-
 
 def export_dlc_track_h5(
     parquet_path: Union[str, Path],
@@ -327,12 +303,12 @@ def export_dlc_track_h5(
         y = pd.to_numeric(df[f"{bp}_y"], errors="coerce").to_numpy(dtype)
         miss = np.isnan(x) | np.isnan(y)
         if drop_zero_coords:
-            miss |= (x <= 0.0) & (y <= 0.0)          
+            miss |= (x <= 0.0) & (y <= 0.0)
         flat[lin, i, 0] = np.where(miss, np.nan, x)
         flat[lin, i, 1] = np.where(miss, np.nan, y)
         flat[lin, i, 2] = (~miss).astype(dtype)
 
-    present = arr[..., 2].max(axis=2) > 0          
+    present = arr[..., 2].max(axis=2) > 0
     frac_both = float(present.all(axis=1).mean())
     frac_any = float(present.any(axis=1).mean())
     x_max = float(np.nanmax(arr[..., 0])) if np.isfinite(arr[..., 0]).any() else 0.0
@@ -373,7 +349,6 @@ def export_dlc_track_h5(
             "x_max": x_max, "y_max": y_max,
             "parquet": str(parquet_path), "h5": str(out_h5)}
 
-
 def _assign_male_partner_slots(df: pd.DataFrame, id_col: str = "TrackUID",
                                male_values: Sequence[str] = ("m", "male"),
                                switch_factor: float = 1.5, video: str = ""):
@@ -389,7 +364,7 @@ def _assign_male_partner_slots(df: pd.DataFrame, id_col: str = "TrackUID",
         raise ValueError(
             f"[{video}] no detections with Sex in {sorted(male_values)} "
             f"(values found: {sorted(sex.unique())[:10]}); pass --male-values")
-    # sex per TRACK by majority vote (robust to per-frame misclassification)
+
     track_male = row_male.groupby(df[id_col].to_numpy()).mean() > 0.5
     is_male = df[id_col].map(track_male).fillna(False).to_numpy(bool)
 
@@ -442,7 +417,7 @@ def _assign_male_partner_slots(df: pd.DataFrame, id_col: str = "TrackUID",
                 else:
                     p = fk[nearest]
             elif len(cur):
-                p = cur[0]          
+                p = cur[0]
         if p is not None:
             if partner_uid is not None and uids[p] != partner_uid:
                 n_switches += 1
@@ -468,7 +443,6 @@ def _assign_male_partner_slots(df: pd.DataFrame, id_col: str = "TrackUID",
         logger.warning(f"[{video}] >1 male-classified track in "
                        f"{n_multi_male} frames — check the sex classifier")
     return slots, stats
-
 
 def _assign_tracklet_slots(df: pd.DataFrame, n_slots: int,
                            id_col: str = "TrackUID", max_gap: int = 15):
@@ -504,7 +478,6 @@ def _assign_tracklet_slots(df: pd.DataFrame, n_slots: int,
         i = j
     return slots, n_dropped, len(set(ids.tolist()))
 
-
 def _infer_fps(df: pd.DataFrame) -> Optional[float]:
     if "Time_s" not in df.columns:
         return None
@@ -519,8 +492,6 @@ def _infer_fps(df: pd.DataFrame) -> Optional[float]:
         return None
     return float(1.0 / np.median(dt[ok] / df_[ok]))
 
-
-
 PAIR_SOURCE_COLUMNS = [
     "FrameNum", "TrackUID_1", "TrackUID_2", "centroid_distance_px",
     "dist_nose1_nose2_px", "dist_nose1_tailtip2_px", "dist_nose2_tailtip1_px",
@@ -528,7 +499,6 @@ PAIR_SOURCE_COLUMNS = [
     "rel_heading_rad", "bearing_1_rad", "bearing_2_rad",
     "d_heading_1_rad_s", "d_heading_2_rad_s", "d_orbital_rad_s",
 ]
-
 
 def _pair_feature_table(chunk: pd.DataFrame, male_first: np.ndarray):
     def pick(a, b):
@@ -552,7 +522,6 @@ def _pair_feature_table(chunk: pd.DataFrame, male_first: np.ndarray):
     f["abs_turn_rate_M"], f["abs_turn_rate_F"] = np.abs(hm), np.abs(hf)
     f["abs_orbit_rate"] = np.abs(chunk["d_orbital_rad_s"].to_numpy(float))
     return f
-
 
 def export_pair_features(
     pairs_parquet: Union[str, Path],
@@ -613,7 +582,7 @@ def export_pair_features(
             names = list(table)
             feats = np.full((n, len(names)), np.nan, dtype=np.float64)
             rows_hit = np.zeros(n, dtype=bool)
-        # first matching row per H5 row wins
+
         first = ~rows_hit[r]
         _, uniq = np.unique(r, return_index=True)
         sel = np.zeros(len(r), dtype=bool)
@@ -649,13 +618,7 @@ def export_pair_features(
                 "where both slots are filled)")
     return stats
 
-
-# ---------------------------------------------------------------------------
-# 2. Names + ground truth
-# ---------------------------------------------------------------------------
-
 def normalize_ground_truth_columns(gt: pd.DataFrame) -> pd.DataFrame:
-    """Rename ground-truth columns to the canonical schema."""
     lookup = {}
     for orig in gt.columns:
         low = orig.strip().lower()
@@ -664,9 +627,7 @@ def normalize_ground_truth_columns(gt: pd.DataFrame) -> pd.DataFrame:
                 lookup[orig] = canon
     return gt.rename(columns=lookup)
 
-
 def read_ground_truth(gt_csv: Union[str, Path]) -> pd.DataFrame:
-    """Read + validate the ground-truth CSV (frame- or time-based)."""
     gt = pd.read_csv(gt_csv, dtype=str)
     gt = normalize_ground_truth_columns(gt)
     if "video" not in gt.columns:
@@ -674,11 +635,7 @@ def read_ground_truth(gt_csv: Union[str, Path]) -> pd.DataFrame:
                          f"{list(gt.columns)}")
     gt = gt.dropna(how="all")
     gt["video"] = gt["video"].str.strip()
-    # Team ground truth (merged_spans.csv): ShouldUse=false rows are
-    # superseded duplicates and Circling=false rows were reviewed as not
-    # circling -> both dropped (background). Verified (dlc2action-branch
-    # format): true = circling; false/blank = not confirmed -> "unknown",
-    # which DLC2Action ignores in the loss, as the team's label policy does.
+
     n0 = len(gt)
     if "should_use" in gt.columns:
         gt = gt[_truthy(gt["should_use"])]
@@ -708,17 +665,9 @@ def read_ground_truth(gt_csv: Union[str, Path]) -> pd.DataFrame:
     gt.attrs["frame_based"] = frame_based
     return gt
 
-
 def resolve_video_names(stems: Sequence[str], gt_videos: Sequence[str],
                         name_map: Optional[Dict[str, str]] = None
                         ) -> Dict[str, str]:
-    """Map parquet stems to ground-truth video ids.
-
-    Order: explicit name_map -> exact match -> unique GT id that shares the
-    leading numeric code (e.g. '0028_keypoints' -> '0028_vid') or is a
-    substring of the stem. Raises if any stem stays ambiguous/unmatched while
-    ground truth is available.
-    """
     name_map = name_map or {}
     gt_videos = list(dict.fromkeys(gt_videos))
     out = {}
@@ -750,7 +699,6 @@ def resolve_video_names(stems: Sequence[str], gt_videos: Sequence[str],
         raise ValueError(f"two parquets map to the same video: {out}")
     return out
 
-
 def ground_truth_to_annotations(
     gt_csv: Union[str, Path],
     out_dir: Union[str, Path],
@@ -759,20 +707,6 @@ def ground_truth_to_annotations(
     default_label: str = "circling",
     merge_existing: bool = False,
 ) -> List[Path]:
-    """Convert the ground-truth CSV into DLC2Action csv annotation files.
-
-    Frame-based GT is on the ORIGINAL video axis; it is shifted by the
-    per-video ``frame_min`` and divided by ``stride`` (from ``meta``) so it
-    indexes H5 rows. Time-based GT uses the effective fps.
-
-    Labels: missing -> ``default_label``; ``negative ...`` kept (explicit
-    background); anything starting with ``unknown`` -> ``unknown`` (the
-    configured error_class, ignored in the loss).
-
-    Writes ``{video}.csv`` (behavior,start,end; end exclusive) for every
-    video in ``meta`` (an empty file for a video without GT intervals is
-    valid: the whole video is background). Videos in GT without an H5 raise.
-    """
     gt = read_ground_truth(gt_csv)
     frame_based = gt.attrs["frame_based"]
     out_dir = Path(out_dir)
@@ -796,7 +730,7 @@ def ground_truth_to_annotations(
         for _, r in grp.iterrows():
             if frame_based:
                 s = int((float(r["start_frame"]) - fmin) // stride)
-                # StopFrame is inclusive on the video axis -> exclusive end
+
                 e = int(np.ceil((float(r["end_frame"]) - fmin + 1) / stride))
             else:
                 fps = m.get("fps") or default_fps
@@ -845,9 +779,7 @@ def ground_truth_to_annotations(
                     f"-> {path}")
     return written
 
-
 def _clean_intervals(df: pd.DataFrame, video: str = "") -> pd.DataFrame:
-    """Sort, merge overlapping same-label intervals, warn on cross-label."""
     if df.empty:
         return df
     df = df.sort_values([ANN_COL_START, ANN_COL_END]).reset_index(drop=True)
@@ -866,7 +798,6 @@ def _clean_intervals(df: pd.DataFrame, video: str = "") -> pd.DataFrame:
                        ANN_COL_END: e})
     return pd.DataFrame(merged)
 
-
 def load_meta(data_dir: Union[str, Path]) -> Dict[str, Dict]:
     p = Path(data_dir) / META_FILENAME
     if not p.exists():
@@ -874,12 +805,10 @@ def load_meta(data_dir: Union[str, Path]) -> Dict[str, Dict]:
                                 "(it converts the data first)")
     return json.loads(p.read_text(encoding="utf-8"))
 
-
 def read_positive_intervals(ann_dir: Union[str, Path],
                             videos: Sequence[str],
                             behavior: str = "circling"
                             ) -> Dict[str, List[Tuple[int, int]]]:
-    """Positive [start, end) intervals per video from the csv annotations."""
     out = {}
     for v in videos:
         p = Path(ann_dir) / f"{v}.csv"
@@ -892,7 +821,6 @@ def read_positive_intervals(ann_dir: Union[str, Path],
         out[v] = sorted((int(s), int(e)) for s, e in
                         zip(d[ANN_COL_START], d[ANN_COL_END]))
     return out
-
 
 def read_ignored_intervals(ann_dir, videos):
     out = {}
@@ -907,11 +835,6 @@ def read_ignored_intervals(ann_dir, videos):
         out[v] = [(int(s), int(e)) for s, e in
                   zip(d[ANN_COL_START], d[ANN_COL_END])]
     return out
-
-
-# ---------------------------------------------------------------------------
-# 3. Project config
-# ---------------------------------------------------------------------------
 
 def default_project_parameters(
     data_dir: Union[str, Path],
@@ -935,19 +858,6 @@ def default_project_parameters(
     experiment: Optional[Dict] = None,
     feature_file: Optional[str] = None,
 ) -> Dict:
-    """Parameter update dict for ``Project.update_parameters()``.
-
-    pair_features=True loads ``{video}_pairfeat.pickle`` (convert-pairs)
-    through DLC2Action's ``data.feature_suffix`` and appends it to the
-    kinematic features of the ind0+ind1 clip; False clears it explicitly.
-    feature_file="pairemb" loads ``{video}_pairemb.pickle`` instead (pair
-    features + image-embedding PCs in one file); exclusive with pair_features.
-
-    Fixed choices (see module docstring for why):
-    exclusive=True, interactive=True, default_agent_name="ind0+ind1",
-    use_hard_negatives=False, error_class="unknown", fps=1,
-    filter_background=False, H5 and csv in the same ``data_dir``.
-    """
     behaviors = sorted(set(behaviors or ["circling"]))
     data_dir = str(Path(data_dir).resolve())
     if pair_features and feature_file:
@@ -994,8 +904,7 @@ def default_project_parameters(
             "model_save_epochs": int(model_save_epochs),
         },
     }
-    # DLC2Action macro-averages metrics over ALL classes incl. "other" (0),
-    # which the huge background class inflates. Report behaviour classes only.
+
     params["metrics"] = {m: {"ignored_classes": {0}}
                          for m in ("f1", "precision", "recall")}
     if partition_method == "file":
@@ -1005,34 +914,15 @@ def default_project_parameters(
         params["training"]["split_path"] = str(Path(split_path).resolve())
         params["training"]["val_frac"] = 0.0
         params["training"]["test_frac"] = 0.0
-    # Experiment settings (augmentations, SSL, model, feature keys). Always
-    # applied, baseline values included: DLC2Action persists every update in
-    # the project config, so a preset left out would otherwise carry over
-    # from the previous run.
+
     _deep_merge(params, copy.deepcopy(
         experiment if experiment is not None else experiment_parameters()))
     return params
-
-
-# ---------------------------------------------------------------------------
-# 3b. Experiment presets (checked against the DLC2Action 1.0 source)
-# ---------------------------------------------------------------------------
-# * MS-TCN3 only has a feature extractor (needed for ANY SSL task) with
-#   model.PG_in_FE = true or num_layers_S > 0; the defaults give an identity
-#   extractor ("MS-TCN without a feature extractor -> no SSL possible!").
-# * augmentations.augmentations is used as given; the default list only
-#   applies when that set is empty. Augmentations transform coordinate-type
-#   kinematic keys only, so the (rotation/mirror-invariant) pair features
-#   loaded via feature_suffix are left untouched, as they should be.
-# * Never use the 'switch' augmentation: it swaps ind0/ind1, i.e. the male
-#   and partner roles the pair features are ordered by.
-# * Loss: focal + inverse class weights are DLC2Action defaults already.
 
 FEATURE_KEYS_DEFAULT = frozenset({
     "coord_diff", "center", "intra_distance", "speed_direction",
     "speed_value", "angle_speeds", "acc_joints", "inter_distance"})
 
-# What every run so far has used (project defaults). Re-applied each run.
 BASELINE_EXPERIMENT = {
     "general": {"ssl": None},
     "model": {"PG_in_FE": False, "num_layers_S": 0},
@@ -1048,36 +938,26 @@ BASELINE_EXPERIMENT = {
 }
 
 PRESETS = {
-    # top-down tank: any rotation and both mirror axes are valid
+
     "aug": {"augmentations": {
         "augmentations": {"rotate", "mirror", "shift", "add_noise"},
         "rotation_limits": [-math.pi, math.pi],
         "mirror_dim": {0, 1}}},
-    # SSL on the prediction-generator features
-    # general.ssl must be a LIST: the config comment says "set", but
-    # TaskDispatcher._construct_ssl assigns ssl_list[i] (a set -> TypeError).
-    # Per-frame heads only: see FIXED_LENGTH_SSL.
+
     "ssl": {"model": {"PG_in_FE": True},
             "general": {"ssl": ["masked_features", "masked_frames"]}},
-    # drop absolute position: tests whether the pose model leans on where in
-    # the tank things happen (pose-only failed across videos)
+
     "nocenter": {"features": {"keys": set(FEATURE_KEYS_DEFAULT - {"center"})}},
 }
 
-# SSL heads built for exactly len_segment frames (FeatureExtractorTCN /
-# MFeatureExtractorTCN / reshapes by segment length). Training feeds them
-# temporal_subsampling_size * len_segment frames (0.85 by default), which
-# crashes with "expected input[..., 768, 1] to have 928 channels" at 128.
 FIXED_LENGTH_SSL = {"contrastive", "contrastive_masked", "pairwise",
                     "pairwise_masked", "reverse", "order"}
 
-# config entries DLC2Action reads as sets (YAML lists are converted)
 SET_PARAMS = {("general", "metric_functions"),
               ("augmentations", "augmentations"),
               ("augmentations", "mirror_dim"), ("features", "keys"),
               ("data", "behaviors"), ("data", "data_suffix"),
               ("data", "annotation_suffix")}
-
 
 def _deep_merge(dst: Dict, src: Dict) -> Dict:
     for k, v in src.items():
@@ -1087,9 +967,7 @@ def _deep_merge(dst: Dict, src: Dict) -> Dict:
             dst[k] = v
     return dst
 
-
 def parse_param_override(text: str) -> Tuple[List[str], object]:
-    """'model.num_f_maps=64' -> (['model', 'num_f_maps'], 64). YAML values."""
     import yaml
     if "=" not in text:
         raise ValueError(f"--param must be section.key=value, got {text!r}")
@@ -1100,7 +978,7 @@ def parse_param_override(text: str) -> Tuple[List[str], object]:
                          f"got {key!r}")
     value = yaml.safe_load(raw)
     if isinstance(value, str):
-        # YAML 1.1 reads "5e-4" as a string (it wants "5.0e-4")
+
         try:
             value = int(value) if re.fullmatch(r"[+-]?\d+", value) else float(value)
         except ValueError:
@@ -1108,13 +986,11 @@ def parse_param_override(text: str) -> Tuple[List[str], object]:
     if (path[0], path[-1]) in SET_PARAMS and isinstance(value, list):
         value = set(value)
     if tuple(path) == ("general", "ssl") and isinstance(value, str):
-        value = [value]                      # one SSL task -> list
+        value = [value]
     return path, value
-
 
 def experiment_parameters(presets: Sequence[str] = (),
                           overrides: Sequence[str] = ()) -> Dict:
-    """Baseline experiment block + presets (in order) + --param overrides."""
     out = copy.deepcopy(BASELINE_EXPERIMENT)
     for p in presets:
         if p not in PRESETS:
@@ -1151,33 +1027,22 @@ def experiment_parameters(presets: Sequence[str] = (),
         raise ValueError("'switch' augmentation is not allowed (swaps male/partner)")
     return out
 
-
 def preset_tag(presets: Sequence[str]) -> str:
-    """Episode-name suffix for presets, in a fixed order: '_aug_ssl'."""
     return "".join(f"_{p}" for p in sorted(set(presets)))
-
-
-# ---------------------------------------------------------------------------
-# 4. Event-aware splits
-# ---------------------------------------------------------------------------
 
 def segment_spans(n_frames: int, len_segment: int, overlap: int
                   ) -> List[Tuple[int, int]]:
-    """DLC2Action's segment grid for one clip: start=i*step, end=min(+len)."""
     step = len_segment - overlap
     if step <= 0:
         raise ValueError("overlap must be smaller than len_segment")
     return [(s, min(s + len_segment, n_frames))
             for s in range(0, n_frames, step)]
 
-
 def segment_id(video: str, start: int, end: int) -> str:
     return f"{video}---{PAIR_CLIP}---{start}-{end}"
 
-
 def cluster_bouts(positives: Dict[str, List[Tuple[int, int]]],
                   cluster_gap: int) -> List[Dict]:
-    """Group bouts closer than ``cluster_gap`` rows into clusters."""
     clusters = []
     for v in sorted(positives):
         cur = None
@@ -1192,7 +1057,6 @@ def cluster_bouts(positives: Dict[str, List[Tuple[int, int]]],
         c["id"] = i
         c["pos_frames"] = int(sum(e - s for s, e in c["bouts"]))
     return clusters
-
 
 def make_event_split(
     data_dir: Union[str, Path],
@@ -1213,32 +1077,6 @@ def make_event_split(
     seed: int = 0,
     val_frac: float = 0.25,
 ) -> Dict:
-    """Write a DLC2Action ``file`` split with segment-level entries.
-
-    scheme="cluster" (few videos): bouts are grouped into clusters (gap <=
-      ``cluster_gap`` H5 rows). Fold k: test = cluster k, val = cluster
-      ``val_cluster`` (default k+1 mod K). Each held-out cluster gets a
-      window of +/- ``context`` rows of surrounding background. Segments
-      straddling a window edge, or within ``guard`` rows of it (default
-      len_segment), are dropped to prevent leakage through overlapping
-      segments. Everything else is train.
-    scheme="video" (>= 3 videos): whole videos in ``test_videos`` /
-      ``val_videos``; all others train.
-    scheme="crossvideo" (the team protocol, works with 2 videos): fold k
-      tests on the WHOLE video ``sorted(videos)[k]`` (or ``test_videos``)
-      and trains on the others. Validation (threshold tuning) is the late
-      tail of the training video with the most bouts: its last bout
-      clusters, enough for >= ``val_frac`` of the training positives, from
-      ``context`` rows before the first of them to the end of that video.
-
-    ``train_background_frac`` < 1 keeps only that fraction of TRAIN
-    segments that are further than ``near_bout`` rows from any bout
-    (seeded); bout-adjacent background is always kept. Val/test are never
-    subsampled.
-
-    A JSON sidecar (``<out>.json``) stores the parameters, the held-out
-    windows and per-subset coverage; ``score`` and the preflight read it.
-    """
     data_dir = Path(data_dir)
     meta = load_meta(data_dir)
     videos = sorted(meta)
@@ -1246,7 +1084,7 @@ def make_event_split(
     guard = len_segment if guard is None else int(guard)
     rng = random.Random(seed)
 
-    windows = {"val": [], "test": []}   # (video, start, end)
+    windows = {"val": [], "test": []}
     info = {"scheme": scheme}
     if scheme == "cluster":
         clusters = cluster_bouts(positives, cluster_gap)
@@ -1338,7 +1176,7 @@ def make_event_split(
         pos = np.zeros(n, dtype=bool)
         for s, e in positives[v]:
             pos[s:e] = True
-        near = np.zeros(n + 1, dtype=np.int64)  # prefix sums for "near bout"
+        near = np.zeros(n + 1, dtype=np.int64)
         wide = np.zeros(n, dtype=bool)
         for s, e in positives[v]:
             wide[max(0, s - near_bout):min(n, e + near_bout)] = True
@@ -1397,9 +1235,7 @@ def make_event_split(
     Path(str(out_path) + ".json").write_text(json.dumps(sidecar, indent=2), encoding="utf-8")
     return sidecar
 
-
 def read_split_file(path: Union[str, Path]) -> Dict[str, List[str]]:
-    """Parse a DLC2Action split file (same rules as DLC2Action)."""
     out = {"train": [], "val": [], "test": []}
     active = None
     for line in Path(path).read_text(encoding="utf-8").splitlines():
@@ -1418,10 +1254,8 @@ def read_split_file(path: Union[str, Path]) -> Dict[str, List[str]]:
             active += s.split(", ") if ", " in s else [s]
     return out
 
-
 def split_coverage_masks(split_path, n_frames: Dict[str, int]
                          ) -> Dict[str, Dict[str, np.ndarray]]:
-    """Per subset and video, boolean mask of H5 rows covered by segments."""
     parsed = read_split_file(split_path)
     masks = {k: {v: np.zeros(n, dtype=bool) for v, n in n_frames.items()}
              for k in parsed}
@@ -1433,26 +1267,12 @@ def split_coverage_masks(split_path, n_frames: Dict[str, int]
                 masks[k][v][s:e] = True
     return masks
 
-
-# ---------------------------------------------------------------------------
-# 5. Predictions -> per-frame probabilities -> events
-# ---------------------------------------------------------------------------
-
 def _to_numpy(x):
     if hasattr(x, "detach"):
         x = x.detach().cpu().numpy()
     return np.asarray(x, dtype=float)
 
-
 def saved_row_for_behavior(classes: Dict, behavior: str) -> int:
-    """Row of a saved prediction array that holds ``behavior``.
-
-    DLC2Action 1.0 ``_make_prediction`` reorders the model output with
-    ``new = old[:, perm]``, ``perm[i] = list(classes.values()).index(
-    classes[i])``, and model column j is class ``classes[j]``. Because the
-    dict is built as ``{1: 'circling', 0: 'other'}`` (insertion order), row 0
-    of the saved array is CIRCLING, not "other". Replicate it exactly.
-    """
     cd = {int(k): str(v) for k, v in dict(classes).items()}
     if sorted(cd) != list(range(len(cd))):
         raise ValueError(f"unexpected class dict {classes}")
@@ -1463,18 +1283,10 @@ def saved_row_for_behavior(classes: Dict, behavior: str) -> int:
             return i
     raise ValueError(f"behavior {behavior!r} not in classes {classes}")
 
-
 def load_prediction_probs(prediction: Union[str, Path],
                           behavior: str = "circling",
                           behavior_index: Optional[int] = None,
                           ) -> Dict[str, np.ndarray]:
-    """Per-video P(behavior) on the H5 row axis from DLC2Action predictions.
-
-    ``prediction`` is a prediction folder
-    (``results/predictions/<name>/``) or one ``*_prediction.pickle`` file.
-    Clip arrays are placed at their ``min_frames`` offset; uncovered frames
-    (-100) become 0. Multiple clips are combined with max.
-    """
     prediction = Path(prediction)
     if prediction.is_dir():
         files = sorted(prediction.glob("*_prediction.pickle"))
@@ -1509,7 +1321,7 @@ def load_prediction_probs(prediction: Union[str, Path],
             if a.ndim != 2:
                 continue
             p = a[idx].copy()
-            p[p < 0] = 0.0                       # -100 = not covered
+            p[p < 0] = 0.0
             off = int(min_frames.get(clip, 0))
             tracks.append((off, p))
         if not tracks:
@@ -1522,11 +1334,9 @@ def load_prediction_probs(prediction: Union[str, Path],
         out[video] = full
     return out
 
-
 def probs_to_intervals(probs: np.ndarray, threshold: float,
                        min_frames: int = 1, gap_frames: int = 0
                        ) -> List[Tuple[int, int]]:
-    """Threshold -> [start, end) intervals, merging gaps <= gap_frames."""
     on = probs > threshold
     edges = np.diff(np.concatenate([[0], on.astype(np.int8), [0]]))
     starts = np.where(edges == 1)[0]
@@ -1542,7 +1352,6 @@ def probs_to_intervals(probs: np.ndarray, threshold: float,
         ivs = [tuple(x) for x in merged]
     return [(s, e) for s, e in ivs if e - s >= max(1, min_frames)]
 
-
 def predictions_to_events(
     prediction: Union[str, Path],
     meta_path: Optional[Union[str, Path]] = None,
@@ -1553,12 +1362,6 @@ def predictions_to_events(
     fps: Optional[float] = None,
     behavior_index: Optional[int] = None,
 ) -> pd.DataFrame:
-    """DLC2Action prediction folder -> events DataFrame (shared schema).
-
-    Frames are mapped back to the ORIGINAL video axis with
-    ``orig = h5_row * stride + frame_min`` using ``_conversion_meta.json``.
-    ``fps`` overrides the effective (post-stride) fps from the metadata.
-    """
     meta = json.loads(Path(meta_path).read_text(encoding="utf-8")) if meta_path else {}
     probs = load_prediction_probs(prediction, behavior, behavior_index)
     events = []
@@ -1590,11 +1393,6 @@ def predictions_to_events(
             "detection_confidence", "notes"]
     return pd.DataFrame(events, columns=cols)
 
-
-# ---------------------------------------------------------------------------
-# 6. Scoring on held-out windows
-# ---------------------------------------------------------------------------
-
 def _frame_counts(p, gt, mask, thr):
     pred = p > thr
     tp = int((pred & gt & mask).sum())
@@ -1602,14 +1400,12 @@ def _frame_counts(p, gt, mask, thr):
     fn = int((~pred & gt & mask).sum())
     return tp, fp, fn
 
-
 def _prf(tp, fp, fn):
     prec = tp / (tp + fp) if tp + fp else float("nan")
     rec = tp / (tp + fn) if tp + fn else float("nan")
     f1 = (2 * prec * rec / (prec + rec)
           if prec == prec and rec == rec and prec + rec else float("nan"))
     return prec, rec, f1
-
 
 def score_predictions(
     prediction: Union[str, Path],
@@ -1622,18 +1418,6 @@ def score_predictions(
     iou: float = 0.3,
     fps: Optional[float] = None,
 ) -> Dict:
-    """Frame- and event-level metrics on the val and test parts of a split.
-
-    Only frames covered by val/test segments are scored (train frames are
-    ignored, guard-band frames too). Frames annotated ``unknown`` are
-    excluded. If ``threshold`` is None it is chosen on VAL (max event F1,
-    ties -> frame F1) and then applied unchanged to TEST.
-
-    Event matching: a GT bout counts as detected if a predicted event
-    overlaps it with IoU >= ``iou`` (one-to-one, greedy). Unmatched
-    predicted events are false positives; reported per hour of scored
-    background.
-    """
     data_dir = Path(data_dir)
     meta = load_meta(data_dir)
     probs = load_prediction_probs(prediction, behavior)

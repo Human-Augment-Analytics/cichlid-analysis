@@ -1,4 +1,3 @@
-"""Per-frame pose and pair features for the circling logistic regression."""
 
 import numpy as np
 import polars as pl
@@ -18,12 +17,7 @@ PAIR_DISTANCES = (
 PAIR_ANGLES = ("orbital_rad", "rel_heading_rad", "bearing_1_rad", "bearing_2_rad")
 PAIR_RATES = ("d_heading_1_rad_s", "d_heading_2_rad_s", "d_orbital_rad_s")
 
-
 def keypoint_displacements(poses):
-    """Per-keypoint movement from (video, TrackID, t-1) to (video, TrackID, t).
-
-    Missing/nonfinite endpoints and track starts/gaps produce null distances.
-    """
     row_keys = [*TRACK_KEYS, "FrameNum"]
     coordinates = [f"{name}_{axis}" for name in KEYPOINTS for axis in ("x", "y")]
     ordered = poses.select(*row_keys, *coordinates).sort(row_keys)
@@ -43,9 +37,7 @@ def keypoint_displacements(poses):
         )
     return ordered.select(*row_keys, *distances)
 
-
 def pose_frame_features(poses, start, end):
-    """50 causal pose features per frame: motion, bend, turn, track count and trailing means."""
     if start < 0 or end < start:
         raise ValueError("Invalid frame range")
     if poses.select("project_id", "day_label").unique().height > 1:
@@ -92,14 +84,7 @@ def pose_frame_features(poses, start, end):
     ])
     return frames.filter(pl.col("FrameNum") >= start).with_columns(pl.exclude("FrameNum").cast(pl.Float32))
 
-
 def pair_frame_features(pairs, start, end):
-    """Aggregate supplied pair measurements into one row per video frame.
-
-    Six distances, four angles encoded as sine/cosine, and three supplied
-    angular rates give 17 signals. Mean/min/max across pairs plus pair count
-    give 52 predictors.
-    """
     if start < 0 or end < start:
         raise ValueError("Invalid frame range")
     if pairs.select("project_id", "day_label").unique().height > 1:
@@ -128,9 +113,7 @@ def pair_frame_features(pairs, start, end):
     return (frames.join(aggregate, on="FrameNum", how="left").sort("FrameNum")
             .with_columns(pl.col("pair_count").fill_null(0), pl.exclude("FrameNum", "pair_count").cast(pl.Float32)))
 
-
 def frame_features(poses, pairs, start, end):
-    """Combine the 50 pose features with the 52 pair features by frame."""
     videos = pl.concat([poses.select("project_id", "day_label"),
                         pairs.select("project_id", "day_label")]).unique()
     if videos.height > 1:
