@@ -6,6 +6,7 @@ from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
+import os
 from pathlib import Path
 import re
 import socket
@@ -117,11 +118,13 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('config',nargs='?',default=str(Path(__file__).with_name('recordings.json')))
-    parser.add_argument('--port',type=int,default=8001); args=parser.parse_args()
+    parser.add_argument('--port',type=int,default=int(os.environ.get('PORT','8001')))
+    parser.add_argument('--host',default=os.environ.get('HOST','127.0.0.1'))
+    args=parser.parse_args()
     try: app=App(args.config)
     except Exception as exc: parser.exit(1,f'Catalog error: {exc}\n')
-    server=ThreadingHTTPServer(('127.0.0.1',args.port),partial(Handler,app=app)); server.daemon_threads=True
-    print(f'Open http://localhost:{args.port} — choose recording and Local/Dropbox. No model training. Ctrl+C to stop.',flush=True)
+    server=ThreadingHTTPServer((args.host,args.port),partial(Handler,app=app)); server.daemon_threads=True
+    print(f'Listening on {args.host}:{args.port}. No model training. Ctrl+C to stop.',flush=True)
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()

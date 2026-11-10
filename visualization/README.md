@@ -14,6 +14,12 @@ python -m visualization.live
 
 Open **http://localhost:8001** and leave Terminal running. Stop with Ctrl+C. Do not run a separate `http.server`. If the virtual environment does not exist, create it with `python3.11 -m venv .venv-viz` first. FFprobe is needed for local video metadata: `brew install ffmpeg` if missing.
 
+## Cloud deployment (Render)
+
+This viewer can run as a hosted Python web service. The server must bind to `0.0.0.0` and use Render's `PORT` environment variable; the deployment-compatible `live.py` supports both.
+
+**Data requirements:** Render only receives files committed to the deployed branch (and any external sources reachable from the service). Local-only Parquet files and ignored outputs are not uploaded automatically. The catalog and recording paths must be checked against the deployed filesystem; the original video can stream from configured Dropbox links. A working site does not guarantee pose/score availability.
+
 ## What's new
 
 - **Recording selector:** choose registered recordings without restarting. The catalog includes 0028 and 0031; it also discovers local `data/*_vid.mp4` recordings.
