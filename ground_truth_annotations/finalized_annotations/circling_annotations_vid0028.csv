@@ -81,9 +81,5 @@ VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Behavior,Rotation direct
 0028_vid,0028_vid_evt_0078,05:10:46,05:10:52,559380,559560,circling,CW,1.5,Bower region,,"Completed the 2nd turn partially, and then switched rotation direction, but circling bout ended (female moved away)"
 0028_vid,0028_vid_evt_0079,05:12:30,05:12:42,562500,562860,circling,CCW,4,Bower region,,
 0028_vid,0028_vid_evt_0080,05:21:39,05:21:43,578970,579090,circling,CW,1,Bower region,,
-0028_vid,0028_vid_evt_0081,05:22:07,05:22:12,579810,579960,circling,CW,1,Away from bower,,"valid circling movement away from bower, just preceded by male fish chasing a third fish away"
-0028_vid,0028_vid_evt_0082,05:25:05,05:25:10,585150,585300,circling,CW,1,Bower region,,
-0028_vid,0028_vid_evt_0083,06:36:06,06:36:17,712980,713310,circling,CCW,3.5,Bower region,,Should be 3.5 turns
-,,,,,,,,,,,
-,,,,,,,,,,,
-,,,,,,,,,,,
+0028_vid,0028_vid_evt_0081,05:25:05,05:25:10,585150,585300,circling,CW,1,Bower region,,
+0028_vid,0028_vid_evt_0082,06:36:06,06:36:17,712980,713310,circling,CCW,3.5,Bower region,,Should be 3.5 turns

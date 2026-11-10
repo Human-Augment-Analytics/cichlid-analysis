@@ -1,0 +1,84 @@
+VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,Rotation direction,No. of turns/circles,Event Location,Secondary label/behavior,Annotator comments/notes,Reviewer comments/notes
+vid6-v18_d18,0018_vid_evt_0002,00:29:11,00:29:57,52538,53900,circling,CW,9,bottom-center,,agree for 9,"Should be 9 turns. or do you think the 9th turn was incomplete? In that case, it will still be 8.5"
+vid6-v18_d18,0018_vid_evt_0010,00:46:25,00:46:45,83561,84135,circling,CW,3.5,bottom-left,,between location boundaries,
+vid6-v18_d18,0018_vid_evt_0013,00:56:21,00:57:21,101432,103238,circling,CW,10.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0014,00:59:56,01:00:19,107891,108566,circling,CW,4.5,bottom-left,no quivering,"merged only 1 frame gap with evt_0015|first 1.5 rounds are off-bower, no quiver","off-bower, no quiver is okay; can be labelled as secondary behavior"
+vid6-v18_d18,0018_vid_evt_0017,01:02:30,01:04:16,112513,115684,circling,CW,18.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0018,01:04:18,01:04:25,115735,115938,circling,CCW,1.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0019,01:11:11,01:12:26,128142,130387,circling,CW,15,bottom-left,,female missed one rotation,
+vid6-v18_d18,0018_vid_evt_0021,01:13:48,01:13:54,132845,133021,circling,CCW,1.5,bottom-left,,updated start frame,Looks like they started from 01:13:48 itself
+vid6-v18_d18,0018_vid_evt_0022,01:15:06,01:15:16,135178,135492,circling,CCW,2,bottom-center,,"merged|first circle away from bower, no quivering",
+vid6-v18_d18,0018_vid_evt_0025,01:16:20,01:17:17,137390,139096,circling,CW,11,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0028,01:21:12,01:21:20,146154,146387,circling,CW,2,bottom-left,male chasing female behavior,,male chases the female after the bout and 2 turns are completed
+vid6-v18_d18,0018_vid_evt_0031,01:22:18,01:22:22,148147,148251,circling,CW,1,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0032,01:22:57,01:23:01,149313,149425,circling,CCW,1,bottom-center,male chasing female behavior,,male chases the female after the bout
+vid6-v18_d18,0018_vid_evt_0035,01:27:56,01:29:22,158274,160848,circling,CW,14.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0036,01:30:38,01:30:46,163147,163394,circling,CW,2,bottom-left,,"started wider apart, may discount first circle. updated to 2 cycles",could see just 2 complete circles here between the frames mentioned
+vid6-v18_d18,0018_vid_evt_0039,01:32:30,01:32:51,166511,167117,circling,CW,4,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0041,01:34:09,01:34:53,169480,170796,circling,CCW,8.5,bottom-left,,merged|,
+vid6-v18_d18,0018_vid_evt_0044,01:36:54,01:39:16,174427,178692,circling,CW,26,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0045,01:44:01,01:44:28,187235,188034,circling,CCW,4,bottom-left,,merged|,
+vid6-v18_d18,0018_vid_evt_0054,01:52:50,01:53:57,203099,205108,circling,CW,12,bottom-left,,merged|,
+vid6-v18_d18,0018_vid_evt_0056,01:54:54,01:55:19,206807,207582,circling,CW,7.5,bottom-left,,merged|,
+vid6-v18_d18,0018_vid_evt_0063,02:02:11,02:02:36,219941,220686,circling,CW,4,bottom-left,Bower and female protection,,Male fish protects the bower region and female from another fish darting in
+vid6-v18_d18,0018_vid_evt_0066,02:04:53,02:05:32,224783,225947,circling,CW,6.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0069,02:06:25,02:07:25,227541,229343,circling,CW,7,bottom-left,Bower and female protection,,
+vid6-v18_d18,0018_vid_evt_0071,02:11:56,02:12:34,237489,238622,circling,CW,6,bottom-left,,merged | ,Isn't this 5 full turns and a partial turn?
+vid6-v18_d18,0018_vid_evt_0074,02:13:58,02:14:19,241149,241772,circling,CW,3,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0091,02:34:25,02:34:34,277954,278226,circling,CW,1,bottom-center,,weak ,"Full circle, but the end timestamp is the beginning frames of 2:34:33. Notice that it has already started its darting run away from bout at this time."
+vid6-v18_d18,0018_vid_evt_0092,02:38:48,02:40:05,285854,288155,circling,CW,12,bottom-left,,merged,
+vid6-v18_d18,0018_vid_evt_0096,02:44:14,02:44:22,295623,295859,circling,CW,1.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0099,02:45:36,02:45:54,298077,298630,circling,CW,3,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0100,02:46:41,02:47:16,300044,301094,circling,CW,5.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0107,02:55:50,02:55:57,316501,316699,circling,CW,1,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0109,02:59:27,02:59:32,323007,323158,circling,CCW,1,center-center,,away from bower,
+vid6-v18_d18,0018_vid_evt_0110,03:01:34,03:02:14,326832,328005,circling,CCW,8,bottom-right,fishes were closer than usual,away from bower | update count to 8,"I felt this was 7 turns and ending by 3:02:10, when that burst of sand separates the two.
+Plz recheck and count again.
+Also, the choice of end frame. The male fish seems to have left the bout by 3:02:12
+It might be 8 turns if you consider the last turn taken after that burst of sand (not sure what kind of event was that)"
+vid6-v18_d18,0018_vid_evt_0119,03:02:58,03:03:07,329336,329603,circling,CW,2,bottom-left,Male chases female towards end of bout,no. rounds unclear,"yes. very rapid circling makes it 3, but the last 2 rapid turns seem to be about chasing the fish and not a courtship intent/behavior"
+vid6-v18_d18,0018_vid_evt_0121,03:04:13,03:04:17,331590,331720,circling,CCW,1,bottom-left,Male chases female towards end of bout,,
+vid6-v18_d18,0018_vid_evt_0122,03:05:21,03:06:19,333644,335377,circling,CW,21,bottom-left,Male spun around  during circling,male did some loops,
+vid6-v18_d18,0018_vid_evt_0125,03:06:23,03:06:43,335479,336096,circling,CW,8.5,bottom-left,Male spun around  during circling,male did some loops,"It's 7.5 turns. Don't count the loop made by the male, as it was only the male who spun 360 degree; there was no co-rotation"
+vid6-v18_d18,0018_vid_evt_0126,03:06:47,03:07:12,336201,336962,circling,CW,10.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0128,03:08:11,03:09:02,338740,340259,circling,CW,10,bottom-left,,merged but includes a loop,Plz recount ignoring the loops as a full turn/circle
+vid6-v18_d18,0018_vid_evt_0133,03:11:53,03:12:13,345387,345977,circling,CW,3.5,bottom-left,,,
+vid6-v18_d18,0018_vid_evt_0134,03:13:09,03:13:16,347684,347892,circling,CW,2,bottom-left,Male chases female towards end of bout,,
+vid6-v18_d18,0018_vid_evt_0135,03:17:33,03:18:33,355591,357379,circling,CW,12,bottom-left,Male spun around  during circling,male did a loop,
+vid6-v18_d18,0018_vid_evt_0137,03:24:03,03:25:06,367302,369168,circling,CW,9.5,bottom-left,,maybe 9.5,"Yes, 9.5. Modified it"
+vid6-v18_d18,0018_vid_evt_0138,03:28:00,03:28:03,374389,374476,circling,CW,1,bottom-left,Male chases female away,weak,"Yes. Intent was chasing the female fish. Still, keeping this as 1 turn was complete"
+vid6-v18_d18,0018_vid_evt_0149,05:29:02,05:30:24,592257,594734,circling,CW,18,bottom-left,Male spun around towards end of circling,merged,
+vid6-v18_d18,0018_vid_evt_0152,05:43:23,05:43:32,618085,618359,circling,CW,1.5,bottom-left,,"weak, not at bower",
+vid6-v18_d18,0018_vid_evt_0154,05:47:48,05:47:56,626030,626294,circling,CCW,2,bottom-left,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,

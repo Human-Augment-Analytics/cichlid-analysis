@@ -1,0 +1,135 @@
+VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,Rotation direction,No. of turns/circles,Event Location,Secondary label/behavior,Annotator comments/notes,Reviewer comments/notes
+0007_vid,vid8-0007_d06_evt_0001,01:23:00,01:23:28,149402,150229,Circling,CW,7.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0002,01:23:29,01:23:50,150262,150909,Circling,CCW,5.5,bower,switching direction of rotation,Switched from CW to CCW mid-episode,Male broke formation and swam away after the 6th turn
+0007_vid,vid8-0007_d06_evt_0003,01:24:17,01:24:35,151713,152239,Circling,CW,6,bower,,Fish accelerated/elevated as they finished the behavior,May only be 6 turns rather than 6.5
+0007_vid,vid8-0007_d06_evt_0004,01:24:35,01:25:04,152256,153124,Circling,CCW,8,bower,switching direction of rotation,Switched from CW to CCW mid-episode,
+0007_vid,vid8-0007_d06_evt_0005,01:25:05,01:25:34,153147,154019,Circling,CW,10.5,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0006,01:26:15,01:26:27,155255,155604,Circling,CW,2.5,bower,,,May be 2.5 turns rather than 3
+0007_vid,vid8-0007_d06_evt_0007,01:26:27,01:26:35,155618,155841,Circling,CCW,2,bower,switching direction of rotation,Switched from CW to CCW mid-episode,
+0007_vid,vid8-0007_d06_evt_0008,01:35:54,01:36:39,172623,173982,Circling,CCW,10.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0009,01:36:52,01:36:58,174353,174542,Circling,CCW,1.5,bower,,,1.5 circles and ended @ 174542
+0007_vid,vid8-0007_d06_evt_0010,01:43:40,01:44:04,186587,187308,Circling,CW,6.5,bower,,"Brief ~2.9s pause after turn, then immediately resumed CW circling",
+0007_vid,vid8-0007_d06_evt_0011,01:44:08,01:44:30,187453,188097,Circling,CW,7,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0012,01:49:10,01:49:19,196506,196771,Circling,CCW,1.5,bower,,Fish accelerated/elevated as they finished the behavior,Observed 1.75 circles 196506 - 196771
+0007_vid,vid8-0007_d06_evt_0013,01:49:31,01:50:02,197144,198074,Circling,CCW,8,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0014,01:50:03,01:50:12,198104,198374,Circling,CW,3,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0015,01:50:20,01:50:36,198604,199069,Circling,CCW,3.5,bower,,Fish accelerated/elevated as they finished the behavior,There are separate events within this span
+0007_vid,vid8-0007_d06_evt_0016,01:50:44,01:50:59,199329,199767,Circling,CCW,3.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0017,01:51:08,01:51:25,200040,200544,Circling,CCW,4,bower,,,4 circles; Span starts around 200040 (1:51:08)
+0007_vid,vid8-0007_d06_evt_0018,01:51:29,01:51:53,200673,201389,Circling,CCW,6,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0019,02:03:53,02:04:00,222994,223192,Circling,CCW,2,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0020,02:04:27,02:04:32,224012,224155,Circling,CCW,1,bower,,,
+0007_vid,vid8-0007_d06_evt_0021,02:08:19,02:08:36,230969,231483,Circling,CW,4.5,bower,,,observed 4.5 circles (start: 230969)
+0007_vid,vid8-0007_d06_evt_0022,02:08:50,02:09:37,231908,233319,Circling,CW,13.5,bower,,"Brief ~3.0s pause after turn, then immediately resumed CW circling",
+0007_vid,vid8-0007_d06_evt_0023,02:09:41,02:10:00,233422,234006,Circling,CCW,2.5,bower,,,Observed 2.5 circles
+0007_vid,vid8-0007_d06_evt_0024,02:10:36,02:11:08,235078,236032,Circling,CW,8.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0025,02:11:12,02:12:17,236154,238117,Circling,CW,18.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0026,02:14:08,02:14:33,241444,242199,Circling,CCW,4.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0027,02:15:29,02:15:46,243865,244366,Circling,CW,3.5,bower,,Fish accelerated/elevated as they finished the behavior,3.5 circles
+0007_vid,vid8-0007_d06_evt_0028,02:15:50,02:15:56,244487,244670,Circling,CCW,1.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0029,02:17:02,02:18:07,246655,248611,Circling,CCW,14.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0030,02:18:43,02:19:35,249691,251242,Circling,CCW,10.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0031,02:22:34,02:22:45,256631,256943,Circling,CCW,2.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0032,02:24:12,02:24:38,259560,260326,Circling,CCW,4.5,bower,,,Lots of interrupted circling at the beginning of this span
+0007_vid,vid8-0007_d06_evt_0033,02:25:36,02:25:43,262085,262293,Circling,CW,1.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0034,02:30:09,02:30:22,270279,270662,Circling,CW,3,bower,,,
+0007_vid,vid8-0007_d06_evt_0035,02:31:07,02:31:13,271999,272187,Circling,CW,2.5,bower,,Fish accelerated/elevated as they finished the behavior,Started @ about 271999
+0007_vid,vid8-0007_d06_evt_0036,02:31:25,02:31:31,272556,272727,Circling,CCW,1.5,bower,,,Started @ about 272556
+0007_vid,vid8-0007_d06_evt_0037,02:31:50,02:32:10,273306,273891,Circling,CW,4.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0038,02:33:19,02:33:32,275983,276357,Circling,CCW,2,bower,,,started @ about 275983; 2 circles
+0007_vid,vid8-0007_d06_evt_0039,02:36:48,02:36:52,282228,282362,Circling,CW,1,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0040,02:40:29,02:40:35,288859,289047,Circling,CW,1,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0041,02:47:24,02:48:03,301308,302491,Circling,CW,11.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0042,02:49:17,02:50:21,304709,306632,Circling,CW,17.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0043,02:50:24,02:50:53,306729,307598,Circling,CW,8,bower,,,
+0007_vid,vid8-0007_d06_evt_0044,02:50:55,02:51:14,307642,308214,Circling,CCW,5.5,bower,switching direction of rotation,Switched from CW to CCW mid-episode,
+0007_vid,vid8-0007_d06_evt_0045,02:51:15,02:51:45,308261,309149,Circling,CW,7,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0046,02:52:58,02:53:24,311332,312134,Circling,CW,5,bower,,,
+0007_vid,vid8-0007_d06_evt_0047,02:53:50,02:53:58,312912,313138,Circling,CCW,1.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0048,02:56:31,02:56:50,317726,318301,Circling,CW,5.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0049,02:57:02,02:57:13,318660,318993,Circling,CCW,2,bower,,Fish accelerated/elevated as they finished the behavior,2 circles; end @ 318993
+0007_vid,vid8-0007_d06_evt_0050,03:02:10,03:02:34,327913,328615,Circling,CW,7,bower,,,7 circles
+0007_vid,vid8-0007_d06_evt_0051,03:11:04,03:11:42,343922,345057,Circling,CCW,8,bower,,Fish accelerated/elevated as they finished the behavior,Split into 2 spans: 8 Turns: 343922 - 345057 & 5 turns: 345218 - 345903
+0007_vid,vid8-0007_d06_evt_0052,03:11:47,03:12:10,345218,345903,Circling,CCW,5,bower,,,
+0007_vid,vid8-0007_d06_evt_0053,03:15:38,03:16:58,352138,354537,Circling,CW,24,bower,,,
+0007_vid,vid8-0007_d06_evt_0054,03:20:09,03:20:19,360266,360566,Circling,CCW,2,bower,,,Start @ 360266
+0007_vid,vid8-0007_d06_evt_0055,03:33:20,03:33:54,383985,385008,Circling,CCW,8,bower,,,
+0007_vid,vid8-0007_d06_evt_0056,03:39:29,03:39:44,395075,395508,Circling,CW,2,bower,,,2 circles rather than 2.5
+0007_vid,vid8-0007_d06_evt_0057,03:39:48,03:40:05,395636,396161,Circling,CW,3.5,bower,,,3.5 circles rather than 4
+0007_vid,vid8-0007_d06_evt_0058,03:41:56,03:42:06,399487,399775,Circling,CCW,2,bower,,,"5 second gap after 2nd circle, then 17 circles follow it; total of 19 circles"
+0007_vid,vid8-0007_d06_evt_0059,03:42:12,03:43:37,399965,402496,Circling,CCW,17,bower,,,
+0007_vid,vid8-0007_d06_evt_0060,03:44:56,03:45:41,404884,406237,Circling,CW,11,bower,,Fish accelerated/elevated as they finished the behavior,11 circles ending @ 406237
+0007_vid,vid8-0007_d06_evt_0061,03:51:44,03:47:24,417123,409306,Circling,CCW,16,bower,,Fish accelerated/elevated as they finished the behavior,16 circles: 417123 - 409306
+0007_vid,vid8-0007_d06_evt_0062,03:47:54,03:48:13,410230,410799,Circling,CW,4.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0063,03:49:36,03:49:47,413285,413612,Circling,CCW,2,bower,,,
+0007_vid,vid8-0007_d06_evt_0064,03:49:51,03:50:13,413740,414404,Circling,CCW,4,bower,,,Start @ 413740; 4 circles
+0007_vid,vid8-0007_d06_evt_0065,03:52:59,03:53:10,419369,419705,Circling,CCW,2,bower,,Fish accelerated/elevated as they finished the behavior,2 circles rather than 2.5
+0007_vid,vid8-0007_d06_evt_0066,03:53:30,03:53:49,420302,420865,Circling,CW,3.5,bower,,,3.5 circles rather than 4
+0007_vid,vid8-0007_d06_evt_0067,03:54:01,03:54:10,421227,421514,Circling,CCW,2,bower,,,
+0007_vid,vid8-0007_d06_evt_0068,03:54:30,03:55:08,422104,423226,Circling,CCW,7.5,bower,,,Start @ 422104
+0007_vid,vid8-0007_d06_evt_0069,03:55:42,03:56:07,424273,425019,Circling,CW,5,bower,,,
+0007_vid,vid8-0007_d06_evt_0070,03:57:00,03:57:31,426605,427525,Circling,CW,7,bower,,Fish accelerated/elevated as they finished the behavior,Start @ 426605; 7 circles
+0007_vid,vid8-0007_d06_evt_0071,03:57:38,03:57:58,427737,428348,Circling,CCW,4.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0072,03:59:02,03:59:35,430272,431239,Circling,CCW,6,bower,,,Start @ 430272; 6 circles
+0007_vid,vid8-0007_d06_evt_0073,04:00:34,04:00:41,433024,433229,Circling,CW,1,bower,,,
+0007_vid,vid8-0007_d06_evt_0074,04:01:00,04:02:26,433797,436388,Circling,CCW,18,bower,,,18 circles
+0007_vid,vid8-0007_d06_evt_0075,04:03:00,04:03:35,437389,438454,Circling,CW,5.5,bower,,,5.5 circles rather than 6.5
+0007_vid,vid8-0007_d06_evt_0076,04:03:49,04:04:17,438870,439701,Circling,CW,6,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0077,04:05:41,04:05:50,442231,442501,Circling,CCW,2,bower,,,
+0007_vid,vid8-0007_d06_evt_0078,04:06:37,04:08:06,443895,446571,Circling,CCW,18,bower,,,start @ 443895; 18 circles
+0007_vid,vid8-0007_d06_evt_0079,04:12:45,04:12:50,454957,455114,Circling,CCW,1,bower,,,
+0007_vid,vid8-0007_d06_evt_0080,04:13:53,04:14:24,456993,457905,Circling,CW,6,bower,,,Start @ 456993; 6 circles
+0007_vid,vid8-0007_d06_evt_0081,04:14:28,04:14:47,458035,458596,Circling,CCW,4,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0082,04:14:54,04:15:06,458831,459181,Circling,CCW,2,bower,,,
+0007_vid,vid8-0007_d06_evt_0083,04:23:30,04:23:37,474290,474504,Circling,CCW,1,bower,,Fish accelerated/elevated as they finished the behavior,1 circle rather than 1.5
+0007_vid,vid8-0007_d06_evt_0084,04:23:43,04:23:57,474679,475120,Circling,CCW,2,bower,,,
+0007_vid,vid8-0007_d06_evt_0085,04:25:39,04:26:35,478178,479864,Circling,CW,13,bower,,Fish accelerated/elevated as they finished the behavior,13 circles: 478178 - 479864
+0007_vid,vid8-0007_d06_evt_0086,04:29:15,04:30:04,484662,486114,Circling,CCW,9.5,bower,,,Start @ 484662; 9.5 circles
+0007_vid,vid8-0007_d06_evt_0087,04:30:06,04:30:19,486166,486556,Circling,CW,2.5,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0088,04:30:38,04:30:55,487138,487651,Circling,CW,3,bower,,Fish accelerated/elevated as they finished the behavior,Start @ 487138; 3 circles
+0007_vid,vid8-0007_d06_evt_0089,04:31:44,04:32:21,489126,490222,Circling,CW,8,bower,,,
+0007_vid,vid8-0007_d06_evt_0090,04:32:49,04:32:56,491058,491273,Circling,CCW,2,bower,,,Start @ 491058; 2 circles
+0007_vid,vid8-0007_d06_evt_0091,04:40:51,04:41:19,505540,506368,Circling,CW,6,bower,,Fish accelerated/elevated as they finished the behavior,Start @ 505540
+0007_vid,vid8-0007_d06_evt_0092,04:41:26,04:42:05,506569,507738,Circling,CW,9.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0093,04:55:06,04:55:54,531178,532632,Circling,CW,11,bower,,,Start @ 531178; 11 circles
+0007_vid,vid8-0007_d06_evt_0094,04:56:38,04:57:06,533946,534788,Circling,CCW,5.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0095,04:57:08,04:57:15,534830,535058,Circling,CW,1.5,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0096,05:08:09,05:09:06,554683,556368,Circling,CW,13.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0097,05:18:49,05:19:00,573884,574192,Circling,CCW,2,bower,,,
+0007_vid,vid8-0007_d06_evt_0098,05:21:13,05:21:48,578194,579229,Circling,CCW,8.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0099,05:21:52,05:21:58,579373,579546,Circling,CCW,1.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0100,05:27:42,05:28:08,589868,590637,Circling,CW,6,bower,,,
+0007_vid,vid8-0007_d06_evt_0101,05:28:08,05:28:20,590651,591009,Circling,CCW,3,bower,switching direction of rotation,Switched from CW to CCW mid-episode,
+0007_vid,vid8-0007_d06_evt_0102,05:38:46,05:38:59,609792,610172,Circling,CCW,3,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0103,05:40:35,05:40:57,613057,613699,Circling,CCW,5.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0104,05:45:39,05:46:15,622172,623252,Circling,CW,10,bower,,,
+0007_vid,vid8-0007_d06_evt_0105,05:46:17,05:46:23,623301,623477,Circling,CCW,2,bower,switching direction of rotation,Switched from CW to CCW mid-episode,
+0007_vid,vid8-0007_d06_evt_0106,06:18:33,06:19:09,681387,682457,Circling,CCW,9,bower,,,
+0007_vid,vid8-0007_d06_evt_0107,06:19:10,06:19:18,682503,682737,Circling,CW,2,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0108,06:19:20,06:19:26,682799,682975,Circling,CCW,2,bower,switching direction of rotation,Switched from CW to CCW mid-episode,2 circles rather than 2.5
+0007_vid,vid8-0007_d06_evt_0109,06:21:45,06:21:51,687163,687341,Circling,CW,1.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0110,06:30:57,06:31:09,703697,704083,Circling,CCW,2,bower,,Fish accelerated/elevated as they finished the behavior,2 circles rather than 3
+0007_vid,vid8-0007_d06_evt_0111,06:32:27,06:33:06,706418,707570,Circling,CCW,11,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0112,06:34:04,06:34:14,709306,709615,Circling,CW,3,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0113,06:40:22,06:40:45,720674,721338,Circling,CCW,7.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0114,06:40:46,06:40:52,721375,721566,Circling,CW,2,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0115,06:40:53,06:41:06,721586,721977,Circling,CCW,3,bower,switching direction of rotation,Switched from CW to CCW mid-episode,
+0007_vid,vid8-0007_d06_evt_0116,06:42:34,06:42:44,724624,724918,Circling,CCW,3,bower,,,
+0007_vid,vid8-0007_d06_evt_0117,06:45:25,06:45:29,729753,729880,Circling,CW,1.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0118,06:49:49,06:49:54,737666,737812,Circling,CW,1.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0119,06:51:25,06:51:39,740541,740966,Circling,CCW,4,bower,,,4 circles rather than 3.5
+0007_vid,vid8-0007_d06_evt_0120,06:57:27,06:57:32,751422,751552,Circling,CW,1.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0121,07:01:36,07:01:55,758894,759436,Circling,CCW,6.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0122,07:01:55,07:02:30,759446,760504,Circling,CW,12,bower,switching direction of rotation,Switched from CCW to CW mid-episode,
+0007_vid,vid8-0007_d06_evt_0123,07:04:31,07:04:38,764141,764347,Circling,CCW,1.5,bower,,,1.5 rather than 2
+0007_vid,vid8-0007_d06_evt_0124,07:29:55,07:30:07,809846,810223,Circling,CCW,2.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0125,07:36:52,07:37:07,822362,822812,Circling,CCW,2.5,bower,,,2.5 rather than 4
+0007_vid,vid8-0007_d06_evt_0126,07:48:48,07:48:58,843854,844140,Circling,CCW,2.5,bower,,,
+0007_vid,vid8-0007_d06_evt_0127,07:51:47,07:51:53,849199,849377,Circling,CCW,1,bower,,,1 rather than 1.5
+0007_vid,vid8-0007_d06_evt_0128,08:04:58,08:05:03,872938,873089,Circling,CCW,1,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0129,08:27:47,08:27:59,913996,914380,Circling,CCW,2.5,bower,,,Start @ 913996
+0007_vid,vid8-0007_d06_evt_0130,08:40:51,08:40:56,937541,937675,Circling,CCW,1.5,bower,,,Start @ 937541
+0007_vid,vid8-0007_d06_evt_0131,09:11:50,09:11:54,993287,993430,Circling,CW,1,bower,,,
+0007_vid,vid8-0007_d06_evt_0132,09:39:01,09:39:07,1042220,1042422,Circling,CCW,1.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0133,09:41:18,09:41:36,1046354,1046893,Circling,CCW,4.5,bower,,Fish accelerated/elevated as they finished the behavior,
+0007_vid,vid8-0007_d06_evt_0134,09:57:25,09:57:39,1075347,1075767,Circling,CCW,3.5,bower,,Fish accelerated/elevated as they finished the behavior,

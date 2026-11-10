@@ -1,0 +1,81 @@
+VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,Rotation direction,No. of turns/circles,Event Location,Secondary label/behavior,Annotator comments/notes,Reviewer comments/notes
+vid3-v13_d13,vid3-v13_d13_evt_0001,00:22:00,00:22:13,39614,40003,circling,CW,2,middle-left,,Re-review 2: 2 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0002,01:05:11,01:05:20,117335,117610,circling,CW,2,middle-left,,,
+vid3-v13_d13,vid3-v13_d13_evt_0003,01:06:05,01:06:12,118942,119149,circling,CCW,1,middle-left,,One turn,
+vid3-v13_d13,vid3-v13_d13_evt_0004,01:06:18,01:06:23,119342,119484,circling,CCW,1.5,middle-left,,1.5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0005,01:06:29,01:06:35,119681,119854,circling,CCW,1.5,middle-left,,1.5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0006,01:06:43,01:06:46,120083,120190,circling,CCW,1.5,middle-left,,CCW from Hirni's split note,"There was a split here. Count as two separate circling movements? If are counting as one, there are 5 totals circles"
+vid3-v13_d13,vid3-v13_d13_evt_0007,01:06:49,01:06:58,120275,120549,circling,CCW,2.5,middle-left,,CCW from Hirni's split note,
+vid3-v13_d13,vid3-v13_d13_evt_0008,01:07:16,01:07:26,121080,121393,circling,CCW,3.5,middle-center,,3.5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0009,01:09:49,01:10:00,125681,125992,circling,CW,2.5,middle-left,,2.5 CCW | Re-review: 2 CW,There were 2 CCW circles here
+vid3-v13_d13,vid3-v13_d13_evt_0010,01:10:24,01:10:29,126714,126874,circling,CW,1.5,middle-left,,CW however fish were not facing opposite directions the whole time,
+vid3-v13_d13,vid3-v13_d13_evt_0011,01:10:36,01:10:40,127065,127197,circling,CW,1,middle-left,,1 CW not a very clean circling event,
+vid3-v13_d13,vid3-v13_d13_evt_0012,01:13:38,01:13:52,132545,132957,circling,CCW,3,middle-left,,3 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0013,01:14:22,01:14:28,133857,134052,circling,CCW,1.5,middle-center,,1.5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0014,01:18:58,01:19:09,142154,142466,circling,CW,2,middle-left,,2 CCW | Re-review: CCW | Re-review 2: 1.75 CW,I would say that these were 2 full circles
+vid3-v13_d13,vid3-v13_d13_evt_0015,01:21:32,01:21:41,146774,147015,circling,CCW,1,middle-left,,1 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0016,02:07:03,02:07:21,228698,229225,circling,CCW,5,middle-left,,5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0017,02:07:26,02:07:39,229376,229776,circling,CCW,5,middle-left,,5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0018,02:07:44,02:08:01,229908,230430,circling,CCW,4.5,middle-left,,4 CCW but a tiny break between 3 and 4 SECOND EYES needed | Re-review 2: 4.5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0019,02:08:08,02:08:18,230655,230927,circling,CW,3,middle-left,,5 CCW tiny break between 3 and 4 | Re-review: CW | Re-review 2: 3 CW 2 CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0020,02:08:18,02:08:26,230928,231178,circling,CCW,2,middle-left,,5 CCW tiny break between 3 and 4 | Re-review: CW | Re-review 2: 3 CW 2 CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0021,02:08:36,02:08:43,231475,231691,circling,CW,2,middle-left,,"2 CCW 1 CW tiny break between CCW and CW | Re-review: CW | Re-review 2: CW into CCW; 2 CW, 2 CCW",
+vid3-v13_d13,vid3-v13_d13_evt_0022,02:08:43,02:08:52,231692,231965,circling,CCW,2,middle-left,,"2 CCW 1 CW tiny break between CCW and CW | Re-review: CW | Re-review 2: CW into CCW; 2 CW, 2 CCW",
+vid3-v13_d13,vid3-v13_d13_evt_0023,02:08:56,02:09:23,232094,232892,circling,CCW,8,middle-left,,8 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0024,02:09:27,02:09:31,232996,233123,circling,CW,2,middle-left,,2 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0025,02:09:37,02:09:40,233315,233408,circling,CW,1,middle-left,,1 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0026,02:13:22,02:13:33,240063,240379,circling,CW,3,middle-center,,2 CW. Second Eyes needed could be 3 but the first circle was somewhat terrible | Re-review 2: 3 CW,"I think would start at time 2:13:22, there was no full circle at 2:13:17. There was still 3 circling though"
+vid3-v13_d13,vid3-v13_d13_evt_0027,02:13:39,02:13:59,240582,241155,circling,CCW,3,middle-center,,3 CCW started off CW no complete CW rotation though | Re-review: CW to CCW,This was CCW the whole time; 3 circliings
+vid3-v13_d13,vid3-v13_d13_evt_0028,02:15:02,02:15:27,243075,243823,circling,CCW,8,middle-left,,8 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0029,02:15:38,02:15:44,244126,244332,circling,CCW,1,middle-left,,1 CCW it seems unreciprocated at the end so I would say unsure | Re-review 2: 1 CCW,"Correct, looks like 1 circle"
+vid3-v13_d13,vid3-v13_d13_evt_0030,02:22:16,02:22:21,256068,256220,circling,CW,1,middle-left,,1 CW 1-2 second break 3 CCW | Re-review: CW to CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0031,02:22:21,02:22:32,256221,256566,circling,CCW,2,middle-left,,1 CW 1-2 second break 3 CCW | Re-review: CW to CCW,This was 2 circlings not 3
+vid3-v13_d13,vid3-v13_d13_evt_0032,02:22:41,02:22:52,256842,257165,circling,CW,2,middle-left,,2 CW | Re-review: CW to CCW | Re-review 2: 5 CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0033,02:22:52,02:23:13,257166,257795,circling,CCW,5,middle-left,,2 CW | Re-review: CW to CCW | Re-review 2: 5 CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0034,02:33:20,02:33:23,275991,276095,circling,CCW,1,middle-left,,1 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0035,02:33:35,02:33:47,276443,276799,circling,CCW,3,middle-left,,3 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0036,02:38:47,02:38:51,285805,285930,circling,CW,1,middle-left,,Hirni's recommended split,
+vid3-v13_d13,vid3-v13_d13_evt_0037,02:38:53,02:39:01,285990,286230,circling,CW,2,middle-left,,Hirni's recommended split,
+vid3-v13_d13,vid3-v13_d13_evt_0038,02:39:01,02:39:29,286244,287079,circling,CCW,8,middle-left,,1 CW tiny break 1 CW then 5 CCW | Re-review: CW to CCW,There was 8 circlings here
+vid3-v13_d13,vid3-v13_d13_evt_0039,02:39:48,02:40:09,287644,288262,circling,CCW,7,middle-left,,7 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0040,02:40:34,02:40:40,289018,289190,circling,CW,1,middle-left,,1 CW tiny break 0.5 CCW | Re-review: CW to CCW | Re-review 2: 1 CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0041,02:40:40,02:40:46,289191,289388,circling,CCW,1,middle-left,,1 CW tiny break 0.5 CCW | Re-review: CW to CCW | Re-review 2: 1 CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0042,02:45:35,02:45:38,298048,298135,circling,CCW,1,middle-left,,Loosly 1 CCW SECOND EYES UNSURE | Re-review 2: 1 CCW,"Correct, looks like 1 circle"
+vid3-v13_d13,vid3-v13_d13_evt_0043,02:45:56,02:46:02,298677,298846,circling,CCW,1,middle-left,,1 CCW tiny break 1 CW | Re-review: CCW to CW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0044,02:46:02,02:46:09,298847,299062,circling,CW,1,middle-left,,1 CCW tiny break 1 CW | Re-review: CCW to CW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0045,02:46:49,02:46:56,300255,300477,circling,CCW,1,middle-left,,1 CCW clear one I do not know if we want to consider the first part a circle,I think we can consider this one full circle
+vid3-v13_d13,vid3-v13_d13_evt_0046,02:47:01,02:47:24,300642,301321,circling,CCW,8,middle-left,,7 CCW,"Recheck, might be 8 circlings"
+vid3-v13_d13,vid3-v13_d13_evt_0047,02:51:08,02:51:20,308027,308410,circling,CCW,3,middle-left,,3 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0048,02:51:42,02:52:03,309064,309693,circling,CCW,6,middle-center,,6 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0049,02:52:13,02:52:21,309988,310225,circling,CCW,2,middle-center,,2 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0050,02:52:30,02:52:41,310508,310816,circling,CW,3,middle-center,,3 CCW | Re-review: CW | Re-review 2: 3 CW,This was 3 CW
+vid3-v13_d13,vid3-v13_d13_evt_0051,02:56:26,02:56:29,317565,317663,circling,CW,1,middle-center,,1 CW quick SECOND EYES | Re-review 2: 1 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0052,03:06:49,03:06:54,336279,336419,circling,CW,1.5,middle-left,,Unsure almost 1 CW | Re-review 2: 1.5 CW,One circle
+vid3-v13_d13,vid3-v13_d13_evt_0053,03:07:26,03:07:32,337395,337552,circling,CW,1,middle-left,,1 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0054,03:07:56,03:08:28,338291,339227,circling,CCW,9,middle-left,,9 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0055,03:09:36,03:09:52,341269,341764,circling,CW,5,middle-center,,5 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0056,03:10:07,03:10:35,342202,343035,circling,CW,10,middle-left,,10 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0057,03:13:26,03:13:33,348194,348383,circling,CW,1,middle-left,,1 CW slight break 3 CCW | Re-review: CW to CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0058,03:13:33,03:13:47,348384,348795,circling,CCW,3,middle-left,,1 CW slight break 3 CCW | Re-review: CW to CCW,Correct
+vid3-v13_d13,vid3-v13_d13_evt_0059,03:14:09,03:14:25,349481,349961,circling,CCW,5,middle-left,,5 CCW,
+vid3-v13_d13,vid3-v13_d13_evt_0060,03:53:33,03:53:54,420379,421019,circling,CW,5,middle-left,,5 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0061,05:09:43,05:10:07,557489,558217,circling,CW,4,middle-left,,4 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0062,05:40:13,05:40:26,612401,612786,circling,CW,2,middle-center,,2 CW,
+vid3-v13_d13,vid3-v13_d13_evt_0063,05:40:56,05:41:11,613673,614131,circling,CCW,2,middle-center,,1 CCW Possibly 2 need SECOND EYES | Re-review 2: 2.5 CCW,"I think this was 2 full circles, the third didn't finish completely"
+vid3-v13_d13,vid3-v13_d13_evt_0064,05:41:22,05:41:29,614465,614681,circling,CCW,2,middle-center,,2 CCW possibly 1,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,

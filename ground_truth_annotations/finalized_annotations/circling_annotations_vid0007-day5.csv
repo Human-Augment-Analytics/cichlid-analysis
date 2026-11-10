@@ -1,0 +1,105 @@
+VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,Rotation direction,No. of turns/circles,Event Location,Secondary label/behavior,Annotator comments/notes,Reviewer comments/notes
+vid5-v07_d05,vid5-v07_d05_evt_0001,00:11:11,00:11:41,20142,21044,Circling,CW,8,Bower,Fish chasing behavior pre-and post-event,,Male fish had to chase away other female fishes before and after the event
+vid5-v07_d05,vid5-v07_d05_evt_0002,00:11:47,00:12:05,21217,21739,Circling,CW,5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0003,00:12:16,00:12:29,22094,22483,Circling,CCW,3,Bower,,"Female fish almost left after 3rd circle, but came back",
+vid5-v07_d05,vid5-v07_d05_evt_0004,00:12:31,00:12:34,22543,22615,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0005,00:12:42,00:12:51,22858,23136,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0006,00:12:56,00:13:03,23272,23502,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0007,00:13:12,00:13:22,23762,24052,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0008,00:13:58,00:14:06,25148,25383,Circling,CW,1.5,Bower,,,Missed an event from 00:14:33 - 00:14:36; CW 1 turn
+vid5-v07_d05,vid5-v07_d05_evt_0009,00:14:33,00:14:37,26190,26310,Circling,CW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0010,00:16:45,00:16:59,30160,30559,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0011,00:17:42,00:17:53,31872,32202,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0012,00:22:15,00:22:38,40043,40751,Circling,CW,4,Bower,,,"I think this starts at 00:22:15; That would make it 4 turns, I believe; Plz recheck"
+vid5-v07_d05,vid5-v07_d05_evt_0013,00:22:45,00:22:56,40965,41288,Circling,CCW,2.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0014,00:23:06,00:23:14,41589,41827,Circling,CW,2,Bower,,,Correct time span; but 2 full turns; Fishes were interrupted before 3 rd turn could be taken
+vid5-v07_d05,vid5-v07_d05_evt_0015,00:25:45,00:26:01,46356,46845,Circling,CW,3,Bower,,Frequent pauses after 3rd circle,This has to be split into two spans - first till 26:01 and then starts from 26:08; 3 and 2 turns
+vid5-v07_d05,vid5-v07_d05_evt_0016,00:26:08,00:26:19,47039,47365,Circling,CW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0017,00:29:02,00:29:22,52266,52868,Circling,CW,4,Bower,,,"4 turns; For it to be considered a partial 5th turn, the fish should atleast initiate the darting turn which it generally takes; it needs to complete a close to 180 deg turn, atleast. Otherwise, it's just a continuation of the previous finished turn"
+vid5-v07_d05,vid5-v07_d05_evt_0018,00:29:35,00:29:49,53244,53659,Circling,CW,3,Bower,,"Female fish completed its ""circles"" faster than the male one",
+vid5-v07_d05,vid5-v07_d05_evt_0019,00:30:00,00:30:13,54010,54377,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0020,00:30:27,00:30:36,54808,55066,Circling,CCW,1.5,Bower,,,Female fish left before male could complete 2nd turn
+vid5-v07_d05,vid5-v07_d05_evt_0021,00:31:17,00:31:30,56323,56710,Circling,CW,3,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0022,00:31:53,00:32:14,57377,58033,Circling,CCW,5.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0023,00:32:42,00:32:51,58855,59132,Circling,CCW,1.5,Bower,,Female fish did a spin during the circle,
+vid5-v07_d05,vid5-v07_d05_evt_0024,00:32:59,00:33:06,59357,59575,Circling,CCW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0025,00:33:32,00:33:51,60373,60944,Circling,CCW,3.5,Bower,,Female fish did some spins on its own,Even the male fish almost broke off before completing the first turn
+vid5-v07_d05,vid5-v07_d05_evt_0026,00:34:05,00:34:13,61358,61578,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0027,00:42:06,00:42:39,75783,76779,Circling,CW,7.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0028,00:43:01,00:43:15,77420,77845,Circling,CW,3.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0029,00:43:40,00:43:46,78602,78774,Circling,CW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0030,00:57:09,00:57:31,102865,103518,Circling,CW,5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0031,00:57:34,00:57:42,103611,103851,Circling,CW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0032,00:57:52,00:58:02,104157,104469,Circling,CW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0033,00:59:03,00:59:10,106302,106502,Circling,CCW,1.5,Bower,,Tried circling a few seconds earlier,
+vid5-v07_d05,vid5-v07_d05_evt_0034,00:59:37,01:00:37,107317,109120,Circling,CW,12,Bower,,,Isn't this CW rotation?
+vid5-v07_d05,vid5-v07_d05_evt_0035,01:00:48,01:00:55,109440,109655,Circling,CCW,1,Bower,,Might just be passing each other,
+vid5-v07_d05,vid5-v07_d05_evt_0036,01:02:10,01:02:52,111887,113152,Circling,CW,9,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0037,01:03:56,01:04:42,115071,116467,Circling,CW,10,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0038,01:05:38,01:05:47,118148,118396,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0039,01:05:51,01:06:01,118532,118843,Circling,CW,2,Bower,,,"Starts from 01:05:51, I guess. Frame nos. would also change"
+vid5-v07_d05,vid5-v07_d05_evt_0040,01:08:11,01:08:20,122723,122995,Circling,CW,1.5,Bower,,,1.5 turns; Also starts from 1 second earlier; 2nd turn not completed fully
+vid5-v07_d05,vid5-v07_d05_evt_0041,01:09:04,01:09:10,124306,124502,Circling,CCW,1,Bower,,,consider it circling
+vid5-v07_d05,vid5-v07_d05_evt_0042,01:09:48,01:09:24,125647,124930,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0043,01:09:51,01:10:11,125738,126321,Circling,CW,3,Bower,,,"Should start from 01:09:51; That makes it 3 turns; Change starting frame number accordingly; From 48 secs - 51 secs, the fish is far away from being close and in the preferred orientation"
+vid5-v07_d05,vid5-v07_d05_evt_0044,01:10:18,01:10:34,126544,127014,Circling,CW,2.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0045,01:17:27,01:18:53,139408,141978,Circling,CW,18.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0046,01:21:21,01:21:32,146430,146747,Circling,CCW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0047,01:21:47,01:21:56,147201,147473,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0048,01:21:59,01:22:04,147573,147707,Circling,CW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0049,01:22:28,01:22:46,148435,148984,Circling,CW,4,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0050,01:31:10,01:31:38,164098,164930,Circling,CW,6,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0051,01:31:46,01:32:01,165174,165645,Circling,CCW,2.5,Bower,,Other fish came in to distract female fish,"Yes, so 3rd turn wasn't complete,right? 2.5 should be the label"
+vid5-v07_d05,vid5-v07_d05_evt_0052,01:36:38,01:36:46,173954,174191,Circling,CCW,1,Bower,,,"Yeah, can mark as circling"
+vid5-v07_d05,vid5-v07_d05_evt_0053,01:37:05,01:38:06,174760,176577,Circling,CW,12,Bower,,,Starts from 01:37:05/06; half a turn is completed by 01:37:08
+vid5-v07_d05,vid5-v07_d05_evt_0054,01:38:24,01:39:05,177125,178338,Circling,CW,7,Bower,,,Starts from 01:38:23; Frame nos. would change
+vid5-v07_d05,vid5-v07_d05_evt_0055,01:39:22,01:40:03,178864,180097,Circling,CW,7.5,Bower,,,"Starts from 01:39:22; Frame nos. would change.
+No. of turns is correct, but starting point seems to differ. Are you using FPS as 30? In the last few cases, frame nos. do not seem to align with its corresponding timestamp"
+vid5-v07_d05,vid5-v07_d05_evt_0056,01:42:15,01:42:26,184050,184388,Circling,CW,1.5,Bower,,,"Again, start timestamp should be 1-2 sec before; Plz check frame nos."
+vid5-v07_d05,vid5-v07_d05_evt_0057,01:42:44,01:43:00,184926,185395,Circling,CW,2.5,Bower,,,Start timestamp issue by 1 sec; Pls recheck
+vid5-v07_d05,vid5-v07_d05_evt_0058,01:43:26,01:43:53,186194,187005,Circling,CW,5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0059,01:44:30,01:45:13,188105,189403,Circling,CCW,8.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0060,01:45:32,01:46:29,189975,191659,Circling,CW,11,Bower,,,Broke off slightly after 6th turn; but it's okay to consider the entire 11-turn span
+vid5-v07_d05,vid5-v07_d05_evt_0061,01:47:00,01:47:08,192610,192844,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0062,01:48:02,01:48:13,194464,194800,Circling,CCW,1.5,Bower,,,"2nd turn is not complete, when the fishes break away from the bout. Should be 1.5"
+vid5-v07_d05,vid5-v07_d05_evt_0063,01:49:03,01:49:39,196291,197356,Circling,CCW,6.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0064,01:50:01,01:50:15,198038,198452,Circling,CW,2,Bower,Female finished the turns earlier,,
+vid5-v07_d05,vid5-v07_d05_evt_0065,01:50:39,01:51:17,199175,200297,Circling,CW,6,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0066,01:51:59,01:52:09,201556,201873,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0067,01:52:16,01:53:04,202081,203534,Circling,CW,9.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0068,01:53:39,01:53:56,204559,205066,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0069,01:55:14,01:55:32,207430,207960,Circling,CW,3,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0070,01:55:36,01:56:02,208069,208873,Circling,CCW,4,Bower,,Female fish did some spins on its own,
+vid5-v07_d05,vid5-v07_d05_evt_0071,01:56:23,01:57:29,209492,211458,Circling,CW,12,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0072,02:00:30,02:01:23,216893,218488,Circling,CCW,9,Bower,,Female fish did some spins on its own,
+vid5-v07_d05,vid5-v07_d05_evt_0073,02:03:26,02:03:32,222182,222352,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0074,04:34:24,04:34:33,493934,494198,Circling,CW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0075,04:34:58,04:36:17,494950,497315,Circling,CW,17,Bower,,Female fish almost left after 10th circle,
+vid5-v07_d05,vid5-v07_d05_evt_0076,04:36:41,04:36:52,498038,498372,Circling,CW,1.5,Bower,,,2nd turn was not complete. The male fish left to chase away a third fish before he had made the complete 2nd turn
+vid5-v07_d05,vid5-v07_d05_evt_0077,04:37:45,04:38:09,499963,500684,Circling,CW,5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0078,04:38:23,04:38:42,501104,501666,Circling,CW,4,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0079,04:38:46,04:39:24,501769,502928,Circling,CCW,7.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0080,04:41:00,04:41:58,505806,507525,Circling,CW,11,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0081,04:44:05,04:44:37,511358,512303,Circling,CW,6,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0082,04:45:40,04:46:32,514211,515748,Circling,CCW,9.5,Bower,,Almost broke away around 5th or 6th circle,
+vid5-v07_d05,vid5-v07_d05_evt_0083,04:47:11,04:48:30,516920,519314,Circling,CW,15,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0084,04:49:14,04:49:23,520627,520901,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0085,04:49:59,04:50:37,521979,523123,Circling,CCW,6.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0086,04:53:13,04:54:11,527795,529543,Circling,CW,11,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0087,04:54:58,04:55:28,530952,531850,Circling,CW,5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0088,04:56:05,04:57:12,532962,534966,Circling,CCW,13,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0089,04:58:33,04:59:30,537387,539110,Circling,CCW,10,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0090,05:00:11,05:00:24,540335,540733,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0091,05:00:50,05:01:00,541510,541808,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0092,05:15:30,05:15:45,567900,568350,Circling,CW,3,Bower,,"Around 8:10:00, there were a couple times they passed each other, that resembled circling","For 8:10:28, Yes, but too far away, and no circular motions"
+vid5-v07_d05,vid5-v07_d05_evt_0093,08:17:31,08:17:39,895532,895777,Circling,CW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0094,08:17:47,08:18:31,896019,897340,Circling,CW,11,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0095,08:19:09,08:19:45,898467,899555,Circling,CW,9.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0096,08:20:10,08:20:31,900289,900940,Circling,CCW,4.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0097,08:20:57,08:21:02,901725,901850,Circling,CCW,1,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0098,08:21:11,08:21:27,902137,902620,Circling,CCW,3,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0099,08:21:50,08:22:31,903314,904534,Circling,CW,8.5,Bower,, ,
+vid5-v07_d05,vid5-v07_d05_evt_0100,08:23:28,08:23:45,906248,906764,Circling,CW,2.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0101,08:24:09,08:24:19,907477,907762,Circling,CCW,1.5,Bower,,,2nd turn is not complete
+vid5-v07_d05,vid5-v07_d05_evt_0102,09:51:17,09:51:24,1064311,1064534,Circling,CW,1.5,Bower,,,
+,,,,,,,,,, ,,
