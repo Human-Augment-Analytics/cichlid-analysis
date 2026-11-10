@@ -25,7 +25,8 @@
           "kind": "annotation",
           "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
         }
-      ]
+      ],
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AIzGAhjimK-vvUN1IRetNrI/0028_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=bfdy11hx&dl=0"
     },
     {
       "id": "0031_vid",
@@ -48,7 +49,8 @@
           "kind": "annotation",
           "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
         }
-      ]
+      ],
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ACNtNV3xM1k06lXgc4zpB0o/0031_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=cxak2061&dl=0"
     }
   ]
 }

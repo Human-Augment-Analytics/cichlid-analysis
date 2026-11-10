@@ -3,8 +3,8 @@ services:
     name: cichlid-visualization
     runtime: python
     plan: free
-    buildCommand: python -m pip install -r visualization/requirements.txt
-    startCommand: python -m visualization.live --host 0.0.0.0
+    buildCommand: python3 -m pip install -r visualization/requirements.txt
+    startCommand: python3 -m visualization.live --host 0.0.0.0
     healthCheckPath: /api/catalog
     envVars:
       - key: PYTHON_VERSION

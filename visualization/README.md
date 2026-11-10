@@ -18,7 +18,11 @@ Open **http://localhost:8001** and leave Terminal running. Stop with Ctrl+C. Do 
 
 This viewer can run as a hosted Python web service. The server must bind to `0.0.0.0` and use Render's `PORT` environment variable; the deployment-compatible `live.py` supports both.
 
+**Pose fallback:** If a configured local pose file is absent, the backend downloads its `poses_url` Dropbox Parquet into temporary disk on first access to that recording. The first load can be slow; a free-service restart loses this cache. Downloads are capped at 350 MB per recording and the server needs enough ephemeral disk. A successful download does not guarantee 512 MB RAM is sufficient for every query. Pose links must be accessible without Dropbox login.
+
 **Data requirements:** Render only receives files committed to the deployed branch (and any external sources reachable from the service). Local-only Parquet files and ignored outputs are not uploaded automatically. The catalog and recording paths must be checked against the deployed filesystem; the original video can stream from configured Dropbox links. A working site does not guarantee pose/score availability.
+
+**Operational notes:** Large-video proxy traffic goes through the Render service and may exceed free-tier resources or bandwidth. The viewer does not provide authentication; get approval before making research footage publicly accessible. Test real playback and frame synchronization before sharing the URL.
 
 ## What's new
 

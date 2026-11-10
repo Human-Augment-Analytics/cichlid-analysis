@@ -7,6 +7,9 @@ from pathlib import Path
 import re
 import subprocess
 import threading
+import os
+import tempfile
+from urllib.request import Request, urlopen
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 import numpy as np
@@ -61,6 +64,42 @@ def read_urls(repo):
     except (SyntaxError, ValueError): pass
     return {}
 
+def cached_pose_file(url, video_id):
+    """Download a trusted catalog pose URL to temporary disk, never into RAM."""
+    if not url or not url.startswith('https://www.dropbox.com/'):
+        raise ValueError('Pose URL must be a Dropbox HTTPS shared-file link')
+    folder = Path(os.environ.get('CICHLID_POSE_CACHE', tempfile.gettempdir())) / 'cichlid-poses'
+    folder.mkdir(parents=True, exist_ok=True)
+    dest = folder / (re.sub(r'[^a-zA-Z0-9_-]', '_', video_id) + '.parquet')
+    if dest.is_file() and dest.stat().st_size > 8:
+        with dest.open('rb') as f:
+            if f.read(4) == b'PAR1':
+                return dest
+        dest.unlink()
+    tmp = dest.with_suffix('.partial')
+    # Avoid using the user's local data directory or committing large datasets.
+    direct = source_url(url)
+    try:
+        with urlopen(Request(direct, headers={'User-Agent':'CichlidVisualization/2'}), timeout=90) as response, tmp.open('wb') as f:
+            if 'text/html' in response.headers.get('Content-Type','').lower():
+                raise ValueError('Dropbox returned HTML instead of Parquet')
+            size = 0
+            while True:
+                block = response.read(1024*1024)
+                if not block: break
+                size += len(block)
+                if size > 350*1024*1024:
+                    raise ValueError('Pose file exceeds 350 MB download cap')
+                f.write(block)
+        with tmp.open('rb') as f:
+            if f.read(4) != b'PAR1': raise ValueError('Downloaded data is not Parquet')
+        if not pq.ParquetFile(tmp).metadata.num_rows:
+            raise ValueError('Downloaded Parquet has no rows')
+        tmp.replace(dest)
+        return dest
+    finally:
+        tmp.unlink(missing_ok=True)
+
 def fields(path): return pq.ParquetFile(path).schema_arrow.names
 
 def scoped(path, start, end, video_id, expected=None, columns=None):
@@ -108,7 +147,7 @@ class Catalog:
         return dict(default=self.default, recordings=[self.availability(e) for e in self.entries.values()])
     def availability(self, e):
         local = bool(e.get('video') and self.resolve(e['video']).is_file())
-        poses = bool(e.get('poses') and self.resolve(e['poses']).is_file())
+        poses = bool(e.get('poses') and self.resolve(e['poses']).is_file()) or bool(e.get('poses_url'))
         remote = bool(e.get('video_url'))
         pred = list((self.repo / 'outputs/predictions').glob('*/' + e['video_id'] + '.csv')) if e.get('discover_predictions', False) else []
         pred += [self.resolve(s['path']) for s in e.get('tracks', []) if s.get('kind') == 'prediction' and self.resolve(s['path']).is_file()]
@@ -127,6 +166,11 @@ class Recording:
         self.layers = {}; self.keys = {}
         for name, key in [('raw', 'poses'), ('cleaned', 'cleaned_poses')]:
             p = self.resolve(cfg[key]) if cfg.get(key) else None
+            if name == 'raw' and (not p or not p.is_file()) and cfg.get('poses_url'):
+                try: p = cached_pose_file(cfg['poses_url'], self.video_id)
+                except Exception as exc:
+                    self.warnings.append(f'Dropbox pose download failed: {exc}')
+                    continue
             if not p or not p.is_file(): continue
             try:
                 names = fields(p)
