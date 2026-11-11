@@ -9,8 +9,9 @@
 
 """Evaluate predicted circling intervals against ground-truth intervals.
 
-Reports MoF, segmental edit score, segmental F1@{10, 25, 50} and frame
-precision/recall/F1/IoU. Frame ranges are zero-based and inclusive. Run interactively:
+Reports MoF, segmental edit score, segmental F1@{10, 25, 50}, frame
+precision/recall/F1/IoU, circling-direction precision/recall/F1 and cycle-count
+errors. Frame ranges are zero-based and inclusive. Run interactively:
 
     uv run marimo edit evaluation/evaluate.py
 """
@@ -28,13 +29,22 @@ with app.setup(hide_code=True):
     import polars as pl
 
     try:
-        from .metrics import TAUS, evaluate_video, summarize
+        from .metrics import (LABEL_TAU, TAUS, evaluate_labels, evaluate_video, label_spans, merge,
+                              summarize, summarize_labels)
     except ImportError:
-        from metrics import TAUS, evaluate_video, summarize
+        from metrics import (LABEL_TAU, TAUS, evaluate_labels, evaluate_video, label_spans, merge,
+                             summarize, summarize_labels)
 
     ROOT = Path(__file__).resolve().parent.parent
     PREDICTIONS_DIR = ROOT / 'outputs/predictions'
     GROUND_TRUTH = ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'
+    # Annotated events with rotation direction and number of circles, used to label
+    # the merged ground-truth spans.
+    GROUND_TRUTH_LABELS = sorted(
+        (ROOT / 'ground_truth_annotations/finalized_annotations').glob('circling_annotations_vid*.csv'))
+    DIRECTION_NAMES = {'cw': 'CW', 'clockwise': 'CW',
+                       'ccw': 'CCW', 'counterclockwise': 'CCW', 'anticlockwise': 'CCW'}
+    CYCLE_COLUMNS = ('cycles', 'numcycles', 'circles', 'turns', 'noofturnscircles')
     VIDEO_DIR = ROOT / 'data'
     # So MoF does not depend on the source videos, which are normally streamed.
     VIDEO_FRAMES = {'0028_vid': 1_080_175, '0031_vid': 1_080_398}
@@ -64,6 +74,20 @@ def _():
     - **Frame IoU**: `|A ∩ B| / |A ∪ B|`, where A is all frames predicted as circling
       in a video and B is all frames annotated as circling. Overall is the mean across
       videos.
+    - **Direction precision / recall / F1** (CW and CCW), when the model predicts a
+      direction: segments are paired as in F1@10. A predicted CW segment is a TP if
+      it is paired with a CW ground-truth segment, else a FP; CW ground-truth
+      segments without a TP are FNs (likewise CCW). Direction F1 is the mean of the
+      CW and CCW F1; direction accuracy is the fraction of paired segments whose
+      direction is correct, so it ignores missed and spurious events.
+    - **Cycle MAE / RMSE / bias**, when the model predicts cycle counts: error
+      (predicted − annotated circles) over segments paired as in F1@10. Bias > 0 means
+      over-counting. Total annotated and predicted cycles are also reported.
+
+    Ground-truth direction and cycles come from the annotated events in
+    `circling_annotations_vid*.csv`: each merged span takes the direction covering
+    most of its frames, and the overlapping events' circles prorated by overlap. Spans
+    without an overlapping annotated event are left out of these metrics.
 
     Pick a model from `outputs/predictions/`; the CSV files in its folder are
     concatenated. Frame counts are read from `data/<video>.mp4`, else the last
@@ -79,6 +103,8 @@ def _():
     |VideoID|`0028_vid` or `0031_vid` for now|
     |StartFrame| frame number |
     |EndFrame| frame number |
+    |Direction| optional: `CW` or `CCW` |
+    |Cycles| optional: number of circles, may be fractional |
 
     Evaluation is done across all videos, so write a file for every video, even if
     it only has the header row.
@@ -87,14 +113,18 @@ def _():
 
 
 @app.function(hide_code=True)
-def read_intervals(path):
+def read_intervals(path, labels=False):
     """Read intervals as (video_id, start, end) from a CSV file.
 
     The file needs video ID and start/end frame columns; header case, spaces and
-    punctuation are ignored ("Start Frame" == "StartFrame"). Every row is used.
+    punctuation are ignored ("Start Frame" == "StartFrame"). Every non-blank row is used.
+    With `labels`, also returns `direction` (CW/CCW) and `cycles` columns, null when
+    the file does not have them: a column containing "direction", and one of
+    `CYCLE_COLUMNS` ("Cycles", "No. of turns/circles", ...).
     """
     path = Path(path)
     rows = pl.read_csv(path, infer_schema=False)
+    rows = rows.filter(~pl.all_horizontal(pl.all().is_null()))
     columns = {re.sub(r'[^a-z]', '', column.lower()): column for column in rows.columns}
     if 'videoid' not in columns:
         raise ValueError(f'{path}: missing video ID column')
@@ -107,16 +137,45 @@ def read_intervals(path):
     invalid = intervals.filter((pl.col('start') < 0) | (pl.col('end') < pl.col('start')))
     if len(invalid):
         raise ValueError(f'{path}: invalid intervals\n{invalid}')
+    if labels:
+        intervals = intervals.with_columns(read_labels(path, rows, columns))
     return intervals
 
 
 @app.function(hide_code=True)
-def read_predictions(model_dir):
+def read_labels(path, rows, columns):
+    """Direction and cycles columns of `rows`, keyed by normalized header in `columns`."""
+    direction_column = next((columns[key] for key in columns if 'direction' in key), None)
+    cycle_column = next((columns[key] for key in CYCLE_COLUMNS if key in columns), None)
+    direction = pl.Series('direction', [None] * len(rows), pl.String)
+    if direction_column:
+        raw = rows[direction_column].str.strip_chars()
+        names = raw.str.to_lowercase().str.replace_all(r'[^a-z]', '')
+        unknown = raw.filter(names.is_not_null() & (names != '') & ~names.is_in(list(DIRECTION_NAMES)))
+        if len(unknown):
+            raise ValueError(f'{path}: unknown directions {sorted(set(unknown))}')
+        direction = names.replace_strict(DIRECTION_NAMES, default=None, return_dtype=pl.String)
+    cycles = pl.Series('cycles', [None] * len(rows), pl.Float64)
+    if cycle_column:
+        cycles = rows[cycle_column].str.strip_chars().replace('', None).cast(pl.Float64)
+        if (cycles < 0).any():
+            raise ValueError(f'{path}: negative cycle counts')
+    return direction.alias('direction'), cycles.alias('cycles')
+
+
+@app.function(hide_code=True)
+def read_predictions(model_dir, labels=False):
     """Concatenate the per-video CSV files in a model's prediction folder."""
     paths = sorted(Path(model_dir).glob('*.csv'))
     if not paths:
         raise FileNotFoundError(f'{model_dir}: no prediction CSV files')
-    return pl.concat([read_intervals(path) for path in paths])
+    return pl.concat([read_intervals(path, labels) for path in paths])
+
+
+@app.function(hide_code=True)
+def read_ground_truth_labels(paths=GROUND_TRUTH_LABELS):
+    """Annotated events with direction and cycles, used to label ground-truth spans."""
+    return pl.concat([read_intervals(path, labels=True) for path in paths])
 
 
 @app.function(hide_code=True)
@@ -156,25 +215,33 @@ def _():
 @app.cell
 def _():
     gt = read_intervals(GROUND_TRUTH)
-    return (gt,)
+    gt_labels = read_ground_truth_labels()
+    return gt, gt_labels
 
 
 @app.cell
 def _(model):
     mo.stop(model.value is None, mo.callout('Select a model from outputs/predictions.', kind='info'))
-    predicted = read_predictions(model.value)
+    predicted = read_predictions(model.value, labels=True)
     return (predicted,)
 
 
 @app.function(hide_code=True)
-def evaluate(gt, predicted, num_frames=None):
+def evaluate(gt, predicted, num_frames=None, gt_labels=None):
     """Per-video and overall metrics plus warnings.
 
     `num_frames` maps video ID to frame count; otherwise it comes from `VIDEO_FRAMES`,
     then `data/<video>.mp4`, else the last annotated or predicted frame + 1.
+    With `gt_labels` (annotated events with `direction` and `cycles`, as from
+    `read_ground_truth_labels`), direction and cycle metrics are added for the
+    labels `predicted` has non-null values for.
     """
     num_frames = num_frames or {}
     warnings = []
+    if gt_labels is not None:
+        predicts_direction = 'direction' in predicted.columns and predicted['direction'].is_not_null().any()
+        predicts_cycles = 'cycles' in predicted.columns and predicted['cycles'].is_not_null().any()
+        unlabelled = 0
     extra = set(predicted['video_id']) - set(gt['video_id'])
     if extra:
         warnings.append(f'Ignoring predictions for videos without ground truth: {sorted(extra)}')
@@ -190,9 +257,49 @@ def evaluate(gt, predicted, num_frames=None):
             warnings.append(f'{video}: frame count unknown, using last interval frame + 1 ({last:,}) for MoF')
         elif frames < last:
             raise ValueError(f'{video}: {frames} frames but intervals reach frame {last - 1}')
-        rows.append({'video_id': video, **evaluate_video(gt_spans, pred_spans, frames)})
-    rows.append({'video_id': 'overall', **summarize(rows)})
-    return pl.DataFrame(rows), warnings
+        row = {'video_id': video, **evaluate_video(gt_spans, pred_spans, frames)}
+        if gt_labels is not None:
+            # Segments as in evaluate_video, labelled from the events overlapping them.
+            labelled_gt = label_spans(merge(gt_spans), label_rows(gt_labels, video))
+            labelled_pred = label_spans(merge(pred_spans), label_rows(predicted, video))
+            row |= evaluate_labels(labelled_gt, labelled_pred, predicts_direction, predicts_cycles)
+            unlabelled += sum(segment[2] is None for segment in labelled_gt)
+        rows.append(row)
+    overall = summarize(rows)
+    if gt_labels is not None:
+        overall |= summarize_labels(rows)
+        if unlabelled:
+            warnings.append(f'{unlabelled} ground-truth spans have no annotated direction and are '
+                            'left out of direction and cycle metrics')
+    rows.append({'video_id': 'overall', **overall})
+    return pl.DataFrame(rows, infer_schema_length=None), warnings
+
+
+@app.function(hide_code=True)
+def label_rows(intervals, video):
+    """(start, end, direction, cycles) tuples for one video."""
+    columns = [c for c in ('start', 'end', 'direction', 'cycles') if c in intervals.columns]
+    rows = intervals.filter(pl.col('video_id') == video).select(columns).iter_rows()
+    return [row + (None,) * (4 - len(row)) for row in rows]
+
+
+@app.function(hide_code=True)
+def label_stats(overall):
+    """Direction and cycle figures, or none when they were not evaluated."""
+    if 'direction_f1' not in overall:
+        return []
+    def percent(value):
+        return '—' if value is None or value != value else f'{value:.1%}'
+    def count(value):
+        return '—' if value is None or value != value else f'{value:.2f}'
+    return [
+        mo.stat(percent(overall['direction_f1']), label='Direction F1',
+                caption=f"CW {percent(overall['cw_f1'])} · CCW {percent(overall['ccw_f1'])}"),
+        mo.stat(percent(overall['direction_accuracy']), label='Direction accuracy',
+                caption=f"of {overall['direction_matched'] or 0} segments paired at IoU ≥ {LABEL_TAU / 100}"),
+        mo.stat(count(overall['cycle_mae']), label='Cycle MAE',
+                caption=f"bias {count(overall['cycle_bias'])} · RMSE {count(overall['cycle_rmse'])}"),
+    ]
 
 
 @app.function(hide_code=True)
@@ -211,13 +318,14 @@ def summary_view(results, warnings):
                       caption=f"{overall[f'tp@{tau}']} / {overall['gt_segments']} segments matched")
               for tau in TAUS),
         ], widths='equal'),
+        *([mo.hstack(label_stats(overall), widths='equal')] if label_stats(overall) else []),
         mo.ui.table(results, selection=None),
     ])
 
 
 @app.cell
-def _(gt, predicted):
-    results, warnings = evaluate(gt, predicted)
+def _(gt, gt_labels, predicted):
+    results, warnings = evaluate(gt, predicted, gt_labels=gt_labels)
     return results, warnings
 
 

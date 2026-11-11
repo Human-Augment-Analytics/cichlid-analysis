@@ -21,13 +21,16 @@ from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read
                                  read_predictions, summary_view)
 
 gt = read_intervals(GROUND_TRUTH)
+gt_labels = read_ground_truth_labels()  # direction and cycles of annotated events
 for name, folder in prediction_models().items():  # e.g. {'rule_based': Path(...)}
-    results, warnings = evaluate(gt, read_predictions(folder))
+    results, warnings = evaluate(gt, read_predictions(folder, labels=True), gt_labels=gt_labels)
     summary_view(results, warnings)
 ```
 
-`predicted` has `video_id`, `start` and `end` columns. `evaluate` also takes an
-optional `num_frames` mapping of video ID to frame count.
+`predicted` has `video_id`, `start` and `end` columns, plus `direction` and
+`cycles` with `labels=True`. `evaluate` also takes an optional `num_frames`
+mapping of video ID to frame count; direction and cycle metrics are only added
+when `gt_labels` is given.
 
 ## Input format
 
@@ -35,7 +38,9 @@ Each model writes one file per video to `outputs/predictions/<model_name>/<video
 Write a file for every video, even if it only has the header row. Files are CSV
 with a video ID column plus start/end frame columns, e.g. `VideoID`, `StartFrame`,
 `EndFrame` (header case, spaces and punctuation are ignored, so `Video ID` and
-`Start Frame` also work). Other columns are ignored and every row
+`Start Frame` also work). Optionally add a `Direction` column (`CW` or `CCW`)
+and a `Cycles` column (number of circles, may be fractional) to be scored on
+those too. Other columns are ignored and every row
 is used, so ground truth must contain only valid circling events. Frame ranges
 are zero-based and inclusive.
 
@@ -77,6 +82,30 @@ are zero-based and inclusive.
   Lower τ rewards finding events; higher τ also requires accurate boundaries.
   True positives (`tp@τ`) and segment counts are pooled across videos for the
   overall figure.
+
+- **Direction precision / recall / F1**, for models with a `Direction` column.
+  Predicted and ground-truth segments are paired as in F1@10 (`LABEL_TAU`). For
+  each direction d, a predicted d segment paired with a ground-truth d segment is
+  a TP; any other predicted d segment is a FP (except one paired with a segment of
+  unknown direction, which is ignored); ground-truth d segments without a TP are
+  FNs. `direction_f1` is the mean of `cw_f1` and `ccw_f1`, so it also penalises
+  missed and spurious events; `direction_accuracy` is the fraction of paired
+  segments with the right direction, so it judges direction alone.
+- **Cycle MAE / RMSE / bias**, for models with a `Cycles` column: error
+  (predicted − annotated circles) over paired segments; bias > 0 means
+  over-counting. `gt_cycles` and `pred_cycles` are the totals per video. Errors are
+  pooled across videos for the overall figure.
+
+Ground-truth direction and cycles come from the annotated events in
+`circling_annotations_vid*.csv`, since `merged_spans.csv` has neither. Each
+merged span takes the direction covering most of its frames and the circles of
+the events it overlaps, prorated by the fraction of each event inside it
+(`label_spans`). Predicted segments are labelled the same way when overlapping
+predictions are merged. The 8 merged spans with no annotated event are left out
+of these metrics, with a warning, and the 6 that overlap events of both
+directions take the majority one.
+
+Metrics for a label a model does not predict are NaN, with counts left empty.
 
 Predictions for videos without ground truth are ignored with a warning.
 

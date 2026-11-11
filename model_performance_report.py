@@ -28,8 +28,9 @@ with app.setup(hide_code=True):
     from matplotlib.patches import Patch
     from matplotlib.ticker import StrMethodFormatter
 
-    from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_intervals,
-                                     read_predictions, summary_view)
+    from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_ground_truth_labels,
+                                     read_intervals, read_predictions, summary_view)
+    from evaluation.metrics import LABEL_TAU
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES
     from video_source import TABLE_URLS, VideoReader, download
@@ -74,6 +75,35 @@ def _():
     as circling:
 
     $$\text{IoU} = \frac{|A \cap B|}{|A \cup B|}$$
+
+    ### Circling direction
+    For models whose predictions have a `Direction` column (`CW` / `CCW`). Predicted
+    and ground-truth segments are paired as in F1@10. For each direction $d$, a
+    predicted $d$ segment paired with a ground-truth $d$ segment is a true positive;
+    any other predicted $d$ segment is a false positive, and ground-truth $d$ segments
+    without a true positive are false negatives:
+
+    $$P_d = \frac{TP_d}{TP_d + FP_d} \qquad R_d = \frac{TP_d}{TP_d + FN_d} \qquad
+      F1_d = \frac{2 P_d R_d}{P_d + R_d}$$
+
+    Direction F1 is the mean of $F1_{CW}$ and $F1_{CCW}$, so it also penalises missed and
+    spurious events. Direction accuracy is the fraction of paired segments with the
+    correct direction, so it judges direction alone.
+
+    ### Number of cycles
+    For models whose predictions have a `Cycles` column. With $e_i$ = predicted −
+    annotated circles for each of the $n$ paired segments:
+
+    $$\text{MAE} = \frac{1}{n}\sum |e_i| \qquad \text{RMSE} = \sqrt{\frac{1}{n}\sum e_i^2}
+      \qquad \text{bias} = \frac{1}{n}\sum e_i$$
+
+    Positive bias means over-counting. Total annotated and predicted cycles per video are
+    in the per-video table (`gt_cycles`, `pred_cycles`).
+
+    Ground-truth direction and circles come from `circling_annotations_vid*.csv`: each
+    merged span takes the direction covering most of its frames and the circles of the
+    annotated events it overlaps, prorated by overlap. Spans with no annotated event
+    are left out of these metrics.
     """)
     return
 
@@ -91,8 +121,9 @@ def _():
     models = prediction_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
     gt = read_intervals(GROUND_TRUTH)
-    predictions = {_name: read_predictions(_dir) for _name, _dir in models.items()}
-    evaluations = {_name: evaluate(gt, _predicted, num_frames=VIDEO_FRAMES)
+    _gt_labels = read_ground_truth_labels()
+    predictions = {_name: read_predictions(_dir, labels=True) for _name, _dir in models.items()}
+    evaluations = {_name: evaluate(gt, _predicted, num_frames=VIDEO_FRAMES, gt_labels=_gt_labels)
                    for _name, _predicted in predictions.items()}
     return evaluations, gt, models, predictions
 
@@ -103,13 +134,16 @@ def _(evaluations, predictions):
         {"model": _name, "predicted_spans": predictions[_name].height,
          **{_key: _overall[_key] for _key in ("mof", "edit_score", "f1@10", "f1@25", "f1@50",
                                              "frame_precision", "frame_recall", "frame_f1",
-                                             "frame_iou")}}
+                                             "frame_iou", "direction_f1", "cw_f1", "ccw_f1",
+                                             "direction_accuracy", "cycle_mae", "cycle_rmse",
+                                             "cycle_bias")}}
         for _name, (_results, _) in evaluations.items()
         for _overall in [_results.row(-1, named=True)]
     ])
     mo.vstack([
         mo.md(f"## Model comparison\n\nOverall metrics across both videos · ground truth "
-              f"`{GROUND_TRUTH.relative_to(ROOT)}`"),
+              f"`{GROUND_TRUTH.relative_to(ROOT)}`. Direction and cycle metrics pair segments at "
+              f"IoU ≥ {LABEL_TAU / 100} and are NaN for models that do not predict them."),
         mo.ui.table(_comparison, selection=None, pagination=False),
         mo.ui.tabs({_name: summary_view(_results, _warnings)
                     for _name, (_results, _warnings) in evaluations.items()}),
@@ -186,7 +220,7 @@ def _(clip_model, predictions):
     mo.stop(_predicted.is_empty(), mo.md("No predicted spans to preview."))
     _options = {
         f"{_video} · {_start:,}–{_end:,} · {(_end - _start + 1) / FPS:.1f} s": (_video, _start, _end)
-        for _video, _start, _end in _predicted.iter_rows()
+        for _video, _start, _end in _predicted.select("video_id", "start", "end").iter_rows()
     }
     clip_selection = mo.ui.dropdown(options=_options, value=next(iter(_options)),
                                     label="Predicted span", allow_select_none=False)
