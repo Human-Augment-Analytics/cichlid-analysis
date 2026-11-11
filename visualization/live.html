@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cichlid recording review</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071923;color:#deebef;font:15px system-ui}main{max-width:1640px;margin:auto;padding:24px}h1{margin:0;font-size:28px}h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;font-weight:500;margin:18px 0 7px}p,small{color:#aec4ce;line-height:1.5}header{display:flex;justify-content:space-between;gap:20px;margin-bottom:20px}.panel{background:#112e3d;border:1px solid #254958;border-radius:12px;padding:16px}.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.layout{align-items:start;display:grid;grid-template-columns:minmax(0,2fr) minmax(330px,1fr);gap:18px;margin-top:16px}button,select,input{font:inherit;background:#1c4053;color:#eef7fa;border:1px solid #4c7182;border-radius:5px;padding:7px}button{cursor:pointer}button:hover{background:#2b576b}button:disabled,select:disabled{opacity:.5;cursor:default}select{max-width:100%}label{display:inline-flex;align-items:center;gap:7px}#recording{min-width:220px}.stage{position:relative;background:#000;line-height:0;min-height:150px}.stage video{width:100%;display:block}.stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}#seek{width:100%;margin:15px 0 0;accent-color:#59d8c1}input[type=number]{width:120px}#readout{font-variant-numeric:tabular-nums;margin:13px 0 8px}.badge{display:flex;align-items:center;gap:10px;padding:9px;}.badge .state-icon{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:50%;background:#1c4053;font-size:18px}.badge .state-copy{flex:1;min-width:0}.badge{padding:11px;border-radius:6px;background:#294754;margin-bottom:8px}.badge strong{display:block;font-weight:500}.badge span{display:block;color:#bdced7;font-size:12px;margin-top:4px}.mint{color:#6bdeca}.purple{color:#ccb7ff}.plot{width:100%;height:120px;background:#0b2431;border-radius:5px}.status{color:#a9c1cd;margin-top:10px}.notice{color:#ffda9c;white-space:pre-line;line-height:1.45;margin-top:10px}#loading{min-height:24px;color:#ffda9c;margin-top:12px}.timeline{width:100%;height:120px;cursor:pointer}#events{max-height:250px;overflow:auto;margin-top:10px}#events button{display:block;width:100%;text-align:left;margin:5px 0}details{margin-top:12px}summary{cursor:pointer;color:#b7cdd7}#warnings{white-space:pre-line;color:#ffda9c}#sources{overflow-wrap:anywhere;font-size:12px}#featurePanel{margin-top:18px}.tag{color:#8ae0cd}.availability{font-size:13px;color:#aec4ce}.empty{color:#aac1ce;padding:12px}#scoreSelect,#featureSelect{width:100%}@media(max-width:900px){.layout{grid-template-columns:1fr}header{display:block}main{padding:12px}.toolbar{align-items:flex-start}}.icon-button{min-width:40px;min-height:38px;font-size:19px;line-height:1}.stage.is-seeking:after{content:"Loading video frame…";position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,25,35,.82);color:#deebef;font-size:16px;line-height:1.4;z-index:3}.stage.is-seeking:before{content:"";position:absolute;top:calc(50% + 24px);left:calc(50% - 17px);width:34px;height:34px;border:3px solid #4c7182;border-top-color:#59d8c1;border-radius:50%;animation:spin 1s linear infinite;z-index:4}@keyframes spin{to{transform:rotate(360deg)}}.timeline{cursor:default}#pairnote {display: block;height: 4.5em;min-height: 4.5em;max-height: 4.5em;line-height: 1.5;font-variant-numeric: tabular-nums;overflow: hidden;}#pairnote span {display: block;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;}
+</style>
+<main>
+<header><div><h1>Circling, across the recording</h1><p id="subtitle">Select a recording to begin</p></div><small>Recorded-video review · local or Dropbox<br>Existing poses and predictions · no live inference</small></header>
+<section class="panel"><div class="toolbar">
+<label>Recording <select id="recording" aria-label="Recording"></select></label>
+<label>Video source <select id="source"><option value="auto">Auto · local first</option><option value="local">Local file</option><option value="dropbox">Dropbox / remote</option></select></label>
+<label>Pose layer <select id="layer"><option value="raw">Original poses</option></select></label>
+<button id="refresh">Refresh available outputs</button>
+</div><div id="availability" class="availability"></div><div id="sourceStatus" class="status"></div>
+<details><summary>Inputs and availability notes</summary><div id="warnings"></div><div id="sources"></div></details></section>
+<div id="loading" role="status"></div>
+<section class="panel" style="margin-top:16px"><h2>Whole-recording event overview</h2><canvas id="timeline" class="timeline" aria-label="Recording event overview"></canvas><small>Overview only (not a seek control). Turquoise: annotated circling; dark green: reviewed negative; purple: prediction; gray: unknown. Use the time slider or event list to seek.</small><details id="eventDetails"><summary>Jump to an event</summary><div class="controls"><select id="eventTrack" aria-label="Event source"></select></div><div id="events"></div></details></section>
+<div class="layout"><section class="panel">
+<div class="stage" id="videoStage"><video id="video" preload="metadata" playsinline></video><canvas id="overlay"></canvas></div>
+<input id="seek" type="range" min="0" max="1" step="0.001" value="0" aria-label="Full recording position">
+<div class="controls"><button id="play" class="icon-button" aria-label="Play" title="Play">▶</button><button id="back" class="icon-button" aria-label="Previous frame" title="Previous frame">⏮</button><button id="forward" class="icon-button" aria-label="Next frame" title="Next frame">⏭</button><label>Speed <select id="speed"><option>0.2</option><option>0.5</option><option selected>1</option><option>2</option><option>4</option><option>8</option></select></label><label><input id="poses" type="checkbox" checked> Poses</label><label><input id="all" type="checkbox" checked> All tracks</label><label><input id="labels" type="checkbox"> Keypoint labels</label></div>
+<div class="controls"><label>Source frame <input id="frame" type="number" min="0" step="1" value="0"></label><button id="jump">Jump</button><button id="prev">Previous event</button><button id="next">Next event</button></div>
+<div id="readout"></div><small>Frame numbers are estimated from media time and FPS; browser frame stepping is approximate.</small>
+</section><aside class="panel">
+<h2>Behavior at this moment</h2><div id="states"></div><small>↻ indicates a circling label, not measured direction or cycle count. Those require structured model outputs.</small>
+<h3 class="purple">Model score</h3><select id="scoreSelect" aria-label="Score source"></select><div id="scoreText" class="purple"></div><canvas id="scorePlot" class="plot"></canvas>
+<small>Saved scores only; they may not be calibrated probabilities.</small>
+<h2 style="margin-top:22px">Selected pair movement</h2><div class="controls"><select id="fishA" aria-label="First fish"></select><select id="fishB" aria-label="Second fish"></select><button id="nearest">Closest pair now</button></div>
+<p id="pairnote"></p><h3 class="mint">Box-center distance (source px)</h3><canvas id="distance" class="plot"></canvas><h3 style="color:#ffc078">Pair angular velocity (rad/s)</h3><canvas id="angular" class="plot"></canvas>
+<small>Box-center geometry; clockwise is positive in image coordinates. Missing data stays missing. Scene-level predictions do not identify individual fish.</small>
+<div id="featurePanel"><h3>Shared pairwise features</h3><select id="featureSelect" aria-label="Shared feature"></select><canvas id="featurePlot" class="plot"></canvas><small id="featureNote">Shared feature values may use different centroids or smoothing. Pose-layer changes do not recompute these features or model outputs.</small></div>
+</aside></div>
+
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), video=$('video');
+let meta=null, catalog=null, chunk=null, currentFrame=0, mediaTime=0, generation=0, layerGeneration=0, wanted=-1, pairChosen=false;
+let cache=new Map(), pending=new Map(), features=new Map(), frameCallback=null, fallbackUsed=false;
+const valid=p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite);
+const pair=()=>[$('fishA').value,$('fishB').value];
+function stamp(t){t=Number.isFinite(t)?Math.max(0,t):0;return `${String(Math.floor(t/3600)).padStart(2,'0')}:${String(Math.floor(t%3600/60)).padStart(2,'0')}:${(t%60).toFixed(3).padStart(6,'0')}`;}
+function params(extra={}){return new URLSearchParams({recording:$('recording').value,source:$('source').value,...extra}).toString();}
+async function json(url){const response=await fetch(url),data=await response.json();if(!response.ok)throw Error(data.error||response.statusText);return data;}
+function options(select,rows,chosen){select.replaceChildren();for(const row of rows){const option=document.createElement('option');option.value=row.id;option.textContent=row.name;select.append(option);}if(chosen&&rows.some(r=>r.id===chosen))select.value=chosen;}
+function setSeeking(value){$('videoStage').classList.toggle('is-seeking',Boolean(value));}
+function updatePlayIcon(){const playing=!video.paused;$('play').textContent=playing?'⏸':'▶';$('play').setAttribute('aria-label',playing?'Pause':'Play');$('play').title=playing?'Pause':'Play';}
+function note(text){$('loading').textContent=text;}
+function resizeCanvas(id){const c=$(id),w=Math.max(1,Math.round(c.clientWidth)),h=Math.max(1,Math.round(c.clientHeight));if(c.width!==w||c.height!==h){c.width=w;c.height=h;}const ctx=c.getContext('2d');ctx.clearRect(0,0,w,h);return {ctx,w,h};}
+function emptyPlot(id,text){const {ctx}=resizeCanvas(id);ctx.font='12px system-ui';ctx.fillStyle='#aec4ce';ctx.fillText(text,10,22);}
+function color(id){const selected=pair();if(id===selected[0])return '#ffc078';if(id===selected[1])return '#6bbdff';let n=0;for(const ch of id)n=(n*31+ch.charCodeAt(0))>>>0;return `hsl(${(n*137.508)%360} 85% 70%)`;}
+async function loadCatalog(refresh=false){
+ const chosen=$('recording').value;catalog=await json('/api/catalog'+(refresh?'?refresh=1':''));
+ options($('recording'),catalog.recordings.map(r=>({id:r.id,name:`${r.label} · ${r.local?'local':r.dropbox?'remote':'video missing'} · ${r.poses?'poses':'video only'}`})),chosen||catalog.default);
+ if(!$('recording').value&&catalog.recordings.length)$('recording').value=catalog.recordings[0].id;
+}
+function availability(){const item=catalog.recordings.find(r=>r.id===$('recording').value);if(!item)return;$('availability').textContent=`Local video: ${item.local?'available':'missing'} · Remote link: ${item.dropbox?'configured (not yet verified)':'none'} · Poses: ${item.poses?'available':'missing'} · Annotations: ${item.annotations?'configured file available':'none configured'} · Prediction files: ${item.predictions}`;}
+function updateInputNotes(){if(!meta)return;$('warnings').textContent=[...meta.warnings,...(chunk?.warnings||[])].join('\n')||'No input warnings.';$('sources').replaceChildren();for(const track of meta.tracks){const line=document.createElement('p');line.textContent=`${track.name}: ${track.source} · ${track.spans.length} intervals`; $('sources').append(line);}for(const source of meta.scores){const line=document.createElement('p');line.textContent=`Score ${source.name}: ${source.source}`;$('sources').append(line);}}
+async function openRecording(preserveTime=null,resetFallback=true){
+ const token=++generation;meta=null;chunk=null;wanted=-1;cache.clear();pending.clear();features.clear();pairChosen=false;
+ if(resetFallback)fallbackUsed=false;
+ video.pause();setSeeking(false);updatePlayIcon();if(frameCallback!=null&&video.cancelVideoFrameCallback)video.cancelVideoFrameCallback(frameCallback);frameCallback=null;
+ video.onloadedmetadata=null;video.onerror=null;video.removeAttribute('src');video.load();
+ $('fishA').replaceChildren();$('fishB').replaceChildren();$('states').replaceChildren();$('events').replaceChildren();$('eventTrack').replaceChildren();$('readout').textContent='';$('pairnote').textContent='';$('scoreText').textContent='';$('scoreSelect').replaceChildren();$('featureSelect').replaceChildren();$('warnings').textContent='';$('sources').replaceChildren();$('overlay').getContext('2d').clearRect(0,0,$('overlay').width,$('overlay').height);
+ $('subtitle').textContent='Loading selected recording…';$('sourceStatus').textContent='';availability();note('Loading recording inputs…');
+ for(const id of ['distance','angular','scorePlot','featurePlot','timeline'])emptyPlot(id,'Loading…');
+ try{
+  const data=await json('/api/meta?'+params());if(token!==generation)return;meta=data;
+  const startTime=preserveTime==null?meta.start_frame/meta.fps:preserveTime;
+  options($('layer'),meta.layers.map(id=>({id,name:id==='raw'?'Original poses':'Cleaned poses'})));if(!meta.layers.length)options($('layer'),[{id:'raw',name:'No pose input'}]);$('layer').disabled=meta.layers.length<2;
+  options($('scoreSelect'),meta.scores.map(s=>({id:s.id,name:s.name})));if(!meta.scores.length)options($('scoreSelect'),[{id:'',name:'No numeric scores available'}]);$('scoreSelect').disabled=!meta.scores.length;
+  options($('featureSelect'),meta.features);$('featurePanel').hidden=!meta.features.length;
+  options($('eventTrack'),meta.tracks.map((t,i)=>({id:String(i),name:t.name})));$('eventTrack').disabled=!meta.tracks.length;
+  $('timeline').style.height=Math.max(65,meta.tracks.length*30+20)+'px';
+  $('sourceStatus').textContent=`Playing ${meta.source==='local'?'local file':'Dropbox / remote video through the local proxy'}. ${meta.source==='dropbox'?'Seeking and playback depend on the network.':''}`;
+  updateInputNotes();eventList();setDuration(meta.duration);subtitle();
+  video.onloadedmetadata=()=>{
+   if(token!==generation)return;
+   if(Number.isFinite(video.duration))setDuration(video.duration);
+   if(meta.width!==video.videoWidth||meta.height!==video.videoHeight){meta.warnings.push('Video dimensions differ from catalog metadata. Verify video/pose identity and coordinate alignment.');updateInputNotes();}
+   meta.width=video.videoWidth||meta.width;meta.height=video.videoHeight||meta.height;
+   video.playbackRate=Number($('speed').value);subtitle();seek(startTime);scheduleFrame();
+  };
+  video.onerror=()=>{
+   if(token!==generation)return;setSeeking(false);
+   if($('source').value==='auto'&&meta.source==='local'&&meta.available_sources.dropbox&&!fallbackUsed){fallbackUsed=true;$('source').value='dropbox';note('Local playback failed; trying the configured remote video.');openRecording(mediaTime,false);return;}
+   note('Video playback failed. Check the direct shared-file link, access, codec and network, or choose Local. The video host must support HTTP range seeking.');
+  };
+  video.src='/video?'+params();video.load();await update(startTime,false);
+ }catch(error){if(token===generation){note(error.message);$('subtitle').textContent='Recording could not be opened';}}
+}
+function subtitle(){if(meta)$('subtitle').textContent=`${meta.video_id} · entire ${stamp(meta.duration)} recording · ${meta.fps} FPS · ${meta.source} playback`;}
+function setDuration(duration){if(!meta||!Number.isFinite(duration)||duration<=0)return;meta.duration=duration;$('seek').max=duration;$('frame').max=Math.max(0,Math.ceil(duration*meta.fps)-1);}
+function scheduleFrame(){if(!video.requestVideoFrameCallback||!meta)return;const token=generation;frameCallback=video.requestVideoFrameCallback((now,data)=>{if(token!==generation)return;update(data.mediaTime,true);scheduleFrame();});}
+function seek(time){if(!meta||!Number.isFinite(time))return;setSeeking(Math.abs(video.currentTime-time)>0.02);video.currentTime=Math.max(0,Math.min(meta.duration-.001,time));update(video.currentTime,false);}
+function populatePair(){if(!chunk)return;const ids=[...new Set((chunk.frames[String(currentFrame)]||[]).map(r=>r.id))].sort((a,b)=>Number(a)-Number(b)),old=pair();
+ for(let i=0;i<2;i++){const selected=old[i]&&ids.includes(old[i])?old[i]:ids[i]||'';options($(i?'fishB':'fishA'),ids.map(id=>({id,name:'Fish '+id})),selected);}
+ if(ids.length<2){pairChosen=false;return;}
+ if(!pairChosen||!ids.includes(old[0])||!ids.includes(old[1])||old[0]===old[1]){pairChosen=false;closestPair();}
+}
+function closestPair(){if(!chunk)return;const rows=chunk.frames[String(currentFrame)]||[];let best=null;for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){if(!valid(rows[i].center)||!valid(rows[j].center))continue;const d=Math.hypot(rows[i].center[0]-rows[j].center[0],rows[i].center[1]-rows[j].center[1]);if(!best||d<best.d)best={a:rows[i].id,b:rows[j].id,d};}
+ if(best){$('fishA').value=best.a;$('fishB').value=best.b;pairChosen=true;}else note('Fewer than two valid tracks at this frame; no closest pair available.');
+}
+function geometry(frame){const [a,b]=pair(),rows=chunk?.frames[String(frame)]||[],ra=rows.find(r=>r.id===a),rb=rows.find(r=>r.id===b);if(a===b||!valid(ra?.center)||!valid(rb?.center))return null;const dx=rb.center[0]-ra.center[0],dy=rb.center[1]-ra.center[1],distance=Math.hypot(dx,dy);return {distance,angle:distance>1e-8?Math.atan2(dy,dx):null};}
+function feature(frame){const g=geometry(frame),p=geometry(frame-1);return {distance:g?.distance??null,rate:g?.angle!=null&&p?.angle!=null?Math.atan2(Math.sin(g.angle-p.angle),Math.cos(g.angle-p.angle))*meta.fps:null};}
+function shared(frame){let [a,b]=pair();if(Number(a)>Number(b))[a,b]=[b,a];return features.get(`${frame}|${a}|${b}`)?.[$('featureSelect').value]??null;}
+function score(frame){return chunk?.scores[$('scoreSelect').value]?.[String(frame)]??null;}
+function plot(id,getValue,tint,fixed=null){
+ if(!chunk){emptyPlot(id,'Section loading / no data');return;}
+ const values=[];for(let f=chunk.start;f<=chunk.end;f++)values.push(getValue(f));const finite=values.filter(Number.isFinite);
+ if(!finite.length){emptyPlot(id,id==='scorePlot'?'No scores supplied in this section':'Selected pair unavailable in this section');return;}
+ const {ctx,w,h}=resizeCanvas(id);let lo=fixed?fixed[0]:Math.min(...finite),hi=fixed?fixed[1]:Math.max(...finite);if(id==='distance')lo=0;if(hi-lo<1e-6){lo-=.5;hi+=.5;}
+ ctx.font='11px system-ui';ctx.fillStyle='#aac3ce';ctx.fillText(hi.toFixed(2),4,13);ctx.fillText(lo.toFixed(2),4,h-20);ctx.strokeStyle=tint;ctx.beginPath();let open=false;
+ values.forEach((value,i)=>{if(!Number.isFinite(value)){open=false;return;}const x=46+i/(values.length-1)*(w-54),y=18+(hi-value)/(hi-lo)*(h-42);if(open)ctx.lineTo(x,y);else ctx.moveTo(x,y);open=true;});ctx.stroke();
+ const x=46+(currentFrame-chunk.start)/(chunk.end-chunk.start)*(w-54);ctx.strokeStyle='#e6f2f6';ctx.beginPath();ctx.moveTo(x,13);ctx.lineTo(x,h-25);ctx.stroke();ctx.fillStyle='#aac3ce';ctx.fillText(`${stamp(chunk.start/meta.fps)} – ${stamp(chunk.end/meta.fps)}`,46,h-3);
+}
+function state(track){const hits=track.spans.filter(s=>s.start<=currentFrame&&s.end>=currentFrame);if(track.kind==='prediction')return hits.length?'PREDICTED CIRCLING':'NO PREDICTED INTERVAL';const known=new Set(hits.map(s=>s.status).filter(s=>s!=='unknown'));if(known.size>1)return 'UNKNOWN · conflicting reference';return known.has('circling')?'CIRCLING':known.has('non-circling')?'REVIEWED NON-CIRCLING':'UNKNOWN / UNLABELED';}
+function timeline(){const {ctx,w,h}=resizeCanvas('timeline');if(!meta)return;ctx.font='12px system-ui';const left=Math.min(190,w*.3),width=w-left-5,total=meta.duration*meta.fps;
+ meta.tracks.forEach((track,i)=>{const y=10+i*30;ctx.fillStyle='#bed2dc';ctx.fillText(track.name.slice(0,24),0,y+15);ctx.fillStyle=track.kind==='prediction'?'#294454':'#71818b';ctx.fillRect(left,y,width,20);for(const s of track.spans){ctx.fillStyle=s.status==='prediction'?'#c4aaff':s.status==='circling'?'#65d6c0':s.status==='non-circling'?'#175d53':'#71818b';const x=left+Math.min(s.start,total)/total*width,end=left+Math.min(s.end+1,total)/total*width;ctx.fillRect(x,y,Math.max(1,end-x),20);}});
+ if(!meta.tracks.length){ctx.fillStyle='#aec4ce';ctx.fillText('No annotation or prediction intervals available.',10,25);return;}const x=left+mediaTime/meta.duration*width;ctx.strokeStyle='white';ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
+}
+function draw(){if(!meta)return;const canvas=$('overlay');if(canvas.width!==meta.width||canvas.height!==meta.height){canvas.width=meta.width;canvas.height=meta.height;}const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);const rows=chunk?.frames[String(currentFrame)]||[],selected=pair(),keys=meta.keys[$('layer').value]||[];
+ if($('poses').checked)for(const row of rows){if(!$('all').checked&&!selected.includes(row.id))continue;ctx.strokeStyle=ctx.fillStyle=color(row.id);ctx.lineWidth=3;for(const [a,b]of meta.skeleton){const pa=row.points[keys.indexOf(a)],pb=row.points[keys.indexOf(b)];if(valid(pa)&&valid(pb)){ctx.beginPath();ctx.moveTo(...pa);ctx.lineTo(...pb);ctx.stroke();}}row.points.forEach((p,i)=>{if(!valid(p))return;ctx.beginPath();ctx.arc(...p,3,0,Math.PI*2);ctx.fill();if($('labels').checked){ctx.font='15px system-ui';ctx.fillText(keys[i],p[0]+5,p[1]);}});if(valid(row.center)){ctx.font='20px system-ui';ctx.fillText('Fish '+row.id,row.center[0]+8,row.center[1]+20);}}
+ $('readout').textContent=`${stamp(mediaTime)} / ${stamp(meta.duration)} | Source frame ≈ ${currentFrame} | ${rows.length} tracked fish${chunk?'':' · poses loading'}`;$('seek').value=mediaTime;if(document.activeElement!==$('frame'))$('frame').value=currentFrame;
+ $('states').replaceChildren();for(const track of meta.tracks){const box=document.createElement('div');box.className='badge';const status=state(track),positive=status==='CIRCLING'||status==='PREDICTED CIRCLING';const symbol=document.createElement('span');symbol.className='state-icon';symbol.textContent=positive?'↻':status.startsWith('UNKNOWN')?'?':'–';symbol.setAttribute('aria-hidden','true');const copy=document.createElement('div');copy.className='state-copy';const title=document.createElement('strong');title.textContent=track.name;const detail=document.createElement('span');detail.textContent=positive?'Circling detected':status==='REVIEWED NON-CIRCLING'?'Reviewed negative':status==='NO PREDICTED INTERVAL'?'No detected event':status.replace('UNKNOWN / UNLABELED','Unlabeled');copy.append(title,detail);box.append(symbol,copy);box.setAttribute('aria-label',track.name+': '+status);$('states').append(box);}if(!meta.tracks.length)$('states').textContent='No annotation/prediction files supplied.';
+ const n=score(currentFrame);$('scoreText').textContent=n==null?'Model score: not supplied at this frame':`${$('scoreSelect').selectedOptions[0]?.textContent}: ${n.toFixed(3)}`;
+ const g=feature(currentFrame);$('pairnote').textContent=`${selected.filter(Boolean).join(' / ')||'Select two fish'} · distance ${g.distance==null?'unavailable':g.distance.toFixed(2)+' px'} · angular velocity ${g.rate==null?'unavailable':g.rate.toFixed(2)+' rad/s'}`;
+ plot('distance',f=>feature(f).distance,'#65d6c0');plot('angular',f=>feature(f).rate,'#ffc078');plot('scorePlot',score,'#c4aaff',[0,1]);if(meta.features.length)plot('featurePlot',shared,'#7fc9ff');timeline();
+}
+async function update(time,presented=false){
+ if(!meta||!Number.isFinite(time))return;mediaTime=time;currentFrame=Math.max(0,presented?Math.round(time*meta.fps):Math.floor(time*meta.fps+1e-6));const index=Math.floor(currentFrame/meta.chunk_frames),key=$('layer').value+':'+index;wanted=key;
+ if(chunk&&chunk.start===index*meta.chunk_frames){populatePair();draw();return;}
+ if(cache.has(key)){chunk=cache.get(key);features=new Map(chunk.features.map(r=>[`${r.frame}|${r.a}|${r.b}`,r.values]));populatePair();updateInputNotes();draw();return;}
+ chunk=null;features.clear();draw();if(pending.has(key))return;const token=generation,layerToken=layerGeneration;note('Loading ten-second pose/score section…');
+ try{
+  let promise=pending.get(key);if(!promise){promise=json('/api/chunk?'+params({index,layer:$('layer').value}));pending.set(key,promise);}
+  const result=await promise;pending.delete(key);if(token!==generation||layerToken!==layerGeneration)return;cache.set(key,result);while(cache.size>6)cache.delete(cache.keys().next().value);
+  if(wanted!==key)return;chunk=result;features=new Map(chunk.features.map(r=>[`${r.frame}|${r.a}|${r.b}`,r.values]));populatePair();updateInputNotes();note(result.warnings.join(' · '));draw();
+ }catch(error){if(token===generation&&layerToken===layerGeneration&&wanted===key){note('Section loading failed: '+error.message);wanted=-1;}}
+}
+function activeEvents(){return meta?.tracks[Number($('eventTrack').value)]?.spans.filter(s=>s.status==='circling'||s.status==='prediction')||[];}
+function eventList(){const area=$('events');area.replaceChildren();for(const event of activeEvents()){const button=document.createElement('button');button.textContent=`${event.event} · ${stamp(event.start/meta.fps)} – ${stamp((event.end+1)/meta.fps)} · ${event.status}`;button.title=event.notes||'';button.onclick=()=>seek(Math.max(0,event.start/meta.fps-3));area.append(button);}if(!area.childNodes.length)area.textContent='No circling events available for this source.';}
+function eventJump(direction){if(!meta)return;const frames=activeEvents().map(s=>s.start).sort((a,b)=>a-b),frame=direction>0?frames.find(f=>f>currentFrame+1):frames.filter(f=>f<currentFrame-1).pop();if(frame!=null)seek(frame/meta.fps);}
+$('recording').onchange=()=>openRecording();$('source').onchange=()=>openRecording(mediaTime);$('refresh').onclick=async()=>{try{await loadCatalog(true);await openRecording(mediaTime);}catch(e){note(e.message);}};
+$('layer').onchange=()=>{layerGeneration++;chunk=null;wanted=-1;cache.clear();pending.clear();features.clear();update(mediaTime);if(frameCallback!=null&&video.cancelVideoFrameCallback)video.cancelVideoFrameCallback(frameCallback);scheduleFrame();};
+$('play').onclick=()=>{if(meta)video.paused?video.play().catch(e=>note(e.message)):video.pause();};$('back').onclick=()=>{if(meta){video.pause();seek(video.currentTime-1/meta.fps);}};$('forward').onclick=()=>{if(meta){video.pause();seek(video.currentTime+1/meta.fps);}};$('speed').onchange=()=>video.playbackRate=Number($('speed').value);$('seek').oninput=()=>seek(Number($('seek').value));$('jump').onclick=()=>{const n=Number($('frame').value);if(meta&&Number.isInteger(n)&&n>=0)seek(n/meta.fps);};$('prev').onclick=()=>eventJump(-1);$('next').onclick=()=>eventJump(1);$('nearest').onclick=()=>{closestPair();draw();};$('eventTrack').onchange=eventList;
+for(const id of ['poses','all','labels','fishA','fishB','scoreSelect','featureSelect'])$(id).onchange=()=>{if(id.startsWith('fish'))pairChosen=true;draw();};
+
+video.onseeked=()=>{setSeeking(false);if(meta)update(video.currentTime);};video.onwaiting=()=>setSeeking(true);video.onplaying=()=>{setSeeking(false);updatePlayIcon();};video.onpause=updatePlayIcon;video.oncanplay=()=>setSeeking(false);video.ontimeupdate=()=>{if(meta&&(!video.requestVideoFrameCallback||video.paused))update(video.currentTime);};window.onresize=draw;
+(async()=>{try{await loadCatalog();await openRecording();}catch(e){note(e.message);}})();
+</script></html>

@@ -1,0 +1,16 @@
+{
+  "title": "Circling detection | video, poses and pair movement",
+  "video_id": "0028_vid",
+  "expected_project_id": "MC_920_t001_tr1",
+  "video": "../data/0028_vid.mp4",
+  "poses": "../data/0028_vid.parquet",
+  "out": "../outputs/visualization/exports/0028_rule_results.mp4",
+  "fps": 30,
+  "start_frame": 206206,
+  "end_frame": 207105,
+  "pair": "auto",
+  "detector_name": "Rule-based detector | existing team output",
+  "prediction_scope": "Scene-level intervals; auto-selected pair is for diagnostic overlays only",
+  "predictions": {"path": "../outputs/predictions/rule_based/0028_vid.csv"},
+  "annotations": {"path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"}
+}

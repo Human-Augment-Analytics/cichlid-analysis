@@ -1,0 +1,56 @@
+{
+  "repo_root": "..",
+  "data_dir": "../data",
+  "discover_local": true,
+  "default_recording": "0028_vid",
+  "recordings": [
+    {
+      "id": "0028_vid",
+      "video_id": "0028_vid",
+      "label": "0028_vid",
+      "expected_project_id": "MC_920_t001_tr1",
+      "video": "../data/0028_vid.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AMkLWMbEcHxMGEXGPuxG1NI/0028_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=m42jq5db&dl=1",
+      "poses": "../data/0028_vid.parquet",
+      "cleaned_poses": "../data/clean/0028_vid.parquet",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "frame_count": 1080175,
+      "start_frame": 206206,
+      "discover_predictions": true,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
+        }
+      ],
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AIzGAhjimK-vvUN1IRetNrI/0028_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=bfdy11hx&dl=0"
+    },
+    {
+      "id": "0031_vid",
+      "video_id": "0031_vid",
+      "label": "0031_vid",
+      "expected_project_id": "MCYHF1-P-613_t011_tr2",
+      "video": "../data/0031_vid.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ADCA61tJU9SWYSnh9DNWkkk/0031_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=xmrzc3hs&dl=1",
+      "poses": "../data/0031_vid.parquet",
+      "cleaned_poses": "../data/clean/0031_vid.parquet",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "frame_count": 1080398,
+      "start_frame": 97830,
+      "discover_predictions": true,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
+        }
+      ],
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ACNtNV3xM1k06lXgc4zpB0o/0031_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=cxak2061&dl=0"
+    }
+  ]
+}
