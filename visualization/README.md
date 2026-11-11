@@ -14,6 +14,10 @@ python -m visualization.live
 
 Open **http://localhost:8001** and leave Terminal running. Stop with Ctrl+C. Do not run a separate `http.server`. If the virtual environment does not exist, create it with `python3.11 -m venv .venv-viz` first. FFprobe is needed for local video metadata: `brew install ffmpeg` if missing.
 
+## Hosted viewer
+
+The research viewer is deployed at https://cichlid-analysis.onrender.com/ using `render.yaml`. The free service may take time to wake after inactivity. On first access to a recording, the backend may download and cache pose Parquet data; video may be ready before pose overlays. Check availability notes and verify alignment after loading.
+
 ## Cloud deployment (Render)
 
 This viewer can run as a hosted Python web service. The server must bind to `0.0.0.0` and use Render's `PORT` environment variable; the deployment-compatible `live.py` supports both.
