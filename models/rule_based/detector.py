@@ -74,6 +74,8 @@ def _():
     | **Keep going** | ≥ **0.4 turns** in a 4 s window | a looser bar once started, so a brief slowdown doesn't end the episode |
     | Join pauses | gaps < **3 s** are bridged | the annotators never split events closer than 4.7 s apart |
     | Minimum length | ≥ **2 s** | ignore flickers |
+    | **Direction** | sign of the rotation in the 4 s window, majority over the episode | positive rotation is clockwise on screen |
+    | **Circles** | net rotation of each same-direction stretch, summed | back-and-forth jitter cancels out |
 
     The first two numbers (160 px, ¾ turn) are the original rule. The "keep going" threshold and pause-joining
     were added this week, tuned on video 0031 only, and then tested on video 0028.
@@ -162,20 +164,42 @@ def _():
                     merged.append([s, e])
             segs = merged
         return [tuple(s) for s in segs]
-    return detect, signals
+
+
+    def label_episodes(dist, rate, segs, dist_max=160, win_s=4):
+        """Direction ("CW"/"CCW") and number of circles for each (start, end) episode.
+
+        Each frame's local direction is the sign of the rotation over the surrounding window (positive
+        d_orbital_rad_s is clockwise on screen). The episode takes the direction covering most of its frames,
+        and its circles are the net rotation of each same-direction stretch, summed, so jitter cancels out and
+        an episode that reverses direction counts the circles both ways.
+        """
+        win = int(win_s * FPS)
+        step = rate * (np.nan_to_num(dist, nan=1e9) < dist_max) / FPS        # radians turned per frame
+        local = pd.Series(step).rolling(win, center=True, min_periods=win // 2).sum().to_numpy()
+        labels = []
+        for s, e in segs:
+            cw = np.nan_to_num(local[s:e + 1]) >= 0
+            runs = np.split(np.arange(len(cw)), np.flatnonzero(np.diff(cw)) + 1)
+            cycles = sum(abs(step[s:e + 1][r].sum()) for r in runs) / (2 * np.pi)
+            labels.append(("CW" if cw.mean() >= 0.5 else "CCW", float(cycles)))
+        return labels
+    return detect, label_episodes, signals
 
 
 @app.cell
-def _(VIDEOS, detect, series, signals):
+def _(VIDEOS, detect, label_episodes, series, signals):
     sig = {}
     detections = {}
+    episode_labels = {}
     for _v in VIDEOS:
         _s = series[_v]
         sig[("original", _v)] = signals(_s["dist_raw"], _s["rate_raw"])
         sig[("refined", _v)] = signals(_s["dist_clean"], _s["rate_clean"])
         detections[("original", _v)] = detect(*sig[("original", _v)])
         detections[("refined", _v)] = detect(*sig[("refined", _v)], keep_turns=0.4, merge_s=3)
-    return detections, sig
+        episode_labels[_v] = label_episodes(_s["dist_clean"], _s["rate_clean"], detections[("refined", _v)])
+    return detections, episode_labels, sig
 
 
 @app.cell
@@ -368,6 +392,8 @@ def _():
     * **Precision over the full videos is unknown.** Only a few minutes of each 10-hour video are labeled. Spot
       checks of detections outside the labels mostly showed real circling, but that needs a proper count.
     * **15 labeled events from 2 videos** is a small sample; treat the settings as provisional.
+    * **Direction and circles are per episode.** An episode that reverses direction gets the majority
+      direction, with circles counted both ways; it is not split in two.
     * **Frame-level only.** The detector says *when* circling happens, not *which* fish: track IDs break up in
       under a second and the sex label flips, so per-fish questions need track stitching first.
 
@@ -384,17 +410,20 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(LABELS, OUT_DIR, VIDEOS, detections):
+def _(LABELS, OUT_DIR, VIDEOS, detections, episode_labels):
     _tables = []
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for _v in VIDEOS:
         _rows = [{"VideoID": f"{_v}_vid", "EventID": f"{_v}-R{_i:03d}", "StartFrame": _s, "EndFrame": _e,
                   "start_s": round(_s / FPS, 2), "end_s": round(_e / FPS, 2),
-                  "duration_s": round((_e - _s + 1) / FPS, 2), "detector_name": "rule_v2",
+                  "duration_s": round((_e - _s + 1) / FPS, 2), "Direction": _d, "Cycles": round(_c, 2),
+                  "detector_name": "rule_v2",
                   "overlaps_label": any(not (_e < a or _s > b) for a, b in LABELS[_v])}
-                 for _i, (_s, _e) in enumerate(detections[("refined", _v)], start=1)]
+                 for _i, ((_s, _e), (_d, _c)) in enumerate(zip(detections[("refined", _v)], episode_labels[_v]),
+                                                           start=1)]
         _table = pd.DataFrame(_rows, columns=["VideoID", "EventID", "StartFrame", "EndFrame", "start_s", "end_s",
-                                              "duration_s", "detector_name", "overlaps_label"])
+                                              "duration_s", "Direction", "Cycles", "detector_name",
+                                              "overlaps_label"])
         _table.to_csv(OUT_DIR / f"{_v}_vid.csv", index=False)
         _tables.append(_table)
     _export = pd.concat(_tables, ignore_index=True)

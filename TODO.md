@@ -11,8 +11,8 @@
     - [ ] Build more models for direction and circle count
 - [ ] Improve rule-based classifier
     - [ ] Handle M-F pairing, multiple fish on screen
-    - [ ] Output direction
-    - [ ] Output circle count
+    - [x] Output direction
+    - [x] Output circle count
     - [ ] Check improvement from reflection removal
 
 ## Neural Methods
