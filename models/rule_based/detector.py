@@ -24,6 +24,7 @@ with app.setup:
     import pandas as pd
 
     import circling_cleaning as cc
+    import episode_labels as el
 
     FPS = 30
     # Chart styling (validated categorical slot 1 for detections; neutral ink for labels and thresholds)
@@ -77,6 +78,8 @@ def _():
     | **Direction** | sign of the rotation in the 4 s window, majority over the episode | positive rotation is clockwise on screen |
     | **Circles** | net rotation of each same-direction stretch, summed | back-and-forth jitter cancels out |
 
+    Direction and circles live in `models/rule_based/episode_labels.py`, which can label any detector's intervals.
+
     The first two numbers (160 px, ¾ turn) are the original rule. The "keep going" threshold and pause-joining
     were added this week, tuned on video 0031 only, and then tested on video 0028.
     """)
@@ -87,7 +90,6 @@ def _():
 def _():
     DATA_DIR = cc.default_data_dir(cc.ROOT)           # $CIRCLING_DATA_DIR, <repo>/data or ~/Downloads
     OUT_DIR = cc.ROOT / "outputs" / "predictions" / "rule_based"
-    CACHE = DATA_DIR / "rule_detector_cache"          # kept next to the data, outside git
     VIDEOS = ["0031", "0028"]
     LABELS = {
         "0031": [(265510, 266227), (266809, 267100), (267242, 267837), (269089, 271817),
@@ -97,37 +99,14 @@ def _():
     }
     REVIEWED = {"0031": [(265510, 276530)],
                 "0028": [(334703, 336285), (436636, 437437), (713035, 713330)]}
-    return CACHE, DATA_DIR, LABELS, OUT_DIR, REVIEWED, VIDEOS
+    return DATA_DIR, LABELS, OUT_DIR, REVIEWED, VIDEOS
 
 
 @app.cell
-def _(CACHE, DATA_DIR, VIDEOS):
+def _(DATA_DIR, VIDEOS):
     # Per-frame closest-pair distance and rotation rate, before and after cleaning (rules in circling_cleaning.py).
-    # The first run reads the full tracking tables (~1 min); later runs load a small cache (seconds).
-    def build_series(v):
-        _, p = cc.load_flagged(DATA_DIR, v, ["FrameNum", "TrackID_1", "TrackID_2", "centroid_distance_px",
-                                             "d_orbital_rad_s"])
-        n = int(p.FrameNum.max()) + 1
-        out = {}
-        for tag, q in (("raw", p), ("clean", p[p.keep])):
-            q = q.sort_values(["FrameNum", "centroid_distance_px"]).drop_duplicates("FrameNum").set_index("FrameNum")
-            q = q.reindex(pd.RangeIndex(0, n))
-            out[f"dist_{tag}"] = q.centroid_distance_px.to_numpy()
-            out[f"rate_{tag}"] = q.d_orbital_rad_s.where(q.d_orbital_rad_s.abs() <= 15).fillna(0).to_numpy()
-        return out
-
-
-    def load_series(v):
-        path = CACHE / f"series_{v}.npz"
-        if path.exists():
-            return dict(np.load(path))
-        s = build_series(v)
-        CACHE.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(path, **s)
-        return s
-
-
-    series = {_v: load_series(_v) for _v in VIDEOS}
+    # The first run reads the full tracking tables (~1 min); later runs load a small cache next to the data.
+    series = {_v: el.load_series(DATA_DIR, _v) for _v in VIDEOS}
     return (series,)
 
 
@@ -165,30 +144,11 @@ def _():
             segs = merged
         return [tuple(s) for s in segs]
 
-
-    def label_episodes(dist, rate, segs, dist_max=160, win_s=4):
-        """Direction ("CW"/"CCW") and number of circles for each (start, end) episode.
-
-        Each frame's local direction is the sign of the rotation over the surrounding window (positive
-        d_orbital_rad_s is clockwise on screen). The episode takes the direction covering most of its frames,
-        and its circles are the net rotation of each same-direction stretch, summed, so jitter cancels out and
-        an episode that reverses direction counts the circles both ways.
-        """
-        win = int(win_s * FPS)
-        step = rate * (np.nan_to_num(dist, nan=1e9) < dist_max) / FPS        # radians turned per frame
-        local = pd.Series(step).rolling(win, center=True, min_periods=win // 2).sum().to_numpy()
-        labels = []
-        for s, e in segs:
-            cw = np.nan_to_num(local[s:e + 1]) >= 0
-            runs = np.split(np.arange(len(cw)), np.flatnonzero(np.diff(cw)) + 1)
-            cycles = sum(abs(step[s:e + 1][r].sum()) for r in runs) / (2 * np.pi)
-            labels.append(("CW" if cw.mean() >= 0.5 else "CCW", float(cycles)))
-        return labels
-    return detect, label_episodes, signals
+    return detect, signals
 
 
 @app.cell
-def _(VIDEOS, detect, label_episodes, series, signals):
+def _(VIDEOS, detect, series, signals):
     sig = {}
     detections = {}
     episode_labels = {}
@@ -198,7 +158,8 @@ def _(VIDEOS, detect, label_episodes, series, signals):
         sig[("refined", _v)] = signals(_s["dist_clean"], _s["rate_clean"])
         detections[("original", _v)] = detect(*sig[("original", _v)])
         detections[("refined", _v)] = detect(*sig[("refined", _v)], keep_turns=0.4, merge_s=3)
-        episode_labels[_v] = label_episodes(_s["dist_clean"], _s["rate_clean"], detections[("refined", _v)])
+        # Direction and circles per episode; episode_labels.py applies the same rules to any detector's intervals.
+        episode_labels[_v] = el.label_intervals(_s["dist_clean"], _s["rate_clean"], detections[("refined", _v)])
     return detections, episode_labels, sig
 
 

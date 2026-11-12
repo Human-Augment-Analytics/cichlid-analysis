@@ -44,6 +44,11 @@ those too. Other columns are ignored and every row
 is used, so ground truth must contain only valid circling events. Frame ranges
 are zero-based and inclusive.
 
+A model that only finds intervals can borrow the rule-based direction and cycle
+count: `uv run python -m models.rule_based.episode_labels outputs/predictions/<model>`
+writes a copy with `Direction` and `Cycles` to `outputs/predictions/<model>_rule_labels/`,
+which is then evaluated as its own model.
+
 ## Metrics
 
 - **MoF**: fraction of all frames (circling and background) labelled correctly.
