@@ -39,8 +39,8 @@ python3 download_data.py --urls extra.txt      # more files: "<name> <dropbox ur
 
 - 270 GB is close to the ~300 GB scratch quota. Check `pace-quota` first, or download only the
   videos you need, e.g. `--only 0018 0028`.
-- The two recordings named `0007_vid` are saved as `0007_vid_535` and `0007_vid_538` (fish IDs).
-
+- The two recordings named `0007_vid` are saved as `0007-day5_vid` and `0007-day6_vid`, matching
+  their annotation files (`circling_annotations_vid0007-day5.csv` / `-day6.csv`).
 - Models that only need features can train from the `.parquet` files (~200 MB each), so
   only download the `.mp4`s if you need pixels.
 - Back up anything in scratch you want to keep. It is wiped at the end of the semester.

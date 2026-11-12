@@ -31,13 +31,14 @@ HEADERS = {"User-Agent": "cichlid-analysis-downloader"}
 # The other recordings in the shared folder's MorePoseData/ (0028 and 0031 there are the same
 # files as in video_source.py). Kept out of video_source.TABLE_URLS because
 # model_performance_report.py downloads every table listed there. Two different recordings are
-# both named 0007_vid, so they get the fish ID from their Dropbox folder name (535 / 538).
+# both named 0007_vid; they are renamed to match the annotation files
+# circling_annotations_vid0007-day5.csv / -day6.csv (the day suffix of their Dropbox folder).
 _FOLDER = "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9"
 _RLKEY = "?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=1"
 MORE_POSE_DATA = {  # local stem: (secure hash of .mp4, of .parquet, path under MorePoseData/)
     "0002_vid": ("AF3_7bx3JNcQAKoKuzywbhc", "AGmhAYd3le06eMWOrQZkEtM", "YH/YH-norm_713_t029_tr1_day00/0002_vid"),
-    "0007_vid_535": ("APZMbbr02wRLVO4B7iIrbx8", "AGdimCkucfkRzOSvrSAUqkI", "MCxYH_F1/MCYHRF1_535_t015_tr1_day06/0007_vid"),
-    "0007_vid_538": ("AO7dRIfeRjVDjrYbCqp9UA8", "AHuwLHFLGMefydHMdig4zIA", "MCxYH_F1/MCYHRF1_538_t021_tr1_day05/0007_vid"),
+    "0007-day6_vid": ("APZMbbr02wRLVO4B7iIrbx8", "AGdimCkucfkRzOSvrSAUqkI", "MCxYH_F1/MCYHRF1_535_t015_tr1_day06/0007_vid"),
+    "0007-day5_vid": ("AO7dRIfeRjVDjrYbCqp9UA8", "AHuwLHFLGMefydHMdig4zIA", "MCxYH_F1/MCYHRF1_538_t021_tr1_day05/0007_vid"),
     "0013_vid": ("APwSbo8kVFub26X56zf6Ibk", "AKls_00braKBJfvujlFY8r0", "MC/MC_944_t029_tr1_day13/0013_vid"),
     "0018_vid": ("APNqk2TGYAfHsOTQeWa8dHA", "AEEX8lDCJZizcOWzSPKWwXI", "YH/YH-norm_681_t015_tr1_day18/0018_vid"),
     "0037_vid": ("AKMSHUDGvpzPxtyqSYIoSd4", "AMzLJHzvz8obcvDrxOJ92lc", "YHxMC_F1/MCYHF1-P-728_t051_tr1_day38/0037_vid"),
