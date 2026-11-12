@@ -21,11 +21,12 @@ module load uv        # or: curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --locked
 ```
 
-## 2. Get the videos to ICE (~33 GB each, ~100 GB total)
+## 2. Get the videos to ICE (8 videos, ~34 GB each, ~270 GB total)
 
 **Pull them on ICE instead of uploading them from your laptop.** Campus bandwidth is much
-faster than a home uplink. `download_data.py` fetches every link in `video_source.py`,
-downloading many pieces of each file at once, and resumes where it stopped if you rerun it:
+faster than a home uplink. `download_data.py` fetches every recording in the shared Dropbox
+folder (0002, 0007 ×2, 0013, 0018, 0028, 0031 and 0037), downloading many pieces of each file
+at once. It resumes where it stopped if you rerun it:
 
 ```sh
 cd ~/scratch/cichlid-analysis
@@ -34,14 +35,11 @@ python3 download_data.py --tables              # videos + parquet tables into da
 python3 download_data.py --urls extra.txt      # more files: "<name> <dropbox url ending dl=1>" per line
 ```
 
-`0018_vid.mp4` and `0018_vid.parquet` have no URL yet. Either add them to the shared
-Dropbox folder (then to `video_source.py`), or push them from a machine on campus or the VPN:
-
-```sh
-rsync -a --partial --progress data/0018_vid.* <gtuser>@login-ice.pace.gatech.edu:~/scratch/cichlid-analysis/data/
-```
-
 **Tips:**
+
+- 270 GB is close to the ~300 GB scratch quota. Check `pace-quota` first, or download only the
+  videos you need, e.g. `--only 0018 0028`.
+- The two recordings named `0007_vid` are saved as `0007_vid_535` and `0007_vid_538` (fish IDs).
 
 - Models that only need features can train from the `.parquet` files (~200 MB each), so
   only download the `.mp4`s if you need pixels.

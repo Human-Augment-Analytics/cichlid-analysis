@@ -4,8 +4,9 @@ Each file is split into byte ranges fetched concurrently, so one 33 GB video use
 connections. Downloads resume: finished chunks are recorded next to the ``.part`` file.
 Standard library only, so it runs before ``uv sync``.
 
-    python download_data.py                      # videos in video_source.VIDEO_URLS
+    python download_data.py                      # all 8 videos (~270 GB)
     python download_data.py --tables             # plus the parquet tables
+    python download_data.py --only 0018 0028     # just these recordings
     python download_data.py --urls extra.txt     # plus "<filename> <url>" lines
     python download_data.py --workers 32 --dest ~/scratch/cichlid-analysis/data
 """
@@ -27,15 +28,40 @@ BLOCK = 4 * 1024 * 1024
 RETRIES = 6
 HEADERS = {"User-Agent": "cichlid-analysis-downloader"}
 
+# The other recordings in the shared folder's MorePoseData/ (0028 and 0031 there are the same
+# files as in video_source.py). Kept out of video_source.TABLE_URLS because
+# model_performance_report.py downloads every table listed there. Two different recordings are
+# both named 0007_vid, so they get the fish ID from their Dropbox folder name (535 / 538).
+_FOLDER = "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9"
+_RLKEY = "?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=1"
+MORE_POSE_DATA = {  # local stem: (secure hash of .mp4, of .parquet, path under MorePoseData/)
+    "0002_vid": ("AF3_7bx3JNcQAKoKuzywbhc", "AGmhAYd3le06eMWOrQZkEtM", "YH/YH-norm_713_t029_tr1_day00/0002_vid"),
+    "0007_vid_535": ("APZMbbr02wRLVO4B7iIrbx8", "AGdimCkucfkRzOSvrSAUqkI", "MCxYH_F1/MCYHRF1_535_t015_tr1_day06/0007_vid"),
+    "0007_vid_538": ("AO7dRIfeRjVDjrYbCqp9UA8", "AHuwLHFLGMefydHMdig4zIA", "MCxYH_F1/MCYHRF1_538_t021_tr1_day05/0007_vid"),
+    "0013_vid": ("APwSbo8kVFub26X56zf6Ibk", "AKls_00braKBJfvujlFY8r0", "MC/MC_944_t029_tr1_day13/0013_vid"),
+    "0018_vid": ("APNqk2TGYAfHsOTQeWa8dHA", "AEEX8lDCJZizcOWzSPKWwXI", "YH/YH-norm_681_t015_tr1_day18/0018_vid"),
+    "0037_vid": ("AKMSHUDGvpzPxtyqSYIoSd4", "AMzLJHzvz8obcvDrxOJ92lc", "YHxMC_F1/MCYHF1-P-728_t051_tr1_day38/0037_vid"),
+}
+
+
+def more_pose_urls(include_tables):
+    urls = {}
+    for stem, (video_hash, table_hash, path) in MORE_POSE_DATA.items():
+        urls[f"{stem}.mp4"] = f"{_FOLDER}/{video_hash}/MorePoseData/{path}.mp4{_RLKEY}"
+        if include_tables:
+            urls[f"{stem}.parquet"] = f"{_FOLDER}/{table_hash}/MorePoseData/{path}.parquet{_RLKEY}"
+    return urls
+
 
 def known_urls(include_tables):
-    """Read the URL dicts from video_source.py without importing OpenCV."""
+    """URL dicts from video_source.py (read without importing OpenCV) plus MORE_POSE_DATA."""
     tree = ast.parse((ROOT / "video_source.py").read_text())
     wanted = {"VIDEO_URLS"} | ({"TABLE_URLS"} if include_tables else set())
     urls = {}
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(getattr(t, "id", None) in wanted for t in node.targets):
             urls.update(ast.literal_eval(node.value))
+    urls.update(more_pose_urls(include_tables))
     return urls
 
 
@@ -134,11 +160,14 @@ def main():
     parser.add_argument("--workers", type=int, default=16, help="concurrent range requests across all files")
     parser.add_argument("--tables", action="store_true", help="also download the parquet tables")
     parser.add_argument("--urls", type=Path, help='extra "<filename> <url>" lines (Dropbox links ending dl=1)')
+    parser.add_argument("--only", nargs="+", metavar="ID", help="only files starting with these IDs, e.g. 0018 0028")
     args = parser.parse_args()
 
     urls = known_urls(args.tables)
     if args.urls:
         urls.update(read_url_file(args.urls))
+    if args.only:
+        urls = {name: url for name, url in urls.items() if name.startswith(tuple(args.only))}
     args.dest.mkdir(parents=True, exist_ok=True)
 
     downloads = []
