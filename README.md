@@ -21,6 +21,8 @@ uv run marimo edit model_performance_report.py
 You can edit the marimo notebook from the browser with the above command, or just work on it in
 VSCode with the Marimo extension, just like Jupyter.
 
+To train on the PACE ICE GPU cluster, see [PACE_SETUP.md](PACE_SETUP.md).
+
 ## Repository layout
 
 - `data/`: video and parquet files
