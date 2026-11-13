@@ -71,7 +71,7 @@ VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,R
 0037_vid,vid8-v0037_evt_0070,05:16:10,05:16:50,569110,570299,Circling,CCW,6.5,bower,,,
 0037_vid,vid8-v0037_evt_0071,05:17:08,05:17:18,570839,571133,Circling,CCW,1.5,bower,,,
 0037_vid,vid8-v0037_evt_0072,05:17:42,05:18:09,571848,572665,Circling,CCW,4.5,bower,,,
-0037_vid,vid8-v0037_evt_0073,05:19:37,05:19:35,575322,575235,Circling,CCW,4.5,bower,,,
+0037_vid,vid8-v0037_evt_0073,05:19:35,05:19:37,575235,575322,Circling,CCW,4.5,bower,,,
 0037_vid,vid8-v0037_evt_0074,05:20:02,05:20:11,576048,576329,Circling,CCW,1,bower,,,
 0037_vid,vid8-v0037_evt_0075,05:20:26,05:20:42,576779,577256,Circling,CW,2.5,bower,,,
 0037_vid,vid8-v0037_evt_0076,05:20:52,05:21:19,577569,578375,Circling,CW,5.5,bower,,,

@@ -5,12 +5,20 @@ from tempfile import TemporaryDirectory
 
 import polars as pl
 
-from evaluation.evaluate import evaluate, read_intervals, read_predictions
-from evaluation.metrics import (edit_score, evaluate_labels, evaluate_video, label_spans,
-                                segment_true_positives, summarize, summarize_labels)
+from evaluation.evaluate import evaluate, read_ground_truth, read_intervals, read_predictions
+from evaluation.metrics import (average_precision, edit_score, evaluate_attribute_quality,
+                                evaluate_labels, evaluate_oracle_labels, evaluate_video, label_spans,
+                                map_at_tiou, segment_true_positives, summarize, summarize_labels,
+                                temporal_iou)
 
 
 class EvaluationTest(unittest.TestCase):
+    def test_finalized_ground_truth_intervals_are_valid(self):
+        ground_truth = read_ground_truth()
+        self.assertGreater(len(ground_truth), 0)
+        self.assertTrue((ground_truth['start'] >= 0).all())
+        self.assertTrue((ground_truth['end'] >= ground_truth['start']).all())
+
     def test_perfect_prediction(self):
         result = evaluate_video([(10, 19), (40, 49)], [(10, 19), (40, 49)], 100)
         self.assertEqual(result['mof'], 1)
@@ -58,6 +66,23 @@ class EvaluationTest(unittest.TestCase):
         # IoU 5/10 is exactly 0.5.
         self.assertEqual(segment_true_positives([(0, 9)], [(0, 4)], 50), 1)
         self.assertEqual(segment_true_positives([(0, 9)], [(0, 3)], 50), 0)
+
+    def test_temporal_iou_uses_half_open_intervals(self):
+        self.assertAlmostEqual(temporal_iou((0., 10.), (5., 15.)), 5 / 15)
+        self.assertEqual(temporal_iou((0., 5.), (5., 10.)), 0)
+
+    def test_average_precision_is_score_ordered_and_penalizes_duplicates(self):
+        gt = [(0., 10.), (20., 30.)]
+        predictions = [(20., 30., .7), (0., 10., .9), (0., 10., .8)]
+        self.assertAlmostEqual(average_precision(gt, predictions, 50), 5 / 6)
+        self.assertTrue(math.isnan(average_precision([], predictions, 50)))
+        self.assertEqual(average_precision(gt, [], 50), 0)
+
+    def test_map_averages_tiou_thresholds(self):
+        result = map_at_tiou([(0., 10.)], [(0., 6., .9)])
+        self.assertEqual(result['map@50'], 1)
+        self.assertEqual(result['map@70'], 0)
+        self.assertAlmostEqual(result['map_avg'], 6 / 7)
 
     def test_summary_pools_frames(self):
         rows = [evaluate_video([(0, 9)], [(0, 9)], 10), evaluate_video([(0, 9)], [], 30)]
@@ -119,6 +144,29 @@ class EvaluationTest(unittest.TestCase):
         self.assertAlmostEqual(result['cycle_bias'], -.5)
         self.assertEqual((result['gt_cycles'], result['pred_cycles']), (6, 11))
 
+    def test_strict_attribute_metrics_do_not_count_detection_errors(self):
+        gt = [(0, 9, 'CW', 2), (20, 29, 'CCW', 3)]
+        pred = [(0, 9, 'CW', 2.5), (40, 49, 'CCW', 1)]
+        joint = evaluate_labels(gt, pred)
+        strict = evaluate_attribute_quality(gt, pred, tau=50)
+        self.assertLess(joint['direction_f1'], 1)
+        self.assertEqual(strict['attribute_direction_accuracy'], 1)
+        self.assertEqual(strict['attribute_direction_balanced_accuracy'], 1)
+        self.assertEqual(strict['attribute_direction_coverage'], 1)
+        self.assertEqual(strict['attribute_direction_pairs'], 1)
+        self.assertEqual(strict['attribute_cycle_mae'], .5)
+        self.assertEqual(strict['attribute_cycle_wape'], .25)
+        self.assertEqual(strict['attribute_cycle_within_0p5'], 1)
+
+    def test_oracle_metrics_require_exact_ground_truth_boundaries(self):
+        gt = [(0, 9, 'CW', 2)]
+        result = evaluate_oracle_labels(gt, [(0, 9, 'CW', 2.25)])
+        self.assertEqual(result['attribute_direction_accuracy'], 1)
+        self.assertEqual(result['attribute_cycle_mae'], .25)
+        self.assertEqual(result['attribute_cycle_within_0p5'], 1)
+        with self.assertRaises(ValueError):
+            evaluate_oracle_labels(gt, [(0, 8, 'CW', 2)])
+
     def test_unpredicted_labels_are_missing(self):
         result = evaluate_labels([(0, 9, 'CW', 2)], [(0, 9, None, None)])
         self.assertIsNone(result['cw_tp'])
@@ -165,6 +213,35 @@ class EvaluationTest(unittest.TestCase):
             path.write_text('VideoID,StartFrame,EndFrame,Direction\n0028_vid,0,9,left\n')
             with self.assertRaises(ValueError):
                 read_intervals(path, labels=True)
+
+    def test_reads_scores_and_filters_behavior(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory, 'pred.csv')
+            path.write_text('VideoID,StartFrame,EndFrame,Behavior,Score\n'
+                            'v,0,9,Circling,0.8\nv,20,29,Chase,0.4\n')
+            self.assertEqual(read_intervals(path, scores=True, behavior='circling').rows(),
+                             [('v', 0, 9, .8)])
+            path.write_text('VideoID,StartFrame,EndFrame,Score\nv,0,9,not-a-score\n')
+            with self.assertRaises(ValueError):
+                read_intervals(path, scores=True)
+
+    def test_evaluate_reports_map_only_with_scores(self):
+        gt = pl.DataFrame({'video_id': ['v'], 'start': [0], 'end': [9]})
+        scored = pl.DataFrame({'video_id': ['v'], 'start': [0], 'end': [9], 'score': [.9]})
+        results, warnings = evaluate(gt, scored, num_frames={'v': 20})
+        self.assertEqual(results.row(-1, named=True)['map_avg'], 1)
+        self.assertFalse(warnings)
+        unscored = scored.drop('score')
+        results, warnings = evaluate(gt, unscored, num_frames={'v': 20})
+        self.assertNotIn('map_avg', results.columns)
+        self.assertTrue(any('mAP unavailable' in warning for warning in warnings))
+
+    def test_evaluation_scope_comes_from_declared_prediction_videos(self):
+        gt = pl.DataFrame({'video_id': ['v', 'w'], 'start': [0, 0], 'end': [9, 9]})
+        predicted = pl.DataFrame({'video_id': ['v'], 'start': [0], 'end': [9]})
+        results, warnings = evaluate(gt, predicted, num_frames={'v': 20}, videos=['v'])
+        self.assertEqual(results['video_id'].to_list(), ['v', 'overall'])
+        self.assertTrue(any('excludes' in warning and "'w'" in warning for warning in warnings))
 
 
 if __name__ == '__main__':

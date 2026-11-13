@@ -20,6 +20,9 @@ with Direction and Cycles columns (existing ones are replaced):
 
 writes outputs/predictions/xgboost_rule_labels/, which the evaluation picks up as a
 separate model. Data location as in circling_cleaning.py.
+
+Passing one multi-video interval CSV instead creates oracle-span labels, by
+default in outputs/predictions/rule_based_oracle_labels/.
 """
 import argparse
 import re
@@ -149,12 +152,46 @@ def label_predictions(input_dir, output_dir=None, data_dir=None, **kwargs):
     return output_dir
 
 
+def label_interval_file(input_path, output_dir=None, data_dir=None, **kwargs):
+    """Label one multi-video interval CSV, writing one file per video.
+
+    This is the oracle-span workflow: pass a canonical multi-video interval CSV
+    to measure direction and count independently of detector boundaries.
+    """
+    input_path = Path(input_path)
+    table = pd.read_csv(input_path)
+    columns = {re.sub(r"[^a-z]", "", column.lower()): column for column in table.columns}
+    if "videoid" not in columns:
+        raise ValueError(f"{input_path}: missing VideoID column")
+    video_column = columns["videoid"]
+    output_dir = Path(output_dir or cc.ROOT / "outputs/predictions/rule_based_oracle_labels")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for video, rows in table.groupby(video_column, sort=True):
+        start_column, end_column = frame_columns(rows)
+        merged = []
+        for start, end in sorted(zip(rows[start_column], rows[end_column])):
+            if merged and start <= merged[-1][1] + 1:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([int(start), int(end)])
+        canonical = pd.DataFrame({"VideoID": video,
+                                  "StartFrame": [span[0] for span in merged],
+                                  "EndFrame": [span[1] for span in merged]})
+        label_table(canonical, data_dir or cc.default_data_dir(cc.ROOT), video, **kwargs).to_csv(
+            output_dir / f"{video}.csv", index=False)
+    return output_dir
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input_dir", help="prediction folder with one <video>.csv per video")
+    parser.add_argument("input_dir", help="prediction folder, or one multi-video interval CSV")
     parser.add_argument("--output-dir", help="default: <input_dir>_rule_labels")
     parser.add_argument("--data-dir", help="tracking parquet folder (default as in circling_cleaning.py)")
     parser.add_argument("--raw", action="store_true", help="use the tracking data before cleaning")
     args = parser.parse_args()
-    out = label_predictions(args.input_dir, args.output_dir, args.data_dir, cleaned=not args.raw)
+    source = Path(args.input_dir)
+    if source.is_file():
+        out = label_interval_file(source, args.output_dir, args.data_dir, cleaned=not args.raw)
+    else:
+        out = label_predictions(source, args.output_dir, args.data_dir, cleaned=not args.raw)
     print(f"wrote {out}")
