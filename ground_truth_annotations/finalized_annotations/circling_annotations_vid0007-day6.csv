@@ -59,7 +59,7 @@ VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,R
 0007_vid,vid8-0007_d06_evt_0058,03:41:56,03:42:06,399487,399775,Circling,CCW,2,bower,,,"5 second gap after 2nd circle, then 17 circles follow it; total of 19 circles"
 0007_vid,vid8-0007_d06_evt_0059,03:42:12,03:43:37,399965,402496,Circling,CCW,17,bower,,,
 0007_vid,vid8-0007_d06_evt_0060,03:44:56,03:45:41,404884,406237,Circling,CW,11,bower,,Fish accelerated/elevated as they finished the behavior,11 circles ending @ 406237
-0007_vid,vid8-0007_d06_evt_0061,03:51:44,03:47:24,417123,409306,Circling,CCW,16,bower,,Fish accelerated/elevated as they finished the behavior,16 circles: 417123 - 409306
+0007_vid,vid8-0007_d06_evt_0061,03:47:24,03:51:44,409306,417123,Circling,CCW,16,bower,,Fish accelerated/elevated as they finished the behavior,16 circles: 409306 - 417123
 0007_vid,vid8-0007_d06_evt_0062,03:47:54,03:48:13,410230,410799,Circling,CW,4.5,bower,,,
 0007_vid,vid8-0007_d06_evt_0063,03:49:36,03:49:47,413285,413612,Circling,CCW,2,bower,,,
 0007_vid,vid8-0007_d06_evt_0064,03:49:51,03:50:13,413740,414404,Circling,CCW,4,bower,,,Start @ 413740; 4 circles

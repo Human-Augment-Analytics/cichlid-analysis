@@ -8,6 +8,9 @@ from math import isnan, nan, sqrt
 
 # IoU thresholds, in percent, for segmental F1@tau.
 TAUS = (10, 25, 50)
+# FSH-TAL reports selected thresholds and averages AP over every 0.1 step.
+MAP_TAUS = (10, 20, 30, 40, 50, 60, 70)
+MAP_REPORT_TAUS = (10, 30, 50, 70)
 # Circling directions, and the IoU threshold (percent) that pairs predicted with
 # ground-truth segments for direction and cycle metrics. It is the loosest one, so
 # these metrics judge the labels of detected events rather than their boundaries.
@@ -61,6 +64,63 @@ def edit_score(gt_spans, pred_spans, num_frames):
 def iou(a, b):
     inter = overlap(a, b)
     return inter / (a[1] - a[0] + b[1] - b[0] + 2 - inter)
+
+
+def temporal_iou(a, b):
+    """IoU of half-open continuous intervals, as used by temporal action localization."""
+    inter = max(0., min(a[1], b[1]) - max(a[0], b[0]))
+    union = max(a[1], b[1]) - min(a[0], b[0])
+    return inter / union if union else 0.
+
+
+def average_precision(gt_spans, pred_scored, tau):
+    """All-point interpolated AP with score-ordered, greedy one-to-one matching.
+
+    Spans are half-open intervals in any consistent time unit. Predictions are
+    ``(start, end, score)`` tuples and ``tau`` is a percentage.
+    """
+    if not gt_spans:
+        return nan
+    if not pred_scored:
+        return 0.
+
+    matched = set()
+    true_positives, false_positives = [], []
+    for start, end, _ in sorted(pred_scored, key=lambda row: row[2], reverse=True):
+        available = [index for index in range(len(gt_spans)) if index not in matched]
+        best = max(available, key=lambda i: temporal_iou(gt_spans[i], (start, end))) if available else None
+        is_match = best is not None and 100 * temporal_iou(gt_spans[best], (start, end)) >= tau
+        if is_match:
+            matched.add(best)
+        true_positives.append(int(is_match))
+        false_positives.append(int(not is_match))
+
+    tp_total = fp_total = 0
+    recalls, precisions = [], []
+    for tp, fp in zip(true_positives, false_positives):
+        tp_total += tp
+        fp_total += fp
+        recalls.append(tp_total / len(gt_spans))
+        precisions.append(tp_total / (tp_total + fp_total))
+
+    # Precision envelope and all-point area under the precision-recall curve.
+    envelope = precisions[:]
+    for index in range(len(envelope) - 2, -1, -1):
+        envelope[index] = max(envelope[index], envelope[index + 1])
+    ap, previous_recall = 0., 0.
+    for recall, precision in zip(recalls, envelope):
+        if recall > previous_recall:
+            ap += (recall - previous_recall) * precision
+            previous_recall = recall
+    return ap
+
+
+def map_at_tiou(gt_spans, pred_scored, taus=MAP_TAUS):
+    """Single-class AP at each tIoU and its mean across thresholds."""
+    values = {tau: average_precision(gt_spans, pred_scored, tau) for tau in taus}
+    valid = [value for value in values.values() if not isnan(value)]
+    return {**{f'map@{tau}': value for tau, value in values.items()},
+            'map_avg': sum(valid) / len(valid) if valid else nan}
 
 
 def segment_matches(gt_spans, pred_spans, tau):
@@ -237,6 +297,69 @@ def evaluate_labels(gt, pred, predicts_direction=None, predicts_cycles=None, tau
     return row
 
 
+def evaluate_attribute_quality(gt, pred, tau=50):
+    """Attribute-only metrics on segments paired at a strict detection IoU.
+
+    Unlike ``evaluate_labels``, this does not count missed or spurious detections
+    as direction errors. It answers whether attributes are correct given a
+    sufficiently accurate detected span.
+    """
+    matches = segment_matches([g[:2] for g in gt], [p[:2] for p in pred], tau)
+    pairs = [(gt[j], pred[i]) for i, j in matches.items()]
+    direction_eligible = [(g[2], p[2]) for g, p in pairs if g[2] is not None]
+    directions = [(g[2], p[2]) for g, p in pairs if g[2] is not None and p[2] is not None]
+    cycle_eligible = [(g[3], p[3]) for g, p in pairs if g[3] is not None]
+    cycle_pairs = [(g, p) for g, p in cycle_eligible if p is not None]
+    errors = [p - g for g, p in cycle_pairs]
+
+    counts = {d: [0, 0, 0] for d in DIRECTIONS}
+    for truth, predicted in directions:
+        counts[predicted][0 if truth == predicted else 1] += 1
+    for direction in DIRECTIONS:
+        counts[direction][2] = sum(truth == direction for truth, _ in directions) - counts[direction][0]
+    direction_summary = direction_metrics(
+        counts, sum(g == p for g, p in directions), len(directions)) if directions else direction_metrics(None, 0, 0)
+
+    row = {
+        'attribute_pairs': len(pairs),
+        'attribute_direction_eligible': len(direction_eligible),
+        'attribute_direction_pairs': len(directions),
+        'attribute_direction_correct': sum(g == p for g, p in directions),
+        'attribute_direction_accuracy': ratio(sum(g == p for g, p in directions), len(directions)),
+        'attribute_direction_coverage': ratio(len(directions), len(direction_eligible)),
+        'attribute_direction_macro_f1': direction_summary['direction_f1'],
+        'attribute_direction_balanced_accuracy': mean(
+            [direction_summary[f'{d.lower()}_recall'] for d in DIRECTIONS]),
+        'attribute_cycle_eligible': len(cycle_eligible),
+        'attribute_cycle_pairs': len(errors),
+        'attribute_cycle_coverage': ratio(len(errors), len(cycle_eligible)),
+        **{f'attribute_{key}': value for key, value in cycle_metrics(errors).items()},
+    }
+    for direction in DIRECTIONS:
+        row |= {f'attribute_{direction.lower()}_{key}': counts[direction][index]
+                for index, key in enumerate(('tp', 'fp', 'fn'))}
+    absolute_error = sum(map(abs, errors))
+    row |= {
+        'attribute_cycle_abs_error': absolute_error,
+        'attribute_cycle_squared_error': sum(error * error for error in errors),
+        'attribute_cycle_error': sum(errors),
+        'attribute_cycle_gt_total': sum(g for g, _ in cycle_pairs),
+        'attribute_cycle_wape': ratio(absolute_error, sum(g for g, _ in cycle_pairs)),
+        'attribute_cycle_within_0p5': ratio(sum(abs(error) <= .5 for error in errors), len(errors)),
+        'attribute_cycle_within_1': ratio(sum(abs(error) <= 1 for error in errors), len(errors)),
+    }
+    return row
+
+
+def evaluate_oracle_labels(gt, pred):
+    """Attribute quality when predictions use the exact ground-truth boundaries."""
+    gt = sorted(gt, key=lambda row: row[:2])
+    pred = sorted(pred, key=lambda row: row[:2])
+    if [row[:2] for row in gt] != [row[:2] for row in pred]:
+        raise ValueError('oracle label spans must exactly match ground-truth spans')
+    return evaluate_attribute_quality(gt, pred, tau=100)
+
+
 def cycle_metrics(errors):
     """MAE, RMSE and mean signed error (predicted - ground truth) of cycle counts."""
     if not errors:
@@ -244,6 +367,64 @@ def cycle_metrics(errors):
     return {'cycle_mae': sum(map(abs, errors)) / len(errors),
             'cycle_rmse': sqrt(sum(e * e for e in errors) / len(errors)),
             'cycle_bias': sum(errors) / len(errors)}
+
+
+def summarize_attribute_quality(per_video, prefix):
+    """Pool prefixed outputs from ``evaluate_attribute_quality`` across videos."""
+    def total(key):
+        return sum(row[f'{prefix}{key}'] for row in per_video)
+
+    direction_pairs = total('attribute_direction_pairs')
+    cycle_pairs = total('attribute_cycle_pairs')
+    row = {
+        f'{prefix}attribute_pairs': total('attribute_pairs'),
+        f'{prefix}attribute_direction_eligible': total('attribute_direction_eligible'),
+        f'{prefix}attribute_direction_pairs': direction_pairs,
+        f'{prefix}attribute_direction_correct': total('attribute_direction_correct'),
+        f'{prefix}attribute_cycle_eligible': total('attribute_cycle_eligible'),
+        f'{prefix}attribute_cycle_pairs': cycle_pairs,
+    }
+    counts = {}
+    for direction in DIRECTIONS:
+        counts[direction] = [total(f'attribute_{direction.lower()}_{key}')
+                             for key in ('tp', 'fp', 'fn')]
+        row |= {f'{prefix}attribute_{direction.lower()}_{key}': value
+                for key, value in zip(('tp', 'fp', 'fn'), counts[direction])}
+    row[f'{prefix}attribute_direction_accuracy'] = ratio(
+        row[f'{prefix}attribute_direction_correct'], direction_pairs)
+    row[f'{prefix}attribute_direction_coverage'] = ratio(
+        direction_pairs, row[f'{prefix}attribute_direction_eligible'])
+    direction_summary = direction_metrics(
+        counts, row[f'{prefix}attribute_direction_correct'], direction_pairs)
+    row[f'{prefix}attribute_direction_macro_f1'] = direction_summary['direction_f1']
+    row[f'{prefix}attribute_direction_balanced_accuracy'] = mean(
+        [direction_summary[f'{d.lower()}_recall'] for d in DIRECTIONS])
+    row[f'{prefix}attribute_cycle_coverage'] = ratio(
+        cycle_pairs, row[f'{prefix}attribute_cycle_eligible'])
+    if not cycle_pairs:
+        return row | {f'{prefix}attribute_{key}': nan for key in (
+            'cycle_mae', 'cycle_rmse', 'cycle_bias', 'cycle_wape',
+            'cycle_within_0p5', 'cycle_within_1')}
+
+    absolute_error = total('attribute_cycle_abs_error')
+    squared_error = total('attribute_cycle_squared_error')
+    error = total('attribute_cycle_error')
+    gt_total = total('attribute_cycle_gt_total')
+    row |= {
+        f'{prefix}attribute_cycle_abs_error': absolute_error,
+        f'{prefix}attribute_cycle_squared_error': squared_error,
+        f'{prefix}attribute_cycle_error': error,
+        f'{prefix}attribute_cycle_gt_total': gt_total,
+        f'{prefix}attribute_cycle_mae': absolute_error / cycle_pairs,
+        f'{prefix}attribute_cycle_rmse': sqrt(squared_error / cycle_pairs),
+        f'{prefix}attribute_cycle_bias': error / cycle_pairs,
+        f'{prefix}attribute_cycle_wape': ratio(absolute_error, gt_total),
+    }
+    for key in ('cycle_within_0p5', 'cycle_within_1'):
+        row[f'{prefix}attribute_{key}'] = sum(
+            item[f'{prefix}attribute_cycle_pairs'] * item[f'{prefix}attribute_{key}']
+            for item in per_video if item[f'{prefix}attribute_cycle_pairs']) / cycle_pairs
+    return row
 
 
 def summarize_labels(per_video):

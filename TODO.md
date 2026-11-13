@@ -3,6 +3,9 @@
 ## Evaluation
 - [ ] Split video segments into training and test splits + holdout for all model training and evaluation
 - [x] Add evaluation metrics for direction and circle count.
+- [x] Separate joint, strict-IoU, and oracle-span direction/count metrics.
+- [x] Add score-ordered temporal mAP at tIoU 0.1-0.7.
+- [ ] Export calibrated interval confidence scores from every detector for mAP.
 
 ## Traditional ML
 - [ ] Improve XGBoost performance

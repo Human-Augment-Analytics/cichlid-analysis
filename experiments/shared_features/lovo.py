@@ -256,7 +256,8 @@ def run_variant(variant: Variant, frames: pd.DataFrame, spans, quick: bool, impo
         test, scores, threshold, min_length, info, model = run_fold(variant, frames, train_videos, test_video, spans, quick)
         full = full_length_scores(test["FrameNum"].to_numpy(), scores, VIDEO_FRAMES[test_video])
         predicted = scores_to_spans(full, threshold, min_length)
-        pd.DataFrame([(test_video, s, e) for s, e in predicted], columns=["VideoID", "StartFrame", "EndFrame"]).to_csv(
+        span_rows = [(test_video, s, e, float(np.mean(full[s:e + 1]))) for s, e in predicted]
+        pd.DataFrame(span_rows, columns=["VideoID", "StartFrame", "EndFrame", "Score"]).to_csv(
             prediction_dir / f"{test_video}.csv", index=False
         )
         metrics = evaluate_spans(test_video, spans, predicted)
@@ -295,7 +296,8 @@ def write_summary(results: pd.DataFrame, variants: dict[str, Variant], out_dir: 
         "# Leave-one-video-out results (held-out predictions only)",
         "",
         f"Folds: each of {', '.join(VIDEOS)} is held out once. Overall pools the held-out videos.",
-        "Annotations: `merged_spans.csv` (139 events). Segment F1 is IoU based (see `evaluation/`).",
+        "Annotations: finalized `circling_annotations_vid*.csv` files. Segment F1 is IoU based "
+        "(see `evaluation/`).",
         "",
         "| Variant | F1@10 | F1@25 | F1@50 | Edit | Frame P | Frame R | Frame F1 | Pred segs |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",

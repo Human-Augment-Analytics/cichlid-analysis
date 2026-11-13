@@ -12,7 +12,7 @@ XGBoost. Inputs use `CIRCLING_DATA_DIR`, `data/`, or `~/Downloads`, with the sam
 pose/pair Parquet filenames as the rule-based detector.
 
 The notebook loads the finalized usable positive intervals in
-`ground_truth_annotations/finalized_annotations/merged_spans.csv`. It reuses the
+`ground_truth_annotations/finalized_annotations/circling_annotations_vid*.csv`. It reuses the
 rule-based artifact cleaning and closest-pair selection, retaining
 `centroid_distance_px` and `d_orbital_rad_s`. Each row contains these two signals
 across 121 centered frames; its label is the middle frame's label.
