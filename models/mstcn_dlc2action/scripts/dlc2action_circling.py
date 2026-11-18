@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 import argparse
 import json
 import logging
@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
     from dotenv import load_dotenv
     load_dotenv(ROOT / ".env")
-except ImportError:
+except ImportError: 
     pass
 
 from dlc_yolo_converter.dlc2action_bridge import (
@@ -43,6 +43,8 @@ logger = logging.getLogger("dlc2action_circling")
 
 LEGACY_ENV = ("DLC2ACTION_DATA_DIR", "DLC2ACTION_ANN_DIR",
               "DLC2ACTION_PROJECTS_DIR", "DLC2ACTION_FPS")
+
+
 
 class Paths:
     def __init__(self, workdir=None):
@@ -77,6 +79,7 @@ class Paths:
             return p.resolve()
         return self.projects / project / "results" / "predictions" / prediction
 
+
 def warn_legacy_env():
     set_ = [k for k in LEGACY_ENV if os.getenv(k)]
     if set_:
@@ -84,15 +87,18 @@ def warn_legacy_env():
                        "now lives under DLC2ACTION_WORKDIR "
                        "(default <root>/dlc2action)")
 
+
 def env_default(name, fallback):
     v = os.getenv(name)
     return v if v not in (None, "") else fallback
+
 
 def parse_canvas(s):
     if not s:
         return None
     w, h = s.lower().split("x")
     return [int(w), int(h)]
+
 
 def _parse_name_map(pairs):
     out = {}
@@ -102,6 +108,7 @@ def _parse_name_map(pairs):
         old, new = p.split("=", 1)
         out[old.strip()] = new.strip()
     return out
+
 
 def training_params(args, paths):
     split_path = None
@@ -128,6 +135,7 @@ def training_params(args, paths):
         experiment=experiment_parameters(getattr(args, "preset", None) or [],
                                          getattr(args, "param", None) or []),
     )
+
 
 def cmd_convert_data(args):
     paths = Paths(args.workdir)
@@ -170,6 +178,7 @@ def cmd_convert_data(args):
     print(f"\nH5 + metadata -> {paths.data}")
     print("Next: convert-ann (re-run it whenever you re-convert pose data).")
 
+
 def default_episode(args):
     if args.episode:
         return args.episode
@@ -188,6 +197,7 @@ def default_episode(args):
     if getattr(args, "tag", None):
         name += f"_{args.tag}"
     return name
+
 
 def cmd_convert_pairs(args):
     paths = Paths(args.workdir)
@@ -213,6 +223,7 @@ def cmd_convert_pairs(args):
     print("Next: preflight / train with --pair-features "
           "(episodes are named <split>_pair).")
 
+
 def cmd_convert_ann(args):
     paths = Paths(args.workdir)
     meta = load_meta(paths.data)
@@ -229,6 +240,7 @@ def cmd_convert_ann(args):
         "label": args.label, "fps": args.fps, "merged": bool(args.merge),
     }, indent=2), encoding="utf-8")
     print(f"\nWrote {len(written)} annotation file(s) -> {paths.data}")
+
 
 def cmd_make_split(args):
     paths = Paths(args.workdir)
@@ -248,11 +260,11 @@ def cmd_make_split(args):
         pos = read_positive_intervals(paths.data, sorted(meta), args.behavior)
         folds = range(len(cluster_bouts(pos, args.cluster_gap)))
     elif args.scheme == "crossvideo" and args.fold == "all":
-        folds = range(len(load_meta(paths.data)))
+        folds = range(len(load_meta(paths.data)))     
     else:
         folds = [int(args.fold)]
     for k in folds:
-        if args.name and "{k}" in args.name:
+        if args.name and "{k}" in args.name:   
             name = args.name.format(k=k)
         else:
             name = args.name or (f"fold{k}" if args.scheme in ("cluster", "crossvideo")
@@ -288,8 +300,10 @@ def cmd_make_split(args):
         print(f"  excluded (guard bands / background subsampling): "
               f"{s['n_excluded_segments']} segments")
 
+
 def project_is_complete(paths, name):
     return (paths.projects / name / "meta" / "episodes.pickle").exists()
+
 
 def _project(paths, name, create=False):
     install_dlc2action_patches()
@@ -313,6 +327,7 @@ def _project(paths, name, create=False):
     return Project(name, data_type="dlc_track", annotation_type="csv",
                    data_path=str(paths.data), annotation_path=str(paths.data),
                    **kw)
+
 
 def cmd_train(args):
     paths = Paths(args.workdir)
@@ -364,6 +379,7 @@ def cmd_train(args):
     print(f"Next: predict --episode {episode}  then  score --prediction "
           f"{episode}_pred --split {args.split or '<split>'}")
 
+
 def cmd_predict(args):
     paths = Paths(args.workdir)
     project = _project(paths, args.project_name)
@@ -373,6 +389,7 @@ def cmd_predict(args):
                            data_path=str(data), force=args.overwrite,
                            augment_n=args.augment_n)
     print(f"\nPrediction -> {paths.prediction_dir(args.project_name, name)}")
+
 
 def cmd_export_events(args):
     paths = Paths(args.workdir)
@@ -389,6 +406,7 @@ def cmd_export_events(args):
     print(f"Wrote {len(df)} event(s) -> {out}")
     if len(df):
         print(f"Events per video: {df.groupby('video').size().to_dict()}")
+
 
 def cmd_score(args):
     paths = Paths(args.workdir)
@@ -418,6 +436,9 @@ def cmd_score(args):
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(r, indent=2, default=float), encoding="utf-8")
     print(f"\nreport -> {out}")
+
+
+
 
 def add_training_args(p):
     p.add_argument("--project-name",
@@ -454,10 +475,10 @@ def add_training_args(p):
                    help="also feed the pair-parquet features (run "
                         "convert-pairs first); episode becomes <split>_pair")
     p.add_argument("--feature-file", choices=list(FEATURE_FILES), default=None,
-                   help="feed a combined feature file instead of the pair "
-                        "file: pairemb = pair features + fish-mask embedding "
-                        "PCs (embed_probe.py features). Exclusive with "
-                        "--pair-features; episode becomes <split>_<name>")
+                   help="feed a combined feature file instead of the pair file: "
+                        "pairemb/pairvmae = original pair + embeddings; pairmotion = engineered "
+                        "windowed pair motion; pairmotionemb/pairmotionvmae add embeddings. "
+                        "Exclusive with --pair-features; episode becomes <split>_<name>")
     p.add_argument("--preset", action="append", choices=sorted(PRESETS),
                    default=None,
                    help="experiment preset, repeatable: aug (rotate 360, "
@@ -472,6 +493,7 @@ def add_training_args(p):
                         "general.ssl=[masked_frames]. Needs --tag")
     p.add_argument("--tag", default=None,
                    help="extra episode-name suffix (required with --param)")
+
 
 def build_parser():
     ap = argparse.ArgumentParser(
@@ -627,6 +649,7 @@ def build_parser():
     p.set_defaults(fn=cmd_score)
     return ap
 
+
 def main(argv=None):
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=getattr(logging, args.log_level),
@@ -637,6 +660,7 @@ def main(argv=None):
         raise SystemExit("train: --split is required with --partition-method "
                          "file (run make-split first)")
     return args.fn(args)
+
 
 if __name__ == "__main__":
     sys.exit(main())

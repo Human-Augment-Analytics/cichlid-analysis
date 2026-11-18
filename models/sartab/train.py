@@ -5,11 +5,14 @@ from pathlib import Path
 import joblib
 import numpy as np
 import polars as pl
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 from models.common.config import (DATA_DIR, FINALIZED_ANNOTATIONS, LABELS, OUTPUTS, label_description, model_name,
-                                  read_annotations, video_frames)
+                                  mstcn_workdir, read_annotations, video_frames)
 from models.common.report import write_report
 
 NAME = model_name('sartab')
@@ -19,6 +22,22 @@ STEP = 900
 ROI = 400
 BIN = 20
 OUTPUT_DIR = OUTPUTS / NAME
+PM_COLUMNS = [
+    'pm_pair_present',
+    'pm_centroid_distance_bl',
+    'pm_speed_mean_bl_s',
+    'pm_closing_speed_bl_s',
+    'pm_abs_d_orbital_rad_s',
+    'pm_w4s_close_frac',
+    'pm_w4s_mutual_facing_frac',
+    'pm_w4s_coverage',
+    'pm_w4s_orbit_turns_net',
+    'pm_w4s_orbit_turns_abs',
+    'pm_w4s_corotation_mean',
+]
+PM_WINDOW_COLUMNS = [f'{column}_60s_mean' for column in PM_COLUMNS]
+FEATURES = ['two_fish_fraction', *PM_WINDOW_COLUMNS]
+
 
 def densest_square(x, y, size=ROI, bin_px=BIN):
     width, height = int(np.nanmax(x)) + size, int(np.nanmax(y)) + size
@@ -29,6 +48,7 @@ def densest_square(x, y, size=ROI, bin_px=BIN):
     sums = total[k:, k:] - total[:-k, k:] - total[k:, :-k] + total[:-k, :-k]
     i, j = np.unravel_index(np.argmax(sums), sums.shape)
     return float(i * bin_px), float(j * bin_px), float(i * bin_px + size), float(j * bin_px + size)
+
 
 def fish_counts(video, frame_count, data_dir=DATA_DIR):
     path = Path(data_dir) / f'{video}.parquet'
@@ -54,10 +74,26 @@ def fish_counts(video, frame_count, data_dir=DATA_DIR):
     counts[index[keep]] = inside['len'].to_numpy()[keep]
     return counts, {'x0': x0, 'y0': y0, 'x1': x1, 'y1': y1}
 
+
 def window_starts(frame_count):
     return np.arange(0, max(frame_count - WINDOW, 0) + 1, STEP)
 
-def window_table(video, frame_count, counts, spans):
+
+def pair_motion_window_features(motion, starts, ends):
+    """Aggregate cached engineered frame features over exact 60 s windows."""
+    result = {}
+    for name in PM_COLUMNS:
+        values = motion[name].to_numpy().astype(np.float64)
+        valid = np.isfinite(values)
+        total = np.r_[0.0, np.cumsum(np.where(valid, values, 0.0))]
+        count = np.r_[0, np.cumsum(valid, dtype=np.int64)]
+        valid_count = count[ends] - count[starts]
+        sums = total[ends] - total[starts]
+        result[f'{name}_60s_mean'] = np.where(valid_count, sums / np.maximum(valid_count, 1), np.nan)
+    return result
+
+
+def window_table(video, frame_count, counts, spans, motion):
     starts = window_starts(frame_count)
     ends = np.minimum(starts + WINDOW, frame_count)
     two = np.r_[0, np.cumsum(counts == 2)]
@@ -68,72 +104,103 @@ def window_table(video, frame_count, counts, spans):
     covered = np.r_[0, np.cumsum(positive)]
     return pl.DataFrame({
         'video': [video] * len(starts), 'start': starts, 'end': ends - 1,
+        # Fit/evaluate on nonoverlapping windows; overlapping windows are still
+        # used for dense inference and are never split across train and test.
+        'fit_window': starts % WINDOW == 0,
         'two_fish_fraction': (two[last] - two[first]) / np.maximum(last - first, 1),
+        **pair_motion_window_features(motion, starts, ends),
         'circling': ((covered[ends] - covered[starts]) > 0).astype(np.int8)})
 
-def frame_scores(window_scores, frame_count):
+
+def frame_scores(window_scores, starts, ends, frame_count):
+    """Linearly interpolate between window centers instead of 30 s steps."""
     frames = np.arange(frame_count, dtype=np.int64)
-    k = np.clip(np.rint((frames - WINDOW / 2) / STEP).astype(np.int64), 0, len(window_scores) - 1)
-    return pl.DataFrame({'FrameNum': frames, 'circling_score': np.asarray(window_scores, np.float64)[k]})
+    centers = (starts + ends - 1) / 2.0
+    scores = np.interp(frames, centers, np.asarray(window_scores, dtype=np.float64))
+    return pl.DataFrame({'FrameNum': frames, 'circling_score': scores})
+
 
 def train(annotations=FINALIZED_ANNOTATIONS, output_dir=OUTPUT_DIR, data_dir=DATA_DIR):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     spans = read_annotations(annotations)
     frames = video_frames(sorted(spans))
+    workdir = mstcn_workdir()
+    from models.mstcn_dlc2action.train import prepare_data
+    from models.common.pair_motion import pair_motion_table
+    from models.common.segments import load_meta
+
+    prepare_data(workdir, data_dir, 'pairmotion', sorted(spans))
+    meta = load_meta(workdir, sorted(spans))
     tables, rois = [], {}
     for video, count in frames.items():
-        print(f'Counting fish in the ROI: {video}', flush=True)
+        print(f'Counting fish in the ROI and aggregating pair motion: {video}', flush=True)
         counts, rois[video] = fish_counts(video, count, data_dir)
-        tables.append(window_table(video, count, counts, spans[video]))
+        motion = pair_motion_table(workdir, video, meta[video], count, data_dir)
+        tables.append(window_table(video, count, counts, spans[video], motion))
     windows = pl.concat(tables)
-    ids = np.arange(windows.height)
-    _, test_ids = train_test_split(ids, test_size=0.2, random_state=42, stratify=windows['circling'].to_numpy())
-    split = np.full(windows.height, 'train', dtype='<U5')
+    fit_windows = windows.filter(pl.col('fit_window'))
+    ids = np.arange(fit_windows.height)
+    _, test_ids = train_test_split(ids, test_size=0.2, random_state=42,
+                                   stratify=fit_windows['circling'].to_numpy())
+    split = np.full(fit_windows.height, 'train', dtype='<U5')
     split[test_ids] = 'test'
-    windows = windows.with_columns(pl.Series('split', split))
-    train_rows, test_rows = windows.filter(pl.col('split') == 'train'), windows.filter(pl.col('split') == 'test')
-    model = LogisticRegressionCV()
-    model.fit(train_rows.select('two_fish_fraction').to_numpy(), train_rows['circling'].to_numpy())
+    fit_windows = fit_windows.with_columns(pl.Series('split', split))
+    train_rows, test_rows = fit_windows.filter(pl.col('split') == 'train'), fit_windows.filter(pl.col('split') == 'test')
+    model = make_pipeline(
+        SimpleImputer(strategy='median', add_indicator=True, keep_empty_features=True),
+        StandardScaler(),
+        LogisticRegressionCV(Cs=np.logspace(-3, 2, 11), scoring='average_precision', class_weight='balanced',
+                             max_iter=2000, solver='lbfgs', n_jobs=-1),
+    )
+    model.fit(train_rows.select(FEATURES).to_numpy(), train_rows['circling'].to_numpy())
     windows = windows.with_columns(pl.Series('circling_score', model.predict_proba(
-        windows.select('two_fish_fraction').to_numpy())[:, 1]))
+        windows.select(FEATURES).to_numpy())[:, 1]))
     windows.write_parquet(output_dir / 'windows.parquet')
-    joblib.dump({'model': model, 'features': ['two_fish_fraction'], 'roi': rois}, output_dir / 'model.joblib')
+    joblib.dump({'model': model, 'features': FEATURES, 'feature_set': 'pairmotion', 'roi': rois},
+                output_dir / 'model.joblib')
     (output_dir / 'roi.json').write_text(json.dumps(rois, indent=2) + '\n')
 
-    test = windows.filter(pl.col('split') == 'test').select('video', 'start', 'end', 'circling', 'circling_score')
+    test = test_rows.select('video', 'start', 'end', 'circling').with_columns(
+        pl.Series('circling_score', model.predict_proba(test_rows.select(FEATURES).to_numpy())[:, 1]))
+    search = model[-1]
     report = {
         'label_assumption': f'A window is circling when it overlaps an interval in {label_description(annotations)}.',
         'labels': LABELS,
         'annotations': str(Path(annotations).resolve()),
-        'method': 'Replication of SARTAB (Lancaster et al. 2024, Front. Behav. Neurosci. 18:1509369): fish '
-                  f'counted in a {ROI} px ROI every {SAMPLE_EVERY}th frame; feature = fraction of sampled frames '
-                  f'with exactly two fish in {WINDOW // 30} s windows every {STEP // 30} s; default '
-                  'LogisticRegressionCV.',
-        'deviations': 'The ROI is the densest 400 px square of the male\'s positions instead of a detector; '
-                      'there is no detection-confidence column; labels are windows overlapping annotated circling.',
-        'split': 'Stratified random 80/20 train/test split of the windows, random_state=42.',
-        'limitation': 'Overlapping windows can occur in both splits; this is not an independent-event or '
-                      'new-video evaluation.',
-        'score_warning': 'Every frame gets the score of the window centred nearest to it, so spans have '
-                         '30 s resolution.',
-        'model': 'LogisticRegressionCV (scikit-learn defaults)', 'C': float(model.C_[0]),
-        'videos': sorted(frames), 'roi': rois,
+        'method': 'SARTAB-inspired fish occupancy plus shared pair-motion features: fish counted in a '
+                  f'{ROI} px ROI every {SAMPLE_EVERY}th frame; {WINDOW // 30} s windows every {STEP // 30} s; '
+                  '60 s means of normalized pair motion and 4 s temporal-consistency features; balanced '
+                  'LogisticRegressionCV with median imputation and standard scaling.',
+        'deviations': 'The ROI is the densest 400 px square of the male positions; pair-motion aggregates are '
+                      'added to the original two-fish fraction. This is an augmented SARTAB variant, not a '
+                      'strict replication.',
+        'split': 'Stratified random 80/20 train/test split of NONOVERLAPPING 60 s windows, random_state=42. '
+                 'Overlapping inference windows are excluded from fitting and internal metrics.',
+        'limitation': 'Neighboring nonoverlapping windows and events can occur in both splits; this is not a '
+                      'new-video evaluation. Whole-video repository metrics remain the primary comparison.',
+        'score_warning': 'Frame scores are linearly interpolated between 60 s window centers spaced 30 s apart.',
+        'model': 'LogisticRegressionCV (balanced, average-precision CV)', 'C': float(search.C_[0]),
+        'features': FEATURES, 'videos': sorted(frames), 'roi': rois,
         'windows': {s: {'circling': int(g['circling'].sum()), 'other': int((g['circling'] == 0).sum())}
                     for s, g in (('train', train_rows), ('test', test_rows))},
     }
     notes = [report['method'], report['deviations'], report['label_assumption'], report['split']]
-    result = write_report(output_dir, 'Circling SARTAB replication', 'SARTAB', test, report, notes, unit='windows')
+    result = write_report(output_dir, 'Circling SARTAB + pair-motion windows', 'SARTAB + pair motion',
+                          test, report, notes, unit='windows')
 
     scores_dir = output_dir / 'scores'
     scores_dir.mkdir(parents=True, exist_ok=True)
     for video, count in frames.items():
         rows = windows.filter(pl.col('video') == video).sort('start')
-        frame_scores(rows['circling_score'].to_numpy(), count).write_parquet(scores_dir / f'{video}_scores.parquet')
+        frame_scores(rows['circling_score'].to_numpy(), rows['start'].to_numpy(), rows['end'].to_numpy(),
+                     count).write_parquet(scores_dir / f'{video}_scores.parquet')
         (scores_dir / f'{video}_scores.json').write_text(json.dumps(
-            {'frames': count, 'windows': rows.height, 'window': WINDOW, 'step': STEP}, indent=2) + '\n')
+            {'frames': count, 'windows': rows.height, 'window': WINDOW, 'step': STEP,
+             'interpolation': 'linear between window centers', 'feature_set': 'pairmotion'}, indent=2) + '\n')
     return result
 
+
 if __name__ == '__main__':
-    argparse.ArgumentParser(description='SARTAB replication (two fish in the ROI over 60 s windows)').parse_args()
+    argparse.ArgumentParser(description='SARTAB + engineered pair-motion features over 60 s windows').parse_args()
     train()

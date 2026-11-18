@@ -15,6 +15,7 @@ MODEL = 'MCG-NJU/videomae-base-finetuned-kinetics'
 MEAN = np.array([0.485, 0.456, 0.406], np.float32)
 STD = np.array([0.229, 0.224, 0.225], np.float32)
 
+
 def letterbox(frame, size):
     h, w = frame.shape[:2]
     scale = size / max(h, w)
@@ -23,6 +24,7 @@ def letterbox(frame, size):
     top, left = (size - nh) // 2, (size - nw) // 2
     out[top:top + nh, left:left + nw] = cv2.resize(frame, (nw, nh), interpolation=cv2.INTER_AREA)
     return cv2.cvtColor(out, cv2.COLOR_BGR2RGB)
+
 
 def load_encoder(name, revision, device):
     import torch
@@ -46,8 +48,10 @@ def load_encoder(name, revision, device):
     print(f'encoder {name}@{revision} on {device}{" (fp16)" if half else ""}', flush=True)
     return encode, model.config.hidden_size
 
+
 def clip_frames(anchor, clip, step, last):
     return np.clip(anchor + step * (np.arange(clip) - clip // 2), 0, last)
+
 
 def interpolate(anchors, n_rows, stride, first, anchor_step, out, chunk=50_000):
     n = len(anchors)
@@ -58,6 +62,7 @@ def interpolate(anchors, n_rows, stride, first, anchor_step, out, chunk=50_000):
         hi = np.clip(lo + 1, 0, n - 1)
         w = np.clip(position - lo, 0, 1)[:, None].astype(np.float32)
         out[rows] = ((1 - w) * anchors[lo].astype(np.float32) + w * anchors[hi].astype(np.float32)).astype(np.float16)
+
 
 def extract(video, path, meta, a, encode, dim):
     out = Path(a.out)
@@ -166,6 +171,7 @@ def extract(video, path, meta, a, encode, dim):
     info_path.write_text(json.dumps(info, indent=2), encoding='utf-8')
     print(f'[{video}] done: {done} clips in {(time.time() - started) / 60:.0f} min', flush=True)
 
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description='VideoMAE clip embeddings for every H5 row')
     parser.add_argument('--data-dir', default=str(WORKDIR / 'data'))
@@ -196,6 +202,7 @@ def main(argv=None):
         if encode is None:
             encode, dim = load_encoder(a.model, a.revision, a.device)
         extract(video, path, meta[video], a, encode, dim)
+
 
 if __name__ == '__main__':
     main()

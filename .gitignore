@@ -234,14 +234,3 @@ feature_engineering/pair_motion/data/*.part
 outputs/mstcn_dlc2action/*
 gpu_ins
 models/mstcn_dlc2action/README.md
-outputs/xgboost/*.parquet
-outputs/xgboost/scores/
-outputs/xgboost/*.html
-
-# Local-only assistant context
-PROJECT_CONTEXT.md
-
-# Leave-one-video-out experiment artifacts (regenerable)
-outputs/experiments/
-outputs/predictions/lovo_*/
-ss

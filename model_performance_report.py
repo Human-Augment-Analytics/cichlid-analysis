@@ -30,7 +30,7 @@ with app.setup(hide_code=True):
 
     from evaluation.evaluate import (ANNOTATION_DIR, evaluate, prediction_models, prediction_video_ids,
                                      read_ground_truth, read_ground_truth_labels, read_predictions,
-                                     summary_view)
+                                     summary_view,heldout_metrics, window_report, comparable_models)
     from evaluation.metrics import LABEL_TAU
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES
@@ -56,9 +56,49 @@ def _():
     |-|-|
     | `logistic_regression` | `uv run python -m models.logistic_regression.predict` |
     | `rule_based` | `uv run python models/rule_based/detector.py` |
+    | `mstcn_dinov2` | `uv run python -m models.mstcn_dlc2action.predict --features pairemb` |
+    | `mstcn_videomae` | `uv run python -m models.mstcn_dlc2action.predict --features pairvmae` |
+    | `mstcn_pose_pair` | `uv run python -m models.mstcn_dlc2action.predict --features pair` |
+    | `mstcn_pose` | `uv run python -m models.mstcn_dlc2action.predict --features pose` |
+    | `mstcn_pairmotion` | `uv run python -m models.mstcn_dlc2action.predict --features pairmotion` |
+    | `mstcn_pairmotion_dinov2` | `uv run python -m models.mstcn_dlc2action.predict --features pairmotionemb` |
+    | `mstcn_pairmotion_videomae` | `uv run python -m models.mstcn_dlc2action.predict --features pairmotionvmae` |
+    | `xgboost_pose_pair` | `uv run python -m models.xgboost_frame.predict --features pair` |
+    | `xgboost_dinov2` | `uv run python -m models.xgboost_frame.predict --features pairemb` |
+    | `xgboost_videomae` | `uv run python -m models.xgboost_frame.predict --features pairvmae` |
+    | `xgboost_turns` | `uv run python -m models.xgboost_frame.predict --features pairturns` |
+    | `xgboost_turns_videomae` | `uv run python -m models.xgboost_frame.predict --features pairturnsvmae` |
+    | `xgboost_pairmotion` | `uv run python -m models.xgboost_frame.predict --features pairmotion` |
+    | `xgboost_pairmotion_dinov2` | `uv run python -m models.xgboost_frame.predict --features pairmotionemb` |
+    | `xgboost_pairmotion_videomae` | `uv run python -m models.xgboost_frame.predict --features pairmotionvmae` |
+    | `lrcv_pose_pair` | `uv run python -m models.logistic_regression_cv.predict --features pair` |
+    | `lrcv_dinov2` | `uv run python -m models.logistic_regression_cv.predict --features pairemb` |
+    | `lrcv_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairvmae` |
+    | `lrcv_turns` | `uv run python -m models.logistic_regression_cv.predict --features pairturns` |
+    | `lrcv_turns_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairturnsvmae` |
+    | `lrcv_pairmotion` | `uv run python -m models.logistic_regression_cv.predict --features pairmotion` |
+    | `lrcv_pairmotion_dinov2` | `uv run python -m models.logistic_regression_cv.predict --features pairmotionemb` |
+    | `lrcv_pairmotion_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairmotionvmae` |
+    | `sartab` | `uv run python -m models.sartab.predict` |
 
-    The logistic regression's predictions include its training frames, and the rule-based
-    detector was tuned on video 0031, so neither is a fully held-out evaluation.
+    `run.ps1` trains and predicts all of them in order. Every predict command takes
+    `[--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]`.
+
+    The ground truth is `CIRCLING_GROUND_TRUTH` (default `merged_spans.csv`) and the videos are
+    `CIRCLING_VIDEOS` (default `0028_vid,0031_vid`). Each model is scored on the selected videos it
+    has prediction files for. The logistic regression and the rule-based detector cover 0028 and 0031 only.
+
+    `CIRCLING_HARD_NEGATIVES=0.5` (`run.ps1 -HardNegatives 0.5`) makes half of the negative training segments
+    ones where the fish are close but not circling; those models are named `<model>_hn50`.
+
+    With `CIRCLING_LABELS=baseline` (`run.ps1 -Labels baseline`) the added models train on the logistic
+    regression's 15 hard-coded spans on 0028/0031, are named `<model>_15spans`, and this report shows only
+    them next to `logistic_regression` and `rule_based`. Otherwise it shows every model except the
+    `_15spans` ones. Evaluation is always against `CIRCLING_GROUND_TRUTH`.
+
+    The whole-video numbers include training frames for every learned model, and the rule-based
+    detector was tuned on video 0031, so none of them is a fully held-out evaluation. Held-out numbers
+    are in the held-out section below.
 
     ## Metrics
     ### Mean over Frames (MoF)
@@ -120,7 +160,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _():
-    models = prediction_models()
+    models = comparable_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
     gt = read_ground_truth()
     _gt_labels = read_ground_truth_labels()
@@ -158,6 +198,37 @@ def _(evaluations, predictions):
         mo.ui.table(_comparison, selection=None, pagination=False),
         mo.ui.tabs({_name: summary_view(_results, _warnings)
                     for _name, (_results, _warnings) in evaluations.items()}),
+    ])
+    return
+
+
+@app.function(hide_code=True)
+def heldout_report(names):
+    return heldout_metrics(names)
+
+
+@app.cell(hide_code=True)
+def _(evaluations, gt, predictions):
+    _heldout = heldout_report(list(evaluations))
+    _windows = window_report(gt, evaluations, predictions)
+    mo.vstack([
+        mo.md("""
+        ## Held-out test metrics
+
+        From each model's `metrics.json`: the sampled test set of its own split, at threshold 0.5.
+        The test unit is frames for the per-frame and MS-TCN models and 60 s windows for SARTAB.
+        The logistic regression's test frames come from its 15 training spans, the others from the
+        shared segment split.
+        """),
+        mo.ui.table(_heldout, selection=None, pagination=False) if _heldout.height
+        else mo.md("No `metrics.json` found."),
+        mo.md("""
+        ## 60 s windows (SARTAB resolution)
+
+        Windows of 60 s every 30 s. A window is circling when it overlaps a span; balanced
+        accuracy and F1 compare ground-truth and predicted windows.
+        """),
+        mo.ui.table(_windows, selection=None, pagination=False) if _windows.height else mo.md(""),
     ])
     return
 

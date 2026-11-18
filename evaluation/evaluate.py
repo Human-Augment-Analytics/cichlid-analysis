@@ -22,6 +22,7 @@ __generated_with = "0.24.2"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
+    import os
     import re
     from pathlib import Path
 

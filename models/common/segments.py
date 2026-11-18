@@ -1,11 +1,12 @@
 import json
+import pickle
 from pathlib import Path
 
 import numpy as np
 import polars as pl
 from sklearn.model_selection import train_test_split
 
-from models.common.config import video_frames
+from models.common.config import CLOSE_PX, HARD_NEGATIVES, video_frames
 from models.logistic_regression.train import THRESHOLD, frame_labels
 from models.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
 
@@ -15,9 +16,11 @@ SEED = 42
 STRIDE = 2
 SPLIT = 'repo_split'
 
-def sample_segments(positives, n_rows, len_segment=LEN_SEGMENT, seed=SEED):
+
+def sample_segments(positives, n_rows, len_segment=LEN_SEGMENT, seed=SEED, closeness=None, hard_fraction=0.0):
     rng = np.random.default_rng(seed)
     tables = []
+    prepared = {}
     for video in sorted(n_rows):
         n = n_rows[video]
         positive = np.zeros(n, dtype=bool)
@@ -25,20 +28,41 @@ def sample_segments(positives, n_rows, len_segment=LEN_SEGMENT, seed=SEED):
             positive[start:end] = True
         spans = np.array(br.segment_spans(n, len_segment, OVERLAP), dtype=np.int64)
         counts = np.array([positive[s:e].sum() for s, e in spans], dtype=np.int64)
-        with_circling = np.flatnonzero(counts > 0)
-        without = np.flatnonzero(counts == 0)
-        if not len(with_circling):
-            continue
-        if len(without) < len(with_circling):
+        prepared[video] = (spans, counts, np.flatnonzero(counts > 0), np.flatnonzero(counts == 0))
+    positive_counts = [len(item[2]) for item in prepared.values() if len(item[2])]
+    if not positive_counts:
+        raise SystemExit('no segment with circling in any selected video')
+    # Negative-only videos are useful on the expanded dataset. Give each the
+    # median positive-segment quota instead of silently dropping the video.
+    negative_only_quota = max(1, int(round(np.median(positive_counts))))
+    for video, (spans, counts, with_circling, without) in prepared.items():
+        n_negative = len(with_circling) if len(with_circling) else min(negative_only_quota, len(without))
+        if len(without) < n_negative:
             raise ValueError(f'{video}: not enough segments without circling to sample')
-        picked = np.sort(np.concatenate([
-            with_circling, rng.choice(without, size=len(with_circling), replace=False)]))
+        if not n_negative and not len(with_circling):
+            continue
+        hard = np.zeros(0, dtype=np.int64)
+        if hard_fraction > 0 and n_negative:
+            close = closeness[video]
+            share = np.array([close[s:e].mean() for s, e in spans[without]])
+            pool = without[share >= 0.5]
+            n_hard = min(round(hard_fraction * n_negative), len(pool))
+            hard = np.sort(rng.choice(pool, size=n_hard, replace=False))
+            rest = np.setdiff1d(without, hard)
+            negatives = np.concatenate([hard, rng.choice(rest, size=n_negative - n_hard, replace=False)])
+            print(f'{video}: {n_hard} hard negative segments (male and partner within {CLOSE_PX} px for at least '
+                  f'half the segment) of {len(pool)} available, {n_negative - n_hard} random', flush=True)
+        elif n_negative:
+            negatives = rng.choice(without, size=n_negative, replace=False)
+        else:
+            negatives = np.zeros(0, dtype=np.int64)
+        picked = np.sort(np.concatenate([with_circling, negatives]))
         tables.append(pl.DataFrame({
             'video': [video] * len(picked), 'start_row': spans[picked, 0], 'end_row': spans[picked, 1],
-            'positive_rows': counts[picked], 'circling': counts[picked] > 0}))
-    if not tables:
-        raise SystemExit('no segment with circling in any selected video')
+            'positive_rows': counts[picked], 'circling': counts[picked] > 0,
+            'hard_negative': np.isin(picked, hard)}))
     return pl.concat(tables)
+
 
 def split_segments(segments, seed=SEED):
     ids = np.arange(segments.height)
@@ -47,6 +71,7 @@ def split_segments(segments, seed=SEED):
     split = np.full(segments.height, 'train', dtype='<U5')
     split[test_ids] = 'test'
     return segments.with_columns(pl.Series('split', split))
+
 
 def write_split(segments, path, n_rows):
     ids = {k: [br.segment_id(v, s, e) for v, s, e in segments.filter(pl.col('split') == k)
@@ -64,9 +89,11 @@ def write_split(segments, path, n_rows):
         'sampling': 'every segment with circling plus an equal number without, per video',
         'split': 'stratified random 80/20 train/test, random_state=42'}, indent=2), encoding='utf-8')
 
+
 def rows_to_frames(start_row, end_row, meta, frame_count):
     stride, first = int(meta.get('stride', 1)), int(meta.get('frame_min', 0))
     return np.arange(start_row * stride + first, min(end_row * stride + first, frame_count))
+
 
 def frame_scores(probs, meta, frame_count):
     stride, first = int(meta.get('stride', 1)), int(meta.get('frame_min', 0))
@@ -77,6 +104,22 @@ def frame_scores(probs, meta, frame_count):
     scores[valid] = probs[rows[valid]]
     return pl.DataFrame({'FrameNum': frames, 'circling_score': scores})
 
+
+def pair_closeness(workdir, meta, videos):
+    data = Path(workdir) / 'data'
+    out = {}
+    for video in videos:
+        path = data / f'{video}{br.PAIR_FEATURE_SUFFIX}'
+        names = (meta[video].get('pair_stats') or {}).get('pair_features')
+        if not path.exists() or not names:
+            raise SystemExit(f'{path} not found: hard negatives need the pair features, run '
+                             '`python -m models.mstcn_dlc2action.train --prepare-only --features pair` first')
+        with open(path, 'rb') as f:
+            values = np.asarray(pickle.load(f)[br.PAIR_CLIP])
+        out[video] = (values[:, -1] > 0) & (values[:, names.index('centroid_dist_px')] < CLOSE_PX)
+    return out
+
+
 def load_meta(workdir, videos):
     data = Path(workdir) / 'data'
     meta = br.load_meta(data) if (data / br.META_FILENAME).exists() else {}
@@ -85,6 +128,7 @@ def load_meta(workdir, videos):
         raise SystemExit(f'{missing} not converted in {data}: run '
                          '`python -m models.mstcn_dlc2action.train --prepare-only` first')
     return meta
+
 
 def shared_segments(workdir, spans, output_dir=None):
     workdir = Path(workdir)
@@ -102,7 +146,8 @@ def shared_segments(workdir, spans, output_dir=None):
     }, indent=2), encoding='utf-8')
     n_rows = {v: int(meta[v]['n_frames']) for v in videos}
     positives = br.read_positive_intervals(data, videos)
-    segments = split_segments(sample_segments(positives, n_rows))
+    closeness = pair_closeness(workdir, meta, videos) if HARD_NEGATIVES else None
+    segments = split_segments(sample_segments(positives, n_rows, closeness=closeness, hard_fraction=HARD_NEGATIVES))
     write_split(segments, workdir / 'splits' / f'{SPLIT}.txt', n_rows)
     if output_dir is not None:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -110,6 +155,7 @@ def shared_segments(workdir, spans, output_dir=None):
     counts = segments.group_by('split', 'circling').len().sort('split', 'circling')
     print(f'Sampled segments:\n{counts}', flush=True)
     return segments, {v: meta[v] for v in videos}
+
 
 def segment_frames(segments, meta, split=None):
     frames = video_frames(sorted(meta))
@@ -122,6 +168,7 @@ def segment_frames(segments, meta, split=None):
         tables.append(pl.DataFrame({'video': [video] * len(rows), 'FrameNum': rows,
                                     'segment': np.full(len(rows), index), 'split': [part] * len(rows)}))
     return pl.concat(tables)
+
 
 def test_frames(segments, meta, scores, spans):
     test = segment_frames(segments, meta, 'test')

@@ -1,4 +1,4 @@
-from models.common.predict import main, predict
+from models.common.predict import main, predict  # noqa: F401
 
 NAMES = {'sartab': 'sartab'}
 
