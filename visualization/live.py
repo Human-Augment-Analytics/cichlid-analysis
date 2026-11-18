@@ -124,7 +124,7 @@ def main():
     try: app=App(args.config)
     except Exception as exc: parser.exit(1,f'Catalog error: {exc}\n')
     server=ThreadingHTTPServer((args.host,args.port),partial(Handler,app=app)); server.daemon_threads=True
-    print(f'Listening on {args.host}:{args.port}. No model training. Ctrl+C to stop.',flush=True)
+    print(f"\n🌐 Open visualization: http://127.0.0.1:{server.server_address[1]}\n")
     try: server.serve_forever()
     except KeyboardInterrupt: pass
     finally: server.server_close()

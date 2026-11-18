@@ -32,7 +32,7 @@ def load_intervals(path, video_id, fps, spec):
     end_col = spec.get('end', 'EndFrame' if 'EndFrame' in data else 'end_frame' if 'end_frame' in data else 'End Frame' if 'End Frame' in data else 'EndTime')
     for number,r in enumerate(data.to_dict('records'), 2):
         vid=r.get('VideoID',r.get('video_id',r.get('video',video_id)))
-        if pd.notna(vid) and str(vid)!=video_id: continue
+        if not spec.get('ignore_video_id', False) and pd.notna(vid) and str(vid)!=video_id: continue
         if pd.isna(r.get(start_col)) or pd.isna(r.get(end_col)):
             skipped+=1; continue
         if 'Time' in start_col or spec.get('units')=='seconds':
@@ -47,7 +47,7 @@ def load_intervals(path, video_id, fps, spec):
         elif spec.get('verified',False) or truth(r.get('verified',r.get('Verified',False))):
             behavior=str(r.get('Primary label/behavior',r.get('Behavior',r.get('behavior','circling')))).strip().lower()
             status='non-circling' if behavior in {'non-circling','noncircling'} else 'circling' if behavior=='circling' else 'unknown'
-        notes=' | '.join(f'{k}: {v}' for k,v in r.items() if ('note' in k.lower() or 'comment' in k.lower() or 'direction' in k.lower() or 'circle' in k.lower()) and pd.notna(v) and str(v).strip())
-        result.append(dict(start=a,end=b,status=status,event=str(r.get('EventID',r.get('event_id',number))),notes=notes,fish_ids=str(r.get('FishIDs','')) if pd.notna(r.get('FishIDs','')) else ''))
+        notes=' | '.join(f'{k}: {v}' for k,v in r.items() if ('note' in k.lower() or 'comment' in k.lower() or 'direction' in k.lower() or 'circle' in k.lower() or 'turn' in k.lower()) and pd.notna(v) and str(v).strip())
+        result.append(dict(start=a,end=b,status=status,event=str(r.get('EventID',r.get('event_id',number))),notes=notes,fish_ids=str(r.get('FishIDs','')) if pd.notna(r.get('FishIDs','')) else '',direction=str(r.get('Direction',r.get('Rotation direction',''))).strip() if pd.notna(r.get('Direction',r.get('Rotation direction',''))) else '',cycles=float(r.get('Cycles',r.get('No. of turns/circles'))) if pd.notna(r.get('Cycles',r.get('No. of turns/circles'))) else None))
     return result,skipped
 

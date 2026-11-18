@@ -64,13 +64,13 @@ def read_urls(repo):
     except (SyntaxError, ValueError): pass
     return {}
 
-def cached_pose_file(url, video_id):
+def cached_pose_file(url, cache_key):
     """Download a trusted catalog pose URL to temporary disk, never into RAM."""
     if not url or not url.startswith('https://www.dropbox.com/'):
         raise ValueError('Pose URL must be a Dropbox HTTPS shared-file link')
     folder = Path(os.environ.get('CICHLID_POSE_CACHE', tempfile.gettempdir())) / 'cichlid-poses'
     folder.mkdir(parents=True, exist_ok=True)
-    dest = folder / (re.sub(r'[^a-zA-Z0-9_-]', '_', video_id) + '.parquet')
+    dest = folder / (re.sub(r'[^a-zA-Z0-9_-]', '_', cache_key) + '.parquet')
     if dest.is_file() and dest.stat().st_size > 8:
         with dest.open('rb') as f:
             if f.read(4) == b'PAR1':
@@ -102,14 +102,47 @@ def cached_pose_file(url, video_id):
 
 def fields(path): return pq.ParquetFile(path).schema_arrow.names
 
+
 def scoped(path, start, end, video_id, expected=None, columns=None):
-    """Frame predicates first; video and project predicates prevent mixed-table collisions."""
-    names = fields(path); filters = [('FrameNum', '>=', max(0, start)), ('FrameNum', '<=', end)]
-    vc = next((c for c in ('day_label', 'VideoID', 'video_id', 'video') if c in names), None)
-    if vc: filters.append((vc, '==', video_id))
-    if expected and 'project_id' in names: filters.append(('project_id', '==', expected))
-    wanted = None if columns is None else list(dict.fromkeys([c for c in columns + [vc, 'project_id'] if c in names]))
-    return pd.read_parquet(path, filters=filters, columns=wanted)
+    """Read poses for the requested frame range and recording."""
+    names = fields(path)
+
+    filters = [
+        ("FrameNum", ">=", max(0, start)),
+        ("FrameNum", "<=", end),
+    ]
+
+    # Read the frame range first, then apply identity filters.
+    # This avoids issues with combined Parquet predicates.
+    wanted = None
+    if columns is not None:
+        wanted = list(dict.fromkeys(
+            [c for c in columns + [
+                "day_label", "VideoID", "video_id",
+                "video", "project_id"
+            ] if c in names]
+        ))
+
+    df = pd.read_parquet(
+        path,
+        filters=filters,
+        columns=wanted,
+    )
+
+    video_col = next(
+        (c for c in ("day_label", "VideoID", "video_id", "video")
+         if c in df.columns),
+        None,
+    )
+
+    if video_col and video_id is not None:
+        df = df[df[video_col].astype(str) == str(video_id)]
+
+    if expected and "project_id" in df.columns:
+        df = df[df["project_id"].astype(str) == str(expected)]
+
+    return df
+
 
 class Catalog:
     def __init__(self, path):
@@ -167,7 +200,7 @@ class Recording:
         for name, key in [('raw', 'poses'), ('cleaned', 'cleaned_poses')]:
             p = self.resolve(cfg[key]) if cfg.get(key) else None
             if name == 'raw' and (not p or not p.is_file()) and cfg.get('poses_url'):
-                try: p = cached_pose_file(cfg['poses_url'], self.video_id)
+                try: p = cached_pose_file(cfg['poses_url'], self.id)
                 except Exception as exc:
                     self.warnings.append(f'Dropbox pose download failed: {exc}')
                     continue
@@ -175,7 +208,7 @@ class Recording:
             try:
                 names = fields(p)
                 metadata = pq.ParquetFile(p).schema_arrow.metadata or {}
-                for field, expected in [('day_label', self.video_id), ('project_id', cfg.get('expected_project_id'))]:
+                for field, expected in [('day_label', self.video_id if cfg.get('pose_video_filter', True) else None), ('project_id', cfg.get('expected_project_id'))]:
                     if expected and field.encode() in metadata and metadata[field.encode()].decode() != expected:
                         raise ValueError(f'{field} metadata does not match this recording')
                 if {'FrameNum', 'TrackUID', 'X_center', 'Y_center'} - set(names): raise ValueError('Missing required pose columns')
@@ -270,7 +303,7 @@ class Recording:
             frames = {}; warnings = []; scores = {}; features = []
             if layer in self.layers:
                 p=self.layers[layer]; keys=self.keys[layer]
-                df=scoped(p,start-1,end,self.video_id,self.cfg.get('expected_project_id'),['FrameNum','TrackUID','X_center','Y_center']+[k+s for k in keys for s in ('_x','_y')])
+                df=scoped(p,start-1,end,self.video_id if self.cfg.get('pose_video_filter', True) else None,self.cfg.get('expected_project_id'),['FrameNum','TrackUID','X_center','Y_center']+[k+s for k in keys for s in ('_x','_y')])
                 if df.duplicated(['FrameNum','TrackUID']).any(): raise ValueError('Duplicate pose frame/TrackUID')
                 for r in df.to_dict('records'):
                     frames.setdefault(str(int(r['FrameNum'])), []).append(dict(id=str(r['TrackUID']),center=[r['X_center'],r['Y_center']],points=[[r[k+'_x'],r[k+'_y']] for k in keys]))

@@ -23,7 +23,8 @@
         {
           "name": "Human reference",
           "kind": "annotation",
-          "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0028.csv",
+          "verified": true
         }
       ],
       "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AIzGAhjimK-vvUN1IRetNrI/0028_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=bfdy11hx&dl=0"
@@ -47,10 +48,155 @@
         {
           "name": "Human reference",
           "kind": "annotation",
-          "path": "../ground_truth_annotations/finalized_annotations/merged_spans.csv"
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0031.csv",
+          "verified": true
         }
       ],
       "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ACNtNV3xM1k06lXgc4zpB0o/0031_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=cxak2061&dl=0"
+    },
+    {
+      "id": "0013_day13",
+      "video_id": "0013_vid",
+      "label": "0013 \u00b7 Day 13",
+      "expected_project_id": "MC_944_t029_tr1",
+      "video": "../data/0013_day13.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/APwSbo8kVFub26X56zf6Ibk/MorePoseData/MC/MC_944_t029_tr1_day13/0013_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "poses": "../data/0013_day13.parquet",
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AKls_00braKBJfvujlFY8r0/MorePoseData/MC/MC_944_t029_tr1_day13/0013_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "discover_predictions": false,
+      "pose_video_filter": false,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid013.csv",
+          "verified": true,
+          "ignore_video_id": true
+        }
+      ]
+    },
+    {
+      "id": "0007_day6",
+      "video_id": "0007_vid",
+      "label": "0007 \u00b7 Day 6",
+      "expected_project_id": "MCYHRF1_535_t015_tr1",
+      "video": "../data/0007_day6.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/APZMbbr02wRLVO4B7iIrbx8/MorePoseData/MCxYH_F1/MCYHRF1_535_t015_tr1_day06/0007_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "poses": "../data/0007_day6.parquet",
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AGdimCkucfkRzOSvrSAUqkI/MorePoseData/MCxYH_F1/MCYHRF1_535_t015_tr1_day06/0007_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "discover_predictions": false,
+      "pose_video_filter": false,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0007-day6.csv",
+          "verified": true,
+          "ignore_video_id": true
+        }
+      ]
+    },
+    {
+      "id": "0007_day5",
+      "video_id": "0007_vid",
+      "label": "0007 \u00b7 Day 5",
+      "expected_project_id": "MCYHRF1_538_t021_tr1",
+      "video": "../data/0007_day5.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AO7dRIfeRjVDjrYbCqp9UA8/MorePoseData/MCxYH_F1/MCYHRF1_538_t021_tr1_day05/0007_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "poses": "../data/0007_day5.parquet",
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AHuwLHFLGMefydHMdig4zIA/MorePoseData/MCxYH_F1/MCYHRF1_538_t021_tr1_day05/0007_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "discover_predictions": false,
+      "pose_video_filter": false,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0007-day5.csv",
+          "verified": true,
+          "ignore_video_id": true
+        }
+      ]
+    },
+    {
+      "id": "0018_day18",
+      "video_id": "0018_vid",
+      "label": "0018 \u00b7 Day 18",
+      "expected_project_id": "YH-norm_681_t015_tr1",
+      "video": "../data/0018_day18.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/APNqk2TGYAfHsOTQeWa8dHA/MorePoseData/YH/YH-norm_681_t015_tr1_day18/0018_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "poses": "../data/0018_day18.parquet",
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AEEX8lDCJZizcOWzSPKWwXI/MorePoseData/YH/YH-norm_681_t015_tr1_day18/0018_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "discover_predictions": false,
+      "pose_video_filter": false,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0018.csv",
+          "verified": true,
+          "ignore_video_id": true
+        }
+      ]
+    },
+    {
+      "id": "0002_day0",
+      "video_id": "0002_vid",
+      "label": "0002 \u00b7 Day 0",
+      "expected_project_id": "YH-norm_713_t029_tr1",
+      "video": "../data/0002_day0.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AF3_7bx3JNcQAKoKuzywbhc/MorePoseData/YH/YH-norm_713_t029_tr1_day00/0002_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "poses": "../data/0002_day0.parquet",
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AGmhAYd3le06eMWOrQZkEtM/MorePoseData/YH/YH-norm_713_t029_tr1_day00/0002_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "discover_predictions": false,
+      "pose_video_filter": false,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0002.csv",
+          "verified": true,
+          "ignore_video_id": true
+        }
+      ]
+    },
+    {
+      "id": "0037_day38",
+      "video_id": "0037_vid",
+      "label": "0037 \u00b7 Day 38",
+      "expected_project_id": "MCYHF1-P-728_t051_tr1",
+      "video": "../data/0037_day38.mp4",
+      "video_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AKMSHUDGvpzPxtyqSYIoSd4/MorePoseData/YHxMC_F1/MCYHF1-P-728_t051_tr1_day38/0037_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "poses": "../data/0037_day38.parquet",
+      "poses_url": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AMzLJHzvz8obcvDrxOJ92lc/MorePoseData/YHxMC_F1/MCYHF1-P-728_t051_tr1_day38/0037_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&dl=0",
+      "fps": 30,
+      "width": 1296,
+      "height": 972,
+      "discover_predictions": false,
+      "pose_video_filter": false,
+      "tracks": [
+        {
+          "name": "Human reference",
+          "kind": "annotation",
+          "path": "../ground_truth_annotations/finalized_annotations/circling_annotations_vid0037.csv",
+          "verified": true,
+          "ignore_video_id": true
+        }
+      ]
     }
   ]
 }
