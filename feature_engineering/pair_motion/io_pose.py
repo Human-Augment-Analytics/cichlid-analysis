@@ -35,6 +35,7 @@ TRACK_COLUMNS = [
     "TailTip_y",
     "body_length_px",
     "speed_bl_s",
+    "bend_angle_rad",
     "qc_n_missing_kp",
     "is_track_start",
     "is_track_end",
@@ -60,6 +61,9 @@ PAIR_COLUMNS = [
     "rel_heading_rad",
     "bearing_1_rad",
     "bearing_2_rad",
+    "d_heading_1_rad_s",
+    "d_heading_2_rad_s",
+    "d_orbital_rad_s",
     "sex_1",
     "sex_2",
     "pair_sex",
@@ -107,22 +111,30 @@ def assert_contract(path: Path, kind: str) -> dict[str, str]:
     return meta
 
 
-def load_pose(data_dir: Path | None = None) -> tuple[pd.DataFrame, pd.DataFrame, list[dict[str, str]]]:
-    """Load both videos' track and pair tables.
+def load_pose(data_dir: Path | None = None, videos: list[str] | None = None) -> tuple[pd.DataFrame, pd.DataFrame, list[dict[str, str]]]:
+    """Load selected videos, or discover every ``<video>_pairs.parquet``.
 
-    Returns tracks, pairs, and the per-file metadata dictionaries.
+    Returns tracks, pairs, and the per-file metadata dictionaries. Explicit
+    ``videos`` makes the expanded-dataset runs deterministic; discovery keeps
+    the original two-video call working without hard-coded filenames.
     """
     root = Path(data_dir) if data_dir is not None else DEFAULT_DATA_DIR
+    if videos is None:
+        videos = sorted(path.name[:-len("_pairs.parquet")] for path in root.glob("*_pairs.parquet"))
+    if not videos:
+        raise FileNotFoundError(f"No <video>_pairs.parquet files found in {root}")
     metadata: list[dict[str, str]] = []
     tracks: list[pd.DataFrame] = []
     pairs: list[pd.DataFrame] = []
 
-    for name in TRACK_FILES:
+    for video in videos:
+        name = f"{video}.parquet"
         path = root / name
         metadata.append({"file": name, "kind": "tracks", **assert_contract(path, "tracks")})
         tracks.append(pd.read_parquet(path, columns=TRACK_COLUMNS))
 
-    for name in PAIR_FILES:
+    for video in videos:
+        name = f"{video}_pairs.parquet"
         path = root / name
         metadata.append({"file": name, "kind": "pairs", **assert_contract(path, "pairs")})
         pairs.append(pd.read_parquet(path, columns=PAIR_COLUMNS))

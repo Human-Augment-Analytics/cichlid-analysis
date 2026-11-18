@@ -35,9 +35,10 @@ Each model writes one file per video to `outputs/predictions/<model_name>/<video
 Write a file for every video, even if it only has the header row. Files are CSV
 with a video ID column plus start/end frame columns, e.g. `VideoID`, `StartFrame`,
 `EndFrame` (header case, spaces and punctuation are ignored, so `Video ID` and
-`Start Frame` also work). Other columns are ignored and every row
-is used, so ground truth must contain only valid circling events. Frame ranges
-are zero-based and inclusive.
+`Start Frame` also work). Other columns are ignored by the standard metrics and
+every row is used, so ground truth must contain only valid circling events.
+ActionFormer additionally writes `Confidence`; `tal_report.py` uses that native
+score for mAP@IoU ranking. Frame ranges are zero-based and inclusive.
 
 ## Metrics
 
@@ -75,7 +76,24 @@ are zero-based and inclusive.
   True positives (`tp@τ`) and segment counts are pooled across videos for the
   overall figure.
 
-Predictions for videos without ground truth are ignored with a warning.
+Predictions outside the evaluation set are ignored with a warning. When
+`num_frames` is supplied, its keys define that set; therefore an explicitly
+selected negative-only video is retained and any predicted frames count as
+false positives. `python -m evaluation.evaluate_models` prints family metrics by
+default and writes overall, per-video, held-out, and 60 s window tables to
+`outputs/figures/family_metrics_*.csv`. Raw per-model audit tables are written to
+`outputs/figures/details/model_metrics_*.csv`; `--details` additionally prints
+the raw overall and held-out variant tables.
+
+Family values are equal-weight arithmetic means over available model variants,
+calculated separately for each metric and video. They are descriptive summaries,
+not predictions from a family ensemble. The visual report writes complete
+versions to `outputs/figures/without_actionformer/` and
+`outputs/figures/with_actionformer/`, restricted to Rule-based, Deep learning
+(MS-TCN), XGBoost, and (in the second version) ActionFormer. In addition to the
+existing comparisons, each version contains `family_metric_profile.csv/.png`,
+which puts whole-video metrics and TAL mAP on a common percentage scale, and
+`family_video_distributions.png`, which shows per-video Frame F1 and F1@50 spread.
 
 ## Tests
 

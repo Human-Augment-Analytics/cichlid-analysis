@@ -8,9 +8,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE / 'scripts')]
 
-from dlc_yolo_converter import dlc2action_bridge as br
+from dlc_yolo_converter import dlc2action_bridge as br  # noqa: E402
 
-from models.common.config import (
+from models.common.config import (  # noqa: E402
     DATA_DIR,
     DINOV2_DIR,
     FINALIZED_ANNOTATIONS,
@@ -21,8 +21,8 @@ from models.common.config import (
     read_annotations,
     video_frames,
 )
-from models.common.report import protocol, segment_counts, write_report
-from models.common.segments import (
+from models.common.report import protocol, segment_counts, write_report  # noqa: E402
+from models.common.segments import (  # noqa: E402
     LEN_SEGMENT,
     OVERLAP,
     SEED,
@@ -37,18 +37,28 @@ from models.common.segments import (
     write_split,
 )
 
-NAMES = {'pairemb': 'mstcn_dinov2', 'pairvmae': 'mstcn_videomae', 'pair': 'mstcn_pose_pair', 'pose': 'mstcn_pose'}
-NAME = model_name(NAMES['pairemb'])
+NAMES = {'pairemb': 'mstcn_dinov2', 'pairvmae': 'mstcn_videomae', 'pair': 'mstcn_pose_pair',
+         'pose': 'mstcn_pose', 'pairmotion': 'mstcn_pairmotion',
+         'pairmotionemb': 'mstcn_pairmotion_dinov2', 'pairmotionvmae': 'mstcn_pairmotion_videomae'}
+NAME = model_name(NAMES['pairmotion'])
 PROJECT = 'circling_repo'
 CANVAS = '1296x972'
 FEATURES = {'pose': [], 'pair': ['--pair-features'], 'pairemb': ['--feature-file', 'pairemb'],
-            'pairvmae': ['--feature-file', 'pairvmae']}
+            'pairvmae': ['--feature-file', 'pairvmae'], 'pairmotion': ['--feature-file', 'pairmotion'],
+            'pairmotionemb': ['--feature-file', 'pairmotionemb'],
+            'pairmotionvmae': ['--feature-file', 'pairmotionvmae']}
 EMBEDDINGS = {'pairemb': DINOV2_DIR, 'pairvmae': VIDEOMAE_DIR}
+EMBEDDING_INPUT = {'pairmotionemb': 'pairemb', 'pairmotionvmae': 'pairvmae'}
+MOTION_FEATURES = {'pairmotion', 'pairmotionemb', 'pairmotionvmae'}
 DESCRIPTIONS = {'pose': 'male and partner pose', 'pair': 'pose + 17 pair features',
                 'pairemb': 'pose + 17 pair features + 32 PCs of DINOv2 ViT-S/14 fish-masked male crops',
-                'pairvmae': 'pose + 17 pair features + 32 PCs of VideoMAE clip embeddings of the whole scene'}
+                'pairvmae': 'pose + 17 pair features + 32 PCs of VideoMAE clip embeddings of the whole scene',
+                'pairmotion': 'pose + normalized male/partner pair motion + gap-aware 0.5/1/2/4/8/16 s windows and persistence fractions',
+                'pairmotionemb': 'pairmotion + 32 PCs of DINOv2 fish-masked male crops',
+                'pairmotionvmae': 'pairmotion + 32 PCs of VideoMAE whole-scene clip embeddings'}
 WORKDIR = mstcn_workdir()
 OUTPUT_DIR = OUTPUTS / NAME
+
 
 def run_cli(workdir, *args):
     import dlc2action_circling as cli
@@ -56,10 +66,12 @@ def run_cli(workdir, *args):
     if code:
         raise SystemExit(code)
 
+
 def need(*paths):
     missing = [str(p) for p in paths if not Path(p).exists()]
     if missing:
         raise SystemExit(f'missing input file(s): {missing} (set CIRCLING_DATA_DIR)')
+
 
 def prepare_data(workdir, data_dir, features, videos=None):
     workdir, data_dir = Path(workdir), Path(data_dir)
@@ -81,22 +93,37 @@ def prepare_data(workdir, data_dir, features, videos=None):
             need(*pairs)
             print(f'Building pair features (convert-pairs): {todo}', flush=True)
             run_cli(workdir, 'convert-pairs', '--pairs', *map(str, pairs))
-    if features in EMBEDDINGS and not all((data / f'{v}_{features}.pickle').exists() for v in videos):
+        meta = br.load_meta(data)
+    if features in MOTION_FEATURES:
+        from models.common.pair_motion import pair_motion_feature_file
+
+        for video in videos:
+            # Always pass through the signature-checked frame cache so changed
+            # pose, pair, or slot inputs cannot leave a stale pickle behind.
+            pair_motion_feature_file(workdir, video, meta[video], video_frames([video])[video], data_dir)
+    embedding = EMBEDDING_INPUT.get(features, features if features in EMBEDDINGS else None)
+    if embedding and not all((data / f'{v}_{embedding}.pickle').exists() for v in videos):
         import embed_probe
         movies = [data_dir / f'{v}.mp4' for v in videos]
         need(*movies)
-        emb_dir = EMBEDDINGS[features]
+        emb_dir = EMBEDDINGS[embedding]
         sources = [x for v, m in zip(videos, movies) for x in ('--video', f'{v}={m}')]
-        if features == 'pairemb':
+        if embedding == 'pairemb':
             print('Extracting DINOv2 embeddings for every row (long; resumable)', flush=True)
             embed_probe.main(['extract-full', '--data-dir', str(data), '--out', str(emb_dir), *sources])
         else:
             import videomae_extract
             print('Extracting VideoMAE clip embeddings (long; resumable)', flush=True)
             videomae_extract.main(['--data-dir', str(data), '--out', str(emb_dir), *sources])
-        embed_probe.main(['features', '--data-dir', str(data), '--emb-dir', str(emb_dir), '--name', features])
+        embed_probe.main(['features', '--data-dir', str(data), '--emb-dir', str(emb_dir), '--name', embedding])
+    if features in EMBEDDING_INPUT:
+        from models.common.pair_motion import combine_motion_embedding
 
-def train(workdir, output_dir, features='pairemb', num_epochs=100, name=None,
+        for video in videos:
+            combine_motion_embedding(workdir, video, meta[video], 'pairmotion', embedding)
+
+
+def train(workdir, output_dir, features='pairmotion', num_epochs=100, name=None,
           annotations=FINALIZED_ANNOTATIONS, data_dir=DATA_DIR, fresh=False):
     name = name or model_name(NAMES[features])
     workdir, output_dir = Path(workdir), Path(output_dir or OUTPUTS / name)
@@ -120,7 +147,7 @@ def train(workdir, output_dir, features='pairemb', num_epochs=100, name=None,
     else:
         run_cli(workdir, 'train', '--project-name', PROJECT, '--split', SPLIT, '--episode', name,
                 '--len-segment', str(LEN_SEGMENT), '--overlap', str(OVERLAP), '--canvas', CANVAS,
-                '--num-epochs', str(num_epochs), '--overwrite', *FEATURES[features])
+                '--num-epochs', str(num_epochs), '--preset', 'aug', '--overwrite', *FEATURES[features])
         done('trained')
     prediction = workdir / 'projects' / PROJECT / 'results' / 'predictions' / f'{name}_pred'
     if progress.get('predicted') and all(any(prediction.glob(f'{v}_*prediction.pickle')) for v in spans):
@@ -137,23 +164,28 @@ def train(workdir, output_dir, features='pairemb', num_epochs=100, name=None,
                                  '(no early stopping or model selection).',
                       len_segment=LEN_SEGMENT, overlap=OVERLAP, stride=STRIDE, num_epochs=num_epochs,
                       seed=SEED, videos=sorted(spans), segments=segment_counts(segments),
+                      augmentation='Top-down rotation, mirror, shift and noise (existing aug preset).',
                       train_positive_rows=int(segments.filter(segments['split'] == 'train')['positive_rows'].sum()))
     notes = [report['label_assumption'], report['sampling'], report['split'], report['validation'],
              f'Input features: {DESCRIPTIONS[features]}. Segment length {LEN_SEGMENT} rows, {num_epochs} epochs.']
     return write_report(output_dir, f'Circling MS-TCN (DLC2Action), {features}', 'MS-TCN', test, report, notes)
 
+
 def file_digest(path):
     path = Path(path)
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
 
+
 def run_signature(workdir, name, features, num_epochs, videos):
     data = Path(workdir) / 'data'
     return {'episode': name, 'features': features, 'num_epochs': num_epochs, 'videos': videos,
+            'augmentation': 'topdown rotation, mirror, shift and noise (aug preset)',
             'len_segment': LEN_SEGMENT, 'overlap': OVERLAP, 'canvas': CANVAS,
             'labels': file_digest(Path(workdir) / 'training_spans.csv'),
             'split': file_digest(Path(workdir) / 'splits' / f'{SPLIT}.txt'),
-            'feature_file': file_digest(data / f'{videos[0]}_{features}.pickle')
-            if features in EMBEDDINGS else None}
+            'feature_files': {video: file_digest(data / f'{video}_{features}.pickle') for video in videos}
+            if features not in ('pose', 'pair') else None}
+
 
 def episode_exists(workdir, name):
     import dlc2action_circling as cli
@@ -165,6 +197,7 @@ def episode_exists(workdir, name):
     except Exception as error:
         print(f'could not read the episodes of {PROJECT}: {error!r}', flush=True)
         return False
+
 
 def cache_scores(workdir, scores_dir, name=NAME):
     data = Path(workdir) / 'data'
@@ -185,11 +218,12 @@ def cache_scores(workdir, scores_dir, name=NAME):
             'prediction': {p.name: p.stat().st_size for p in files}}, indent=2) + '\n')
     return out
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--workdir', type=Path, default=WORKDIR, help='DLC2Action data and project folder')
     parser.add_argument('--output-dir', type=Path, default=None, help='Default outputs/<name>')
-    parser.add_argument('--features', choices=sorted(FEATURES), default='pairemb',
+    parser.add_argument('--features', choices=sorted(FEATURES), default='pairmotion',
                         help=', '.join(f'{k} -> {v}' for k, v in NAMES.items()))
     parser.add_argument('--num-epochs', type=int, default=100)
     parser.add_argument('--prepare-only', action='store_true',

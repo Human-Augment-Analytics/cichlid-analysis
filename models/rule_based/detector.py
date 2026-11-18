@@ -1,4 +1,13 @@
-
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "marimo",
+#     "matplotlib",
+#     "numpy",
+#     "pandas",
+#     "pyarrow",
+# ]
+# ///
 
 import marimo
 
@@ -17,12 +26,13 @@ with app.setup:
     import circling_cleaning as cc
 
     FPS = 30
-
+    # Chart styling (validated categorical slot 1 for detections; neutral ink for labels and thresholds)
     INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
     DET, LABEL = "#2a78d6", "#52514e"
     plt.rcParams.update({"figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "axes.edgecolor": GRID,
                          "axes.labelcolor": INK2, "xtick.color": INK2, "ytick.color": INK2, "text.color": INK,
                          "font.size": 10})
+
 
 @app.cell(hide_code=True)
 def _():
@@ -41,12 +51,14 @@ def _():
     """)
     return
 
+
 @app.cell(hide_code=True)
 def _():
     _img = Path(__file__).resolve().parent / "figures" / "circling_explainer.png"
     mo.vstack([mo.md("## What circling looks like"),
                mo.image(str(_img)) if _img.exists() else mo.md("_`models/rule_based/figures/circling_explainer.png` not found._")])
     return
+
 
 @app.cell(hide_code=True)
 def _():
@@ -68,11 +80,12 @@ def _():
     """)
     return
 
+
 @app.cell
 def _():
-    DATA_DIR = cc.default_data_dir(cc.ROOT)
+    DATA_DIR = cc.default_data_dir(cc.ROOT)           # $CIRCLING_DATA_DIR, <repo>/data or ~/Downloads
     OUT_DIR = cc.ROOT / "outputs" / "predictions" / "rule_based"
-    CACHE = DATA_DIR / "rule_detector_cache"
+    CACHE = DATA_DIR / "rule_detector_cache"          # kept next to the data, outside git
     VIDEOS = ["0031", "0028"]
     LABELS = {
         "0031": [(265510, 266227), (266809, 267100), (267242, 267837), (269089, 271817),
@@ -84,9 +97,11 @@ def _():
                 "0028": [(334703, 336285), (436636, 437437), (713035, 713330)]}
     return CACHE, DATA_DIR, LABELS, OUT_DIR, REVIEWED, VIDEOS
 
+
 @app.cell
 def _(CACHE, DATA_DIR, VIDEOS):
-
+    # Per-frame closest-pair distance and rotation rate, before and after cleaning (rules in circling_cleaning.py).
+    # The first run reads the full tracking tables (~1 min); later runs load a small cache (seconds).
     def build_series(v):
         _, p = cc.load_flagged(DATA_DIR, v, ["FrameNum", "TrackID_1", "TrackID_2", "centroid_distance_px",
                                              "d_orbital_rad_s"])
@@ -99,6 +114,7 @@ def _(CACHE, DATA_DIR, VIDEOS):
             out[f"rate_{tag}"] = q.d_orbital_rad_s.where(q.d_orbital_rad_s.abs() <= 15).fillna(0).to_numpy()
         return out
 
+
     def load_series(v):
         path = CACHE / f"series_{v}.npz"
         if path.exists():
@@ -108,8 +124,10 @@ def _(CACHE, DATA_DIR, VIDEOS):
         np.savez_compressed(path, **s)
         return s
 
+
     series = {_v: load_series(_v) for _v in VIDEOS}
     return (series,)
+
 
 @app.cell
 def _():
@@ -120,6 +138,7 @@ def _():
                  .to_numpy() / (2 * np.pi))
         frac = pd.Series(close.astype(float)).rolling(win, center=True, min_periods=win // 2).mean().to_numpy()
         return turns, frac >= frac_close_min
+
 
     def detect(turns, mostly_close, min_turns=0.75, keep_turns=None, merge_s=0, gap_s=1, min_dur_s=2):
         flag = (turns >= min_turns) & mostly_close
@@ -145,6 +164,7 @@ def _():
         return [tuple(s) for s in segs]
     return detect, signals
 
+
 @app.cell
 def _(VIDEOS, detect, series, signals):
     sig = {}
@@ -157,6 +177,7 @@ def _(VIDEOS, detect, series, signals):
         detections[("refined", _v)] = detect(*sig[("refined", _v)], keep_turns=0.4, merge_s=3)
     return detections, sig
 
+
 @app.cell
 def _(LABELS, REVIEWED, VIDEOS, detections, series):
     def frame_mask(n, ranges):
@@ -164,6 +185,7 @@ def _(LABELS, REVIEWED, VIDEOS, detections, series):
         for _a, _b in ranges:
             m[_a:_b + 1] = True
         return m
+
 
     def evaluate(v, segs, tol=FPS, null_reps=300):
         n = len(series[v]["dist_raw"])
@@ -185,8 +207,10 @@ def _(LABELS, REVIEWED, VIDEOS, detections, series):
                 "false_alarm_s": (det & rev_neg).sum() / FPS, "reviewed_neg_s": rev_neg.sum() / FPS,
                 "episodes": len(segs)}, per
 
+
     scores = {k: evaluate(k[1], s) for k, s in detections.items()}
     return (scores,)
+
 
 @app.cell(hide_code=True)
 def _(scores):
@@ -211,6 +235,7 @@ def _(scores):
     ])
     return
 
+
 @app.cell(hide_code=True)
 def _(LABELS):
     _opts = {f"{v} · event {i + 1} · {(b - a + 1) / FPS:.0f} s at {a / FPS / 3600:.2f} h": (v, a, b)
@@ -225,11 +250,12 @@ def _(LABELS):
     """), event_pick])
     return (event_pick,)
 
+
 @app.cell(hide_code=True)
 def _(detections, event_pick, series, sig):
     _v, _a, _b = event_pick.value
     _lo, _hi = max(0, _a - 15 * FPS), _b + 15 * FPS
-    _t = np.arange(_lo, _hi) / FPS - _a / FPS
+    _t = np.arange(_lo, _hi) / FPS - _a / FPS          # seconds relative to the label start
     _dist = series[_v]["dist_clean"][_lo:_hi]
     _turns = sig[("refined", _v)][0][_lo:_hi]
 
@@ -272,6 +298,7 @@ def _(detections, event_pick, series, sig):
     _fig
     return
 
+
 @app.cell(hide_code=True)
 def _(REVIEWED):
     _opts = {f"{v} · {a / FPS / 60:.1f}–{b / FPS / 60:.1f} min": (v, a, b) for v in ("0031", "0028")
@@ -284,6 +311,7 @@ def _(REVIEWED):
     rule caught every event but broke long ones into fragments; the refined rule reports each event as one episode.
     """), stretch_pick])
     return (stretch_pick,)
+
 
 @app.cell(hide_code=True)
 def _(LABELS, detections, stretch_pick):
@@ -310,6 +338,7 @@ def _(LABELS, detections, stretch_pick):
     _fig
     return
 
+
 @app.cell(hide_code=True)
 def _(scores):
     def _row(k):
@@ -327,6 +356,7 @@ def _(scores):
                          "0028 refined (held out)": _row(("refined", "0028"))})
     mo.vstack([mo.md("**Numbers behind the comparison**"), _tbl])
     return
+
 
 @app.cell(hide_code=True)
 def _():
@@ -352,6 +382,7 @@ def _():
     """)
     return
 
+
 @app.cell(hide_code=True)
 def _(LABELS, OUT_DIR, VIDEOS, detections):
     _tables = []
@@ -370,6 +401,7 @@ def _(LABELS, OUT_DIR, VIDEOS, detections):
     mo.accordion({f"Appendix: all {len(_export)} detected episodes (saved to "
                   f"outputs/predictions/rule_based/<video>.csv)": _export})
     return
+
 
 if __name__ == "__main__":
     app.run()

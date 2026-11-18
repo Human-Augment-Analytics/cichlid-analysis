@@ -4,8 +4,9 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from models.common.config import LABELS, label_description
+from models.common.config import CLOSE_PX, HARD_NEGATIVES, LABELS, label_description
 from models.logistic_regression.train import THRESHOLD, metrics
+
 
 def write_report(output_dir, title, label, test, report, notes=(), unit='frames'):
     from matplotlib.figure import Figure
@@ -49,13 +50,18 @@ def write_report(output_dir, title, label, test, report, notes=(), unit='frames'
     print(json.dumps(result, indent=2), flush=True)
     return result
 
+
 def protocol(annotations, model, **extra):
     return {
         'label_assumption': f'All frames outside the intervals in {label_description(annotations)} are non-circling.',
         'labels': LABELS,
         'annotations': str(Path(annotations).resolve()),
         'sampling': 'Every 128-row segment (stride 2, 256 frames) containing circling plus an equal number '
-                    'of segments without circling, sampled without replacement within each source video, seed 42.',
+                    'of segments without circling, sampled without replacement within each source video, seed 42. '
+                    'Negative-only videos contribute the median per-video positive-segment quota of negatives.'
+                    + (f' {HARD_NEGATIVES:.0%} of the segments without circling are hard negatives: the male and '
+                       f'partner are within {CLOSE_PX} px for at least half of the segment.' if HARD_NEGATIVES else ''),
+        'hard_negative_fraction': HARD_NEGATIVES,
         'split': 'Stratified random 80/20 train/test split of the sampled segments after sampling, '
                  'random_state=42. Segments do not overlap.',
         'limitation': 'Neighboring segments and spans can occur in both splits; this is not an '
@@ -64,6 +70,7 @@ def protocol(annotations, model, **extra):
                          'at full-video prevalence.',
         'model': model, **extra,
     }
+
 
 def segment_counts(segments):
     return {s: {'with_circling': int(g['circling'].sum()), 'without': int((~g['circling']).sum())}

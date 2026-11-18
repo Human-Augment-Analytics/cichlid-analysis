@@ -10,7 +10,9 @@ from models.common.config import (DATA_DIR, FINALIZED_ANNOTATIONS, OUTPUTS, mode
                                   read_annotations, video_frames)
 from models.common.report import protocol, segment_counts, write_report
 from models.common.segments import segment_frames, shared_segments
-from models.logistic_regression.features import FEATURE_SOURCE, WINDOW, frame_features
+from models.common.turns import turn_table
+from models.logistic_regression.features import (FEATURE_SOURCE, PAIR_ANGLES, PAIR_DISTANCES, PAIR_RATES,
+                                                   WINDOW, frame_features)
 from models.logistic_regression.train import frame_labels
 
 FEATURE_DIR = OUTPUTS / 'frame_features'
@@ -21,7 +23,31 @@ DESCRIPTIONS = {
     'pair': 'the logistic regression\'s 50 pose + 52 pair frame features',
     'pairemb': 'the 102 pose + pair frame features plus 32 DINOv2 embedding PCs and emb_present',
     'pairvmae': 'the 102 pose + pair frame features plus 32 VideoMAE embedding PCs and emb_present',
+    'pairturns': 'the 102 pose + pair frame features plus the rule-based detector\'s inputs (closest cleaned pair '
+                 'distance and orbit rate, turns and close fraction over centred 2/4/8 s windows, start/keep flags)',
+    'pairturnsvmae': 'the 102 pose + pair frame features plus the rule-based detector\'s inputs and 32 VideoMAE '
+                     'embedding PCs',
+    'pairmotion': 'the 50 causal pose features plus body-length-normalized male/partner distances, orientation, '
+                  'speed, cleaned angular movement and gap-aware centered 0.5/1/2/4/8/16 s window features, '
+                  'including sustained close/orbital-motion fractions',
+    'pairmotionemb': 'pairmotion plus 32 DINOv2 embedding PCs and emb_present',
+    'pairmotionvmae': 'pairmotion plus 32 VideoMAE embedding PCs and emb_present',
 }
+COMPONENTS = {'pair': (), 'pairemb': ('pairemb',), 'pairvmae': ('pairvmae',), 'pairturns': ('turns',),
+              'pairturnsvmae': ('turns', 'pairvmae'), 'pairmotion': ('pairmotion',),
+              'pairmotionemb': ('pairmotion', 'pairemb'), 'pairmotionvmae': ('pairmotion', 'pairvmae')}
+BASE_PAIR_COLUMNS = ['pair_count'] + [
+    f'{signal}_{stat}'
+    for signal in [*PAIR_DISTANCES, *PAIR_RATES,
+                   *[f'{angle}_{part}' for angle in PAIR_ANGLES for part in ('sin', 'cos')]]
+    for stat in ('mean', 'min', 'max')
+]
+
+
+def base_feature_columns(table, feature):
+    """Pair-motion variants replace arbitrary-pair aggregates, retaining pose."""
+    return table.drop(BASE_PAIR_COLUMNS) if feature.startswith('pairmotion') else table
+
 
 def feature_table(video, frame_count, data_dir=DATA_DIR):
     data_dir = Path(data_dir)
@@ -49,6 +75,7 @@ def feature_table(video, frame_count, data_dir=DATA_DIR):
     info.write_text(json.dumps(signature, indent=2) + '\n')
     return path
 
+
 def embedding_table(workdir, video, feature, meta, frame_count):
     data = Path(workdir) / 'data'
     path = data / f'{video}_{feature}.pickle'
@@ -70,42 +97,83 @@ def embedding_table(workdir, video, feature, meta, frame_count):
     out[valid] = values[rows[valid]]
     return pl.DataFrame({'FrameNum': frames, **{f'{feature}_{n}': out[:, i] for i, n in enumerate(names)}})
 
+
+def extra_tables(workdir, video, feature, meta, frame_count):
+    from models.common.pair_motion import pair_motion_table
+
+    return [turn_table(video, frame_count) if part == 'turns'
+            else pair_motion_table(workdir, video, meta, frame_count) if part == 'pairmotion'
+            else embedding_table(workdir, video, part, meta, frame_count) for part in COMPONENTS[feature]]
+
+
 def video_features(workdir, video, feature, meta, frame_count, frames=None):
     table = pl.scan_parquet(feature_table(video, frame_count))
     if frames is not None:
         table = table.filter(pl.col('FrameNum').is_in(frames))
-    table = table.collect()
-    if feature != 'pair':
-        table = table.join(embedding_table(workdir, video, feature, meta, frame_count),
-                           on='FrameNum', how='left')
+    table = base_feature_columns(table.collect(), feature)
+    for extra in extra_tables(workdir, video, feature, meta, frame_count):
+        table = table.join(extra, on='FrameNum', how='left')
     return table
 
-def score_videos(model, columns, workdir, feature, meta, frames, scores_dir):
-    scores_dir = Path(scores_dir)
-    scores_dir.mkdir(parents=True, exist_ok=True)
+
+def score_videos(model, columns, workdir, feature, meta, frames, scores_dir=None):
+    scores_dir = Path(scores_dir) if scores_dir is not None else None
+    if scores_dir is not None:
+        scores_dir.mkdir(parents=True, exist_ok=True)
     out = {}
     for video, count in frames.items():
         print(f'Scoring {video}', flush=True)
         table = pl.scan_parquet(feature_table(video, count))
-        embedding = (embedding_table(workdir, video, feature, meta[video], count)
-                     if feature != 'pair' else None)
+        extras = extra_tables(workdir, video, feature, meta[video], count)
         parts = []
         for start in range(0, count, SCORE_CHUNK):
-            chunk = table.slice(start, SCORE_CHUNK).collect()
-            if embedding is not None:
-                chunk = chunk.join(embedding.slice(start, SCORE_CHUNK), on='FrameNum', how='left')
+            chunk = base_feature_columns(table.slice(start, SCORE_CHUNK).collect(), feature)
+            for extra in extras:
+                chunk = chunk.join(extra.slice(start, SCORE_CHUNK), on='FrameNum', how='left')
             score = model.predict_proba(chunk.select(columns).to_numpy())[:, 1]
             parts.append(pl.DataFrame({'FrameNum': chunk['FrameNum'], 'circling_score': score.astype(np.float64)}))
         scores = pl.concat(parts)
         if scores.height != count or not np.isfinite(scores['circling_score'].to_numpy()).all():
             raise ValueError(f'{video}: expected {count} finite scores, got {scores.height}')
-        scores.write_parquet(scores_dir / f'{video}_scores.parquet')
-        (scores_dir / f'{video}_scores.json').write_text(json.dumps(
-            {'frames': count, 'feature_source': FEATURE_SOURCE, 'features': feature}, indent=2) + '\n')
+        if scores_dir is not None:
+            scores.write_parquet(scores_dir / f'{video}_scores.parquet')
+            (scores_dir / f'{video}_scores.json').write_text(json.dumps(
+                {'frames': count, 'feature_source': FEATURE_SOURCE, 'features': feature}, indent=2) + '\n')
         out[video] = scores
     return out
 
-def train_frame_model(name, feature, fit, title, model_label, details, annotations=FINALIZED_ANNOTATIONS):
+
+def tune_frame_postprocess(train, fit, columns, workdir, feature, meta, counts, spans, output_dir):
+    """Fit video-disjoint folds and tune span rules on full held-out videos."""
+    from models.common.postprocess_tuning import select_postprocess
+
+    videos = sorted(counts)
+    if len(videos) < 2:
+        raise ValueError('video-level OOF postprocessing needs at least two videos')
+    shuffled = np.asarray(videos)
+    np.random.default_rng(42).shuffle(shuffled)
+    fold_count = min(3, len(videos))
+    folds = [sorted(shuffled[index::fold_count].tolist()) for index in range(fold_count)]
+    oof = {}
+    for index, validation_videos in enumerate(folds, 1):
+        fold_train = train.filter(~pl.col('video').is_in(validation_videos))
+        y = fold_train['circling'].to_numpy()
+        if len(np.unique(y)) < 2:
+            raise ValueError(f'OOF fold {index} has only one training class')
+        print(f'OOF postprocessing fold {index}/{fold_count}: validation videos {validation_videos}', flush=True)
+        model, _ = fit(fold_train.select(columns).to_numpy(), y, fold_train['segment'].to_numpy())
+        scores = score_videos(model, columns, workdir, feature, meta,
+                              {video: counts[video] for video in validation_videos})
+        oof.update(scores)
+    score_dir = Path(output_dir) / 'oof_scores'
+    score_dir.mkdir(parents=True, exist_ok=True)
+    for video, scores in oof.items():
+        scores.write_parquet(score_dir / f'{video}_scores.parquet')
+    return select_postprocess(oof, spans, counts, output_dir, folds=folds)
+
+
+def train_frame_model(name, feature, fit, title, model_label, details, annotations=FINALIZED_ANNOTATIONS,
+                      tune_postprocess=True):
     name = model_name(name)
     output_dir = OUTPUTS / name
     workdir = mstcn_workdir()
@@ -139,5 +207,22 @@ def train_frame_model(name, feature, fit, title, model_label, details, annotatio
              f'every frame of the test segments for the metrics. {details}']
     result = write_report(output_dir, title, model_label, test, report, notes)
     score_videos(model, columns, workdir, feature, meta, counts, output_dir / 'scores')
+    if tune_postprocess:
+        try:
+            settings = tune_frame_postprocess(train, fit, columns, workdir, feature, meta,
+                                              counts, spans, output_dir)
+            report_path = output_dir / 'metrics.json'
+            saved = json.loads(report_path.read_text())
+            saved['postprocess_selection'] = {'status': 'selected', 'settings': settings}
+            report_path.write_text(json.dumps(saved, indent=2) + '\n')
+        except ValueError as error:
+            print(f'Postprocess tuning unavailable: {error}; using defaults', flush=True)
+            (output_dir / 'postprocess.json').write_text(json.dumps({
+                'status': 'unavailable', 'reason': str(error), 'settings': {},
+            }, indent=2) + '\n')
+    else:
+        (output_dir / 'postprocess.json').write_text(json.dumps({
+            'status': 'disabled', 'settings': {},
+        }, indent=2) + '\n')
     return result
 

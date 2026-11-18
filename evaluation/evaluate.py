@@ -21,6 +21,7 @@ __generated_with = "0.24.2"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
+    import os
     import re
     from pathlib import Path
 
@@ -34,8 +35,9 @@ with app.setup(hide_code=True):
 
     ROOT = Path(__file__).resolve().parent.parent
     PREDICTIONS_DIR = ROOT / 'outputs/predictions'
-    GROUND_TRUTH = ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv'
-    VIDEO_DIR = ROOT / 'data'
+    GROUND_TRUTH = Path(os.environ.get('CIRCLING_GROUND_TRUTH')
+                        or ROOT / 'ground_truth_annotations/finalized_annotations/merged_spans.csv')
+    VIDEO_DIR = Path(os.environ.get('CIRCLING_DATA_DIR') or ROOT / 'data')
 
 
 @app.cell(hide_code=True)
@@ -170,15 +172,18 @@ def evaluate(gt, predicted, num_frames=None):
     """
     num_frames = num_frames or {}
     warnings = []
-    extra = set(predicted['video_id']) - set(gt['video_id'])
+    # When frame counts are supplied, their keys define the evaluation set.
+    # This keeps explicitly selected negative-only videos in the denominator.
+    videos = set(gt['video_id']) | set(num_frames)
+    extra = set(predicted['video_id']) - videos
     if extra:
-        warnings.append(f'Ignoring predictions for videos without ground truth: {sorted(extra)}')
+        warnings.append(f'Ignoring predictions outside the evaluation set: {sorted(extra)}')
 
     rows = []
-    for video in sorted(set(gt['video_id'])):
+    for video in sorted(videos):
         gt_spans = list(gt.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
         pred_spans = list(predicted.filter(pl.col('video_id') == video).select('start', 'end').iter_rows())
-        last = max(end for _, end in gt_spans + pred_spans) + 1
+        last = max((end for _, end in gt_spans + pred_spans), default=-1) + 1
         frames = num_frames.get(video) or video_frame_count(video, VIDEO_DIR)
         if frames is None:
             frames = last
