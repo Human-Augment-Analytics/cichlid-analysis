@@ -1,0 +1,1484 @@
+{
+  "window_frames": 121,
+  "features": [
+    "centroid_distance_px_offset_-60",
+    "centroid_distance_px_offset_-59",
+    "centroid_distance_px_offset_-58",
+    "centroid_distance_px_offset_-57",
+    "centroid_distance_px_offset_-56",
+    "centroid_distance_px_offset_-55",
+    "centroid_distance_px_offset_-54",
+    "centroid_distance_px_offset_-53",
+    "centroid_distance_px_offset_-52",
+    "centroid_distance_px_offset_-51",
+    "centroid_distance_px_offset_-50",
+    "centroid_distance_px_offset_-49",
+    "centroid_distance_px_offset_-48",
+    "centroid_distance_px_offset_-47",
+    "centroid_distance_px_offset_-46",
+    "centroid_distance_px_offset_-45",
+    "centroid_distance_px_offset_-44",
+    "centroid_distance_px_offset_-43",
+    "centroid_distance_px_offset_-42",
+    "centroid_distance_px_offset_-41",
+    "centroid_distance_px_offset_-40",
+    "centroid_distance_px_offset_-39",
+    "centroid_distance_px_offset_-38",
+    "centroid_distance_px_offset_-37",
+    "centroid_distance_px_offset_-36",
+    "centroid_distance_px_offset_-35",
+    "centroid_distance_px_offset_-34",
+    "centroid_distance_px_offset_-33",
+    "centroid_distance_px_offset_-32",
+    "centroid_distance_px_offset_-31",
+    "centroid_distance_px_offset_-30",
+    "centroid_distance_px_offset_-29",
+    "centroid_distance_px_offset_-28",
+    "centroid_distance_px_offset_-27",
+    "centroid_distance_px_offset_-26",
+    "centroid_distance_px_offset_-25",
+    "centroid_distance_px_offset_-24",
+    "centroid_distance_px_offset_-23",
+    "centroid_distance_px_offset_-22",
+    "centroid_distance_px_offset_-21",
+    "centroid_distance_px_offset_-20",
+    "centroid_distance_px_offset_-19",
+    "centroid_distance_px_offset_-18",
+    "centroid_distance_px_offset_-17",
+    "centroid_distance_px_offset_-16",
+    "centroid_distance_px_offset_-15",
+    "centroid_distance_px_offset_-14",
+    "centroid_distance_px_offset_-13",
+    "centroid_distance_px_offset_-12",
+    "centroid_distance_px_offset_-11",
+    "centroid_distance_px_offset_-10",
+    "centroid_distance_px_offset_-9",
+    "centroid_distance_px_offset_-8",
+    "centroid_distance_px_offset_-7",
+    "centroid_distance_px_offset_-6",
+    "centroid_distance_px_offset_-5",
+    "centroid_distance_px_offset_-4",
+    "centroid_distance_px_offset_-3",
+    "centroid_distance_px_offset_-2",
+    "centroid_distance_px_offset_-1",
+    "centroid_distance_px_offset_+0",
+    "centroid_distance_px_offset_+1",
+    "centroid_distance_px_offset_+2",
+    "centroid_distance_px_offset_+3",
+    "centroid_distance_px_offset_+4",
+    "centroid_distance_px_offset_+5",
+    "centroid_distance_px_offset_+6",
+    "centroid_distance_px_offset_+7",
+    "centroid_distance_px_offset_+8",
+    "centroid_distance_px_offset_+9",
+    "centroid_distance_px_offset_+10",
+    "centroid_distance_px_offset_+11",
+    "centroid_distance_px_offset_+12",
+    "centroid_distance_px_offset_+13",
+    "centroid_distance_px_offset_+14",
+    "centroid_distance_px_offset_+15",
+    "centroid_distance_px_offset_+16",
+    "centroid_distance_px_offset_+17",
+    "centroid_distance_px_offset_+18",
+    "centroid_distance_px_offset_+19",
+    "centroid_distance_px_offset_+20",
+    "centroid_distance_px_offset_+21",
+    "centroid_distance_px_offset_+22",
+    "centroid_distance_px_offset_+23",
+    "centroid_distance_px_offset_+24",
+    "centroid_distance_px_offset_+25",
+    "centroid_distance_px_offset_+26",
+    "centroid_distance_px_offset_+27",
+    "centroid_distance_px_offset_+28",
+    "centroid_distance_px_offset_+29",
+    "centroid_distance_px_offset_+30",
+    "centroid_distance_px_offset_+31",
+    "centroid_distance_px_offset_+32",
+    "centroid_distance_px_offset_+33",
+    "centroid_distance_px_offset_+34",
+    "centroid_distance_px_offset_+35",
+    "centroid_distance_px_offset_+36",
+    "centroid_distance_px_offset_+37",
+    "centroid_distance_px_offset_+38",
+    "centroid_distance_px_offset_+39",
+    "centroid_distance_px_offset_+40",
+    "centroid_distance_px_offset_+41",
+    "centroid_distance_px_offset_+42",
+    "centroid_distance_px_offset_+43",
+    "centroid_distance_px_offset_+44",
+    "centroid_distance_px_offset_+45",
+    "centroid_distance_px_offset_+46",
+    "centroid_distance_px_offset_+47",
+    "centroid_distance_px_offset_+48",
+    "centroid_distance_px_offset_+49",
+    "centroid_distance_px_offset_+50",
+    "centroid_distance_px_offset_+51",
+    "centroid_distance_px_offset_+52",
+    "centroid_distance_px_offset_+53",
+    "centroid_distance_px_offset_+54",
+    "centroid_distance_px_offset_+55",
+    "centroid_distance_px_offset_+56",
+    "centroid_distance_px_offset_+57",
+    "centroid_distance_px_offset_+58",
+    "centroid_distance_px_offset_+59",
+    "centroid_distance_px_offset_+60",
+    "d_orbital_rad_s_offset_-60",
+    "d_orbital_rad_s_offset_-59",
+    "d_orbital_rad_s_offset_-58",
+    "d_orbital_rad_s_offset_-57",
+    "d_orbital_rad_s_offset_-56",
+    "d_orbital_rad_s_offset_-55",
+    "d_orbital_rad_s_offset_-54",
+    "d_orbital_rad_s_offset_-53",
+    "d_orbital_rad_s_offset_-52",
+    "d_orbital_rad_s_offset_-51",
+    "d_orbital_rad_s_offset_-50",
+    "d_orbital_rad_s_offset_-49",
+    "d_orbital_rad_s_offset_-48",
+    "d_orbital_rad_s_offset_-47",
+    "d_orbital_rad_s_offset_-46",
+    "d_orbital_rad_s_offset_-45",
+    "d_orbital_rad_s_offset_-44",
+    "d_orbital_rad_s_offset_-43",
+    "d_orbital_rad_s_offset_-42",
+    "d_orbital_rad_s_offset_-41",
+    "d_orbital_rad_s_offset_-40",
+    "d_orbital_rad_s_offset_-39",
+    "d_orbital_rad_s_offset_-38",
+    "d_orbital_rad_s_offset_-37",
+    "d_orbital_rad_s_offset_-36",
+    "d_orbital_rad_s_offset_-35",
+    "d_orbital_rad_s_offset_-34",
+    "d_orbital_rad_s_offset_-33",
+    "d_orbital_rad_s_offset_-32",
+    "d_orbital_rad_s_offset_-31",
+    "d_orbital_rad_s_offset_-30",
+    "d_orbital_rad_s_offset_-29",
+    "d_orbital_rad_s_offset_-28",
+    "d_orbital_rad_s_offset_-27",
+    "d_orbital_rad_s_offset_-26",
+    "d_orbital_rad_s_offset_-25",
+    "d_orbital_rad_s_offset_-24",
+    "d_orbital_rad_s_offset_-23",
+    "d_orbital_rad_s_offset_-22",
+    "d_orbital_rad_s_offset_-21",
+    "d_orbital_rad_s_offset_-20",
+    "d_orbital_rad_s_offset_-19",
+    "d_orbital_rad_s_offset_-18",
+    "d_orbital_rad_s_offset_-17",
+    "d_orbital_rad_s_offset_-16",
+    "d_orbital_rad_s_offset_-15",
+    "d_orbital_rad_s_offset_-14",
+    "d_orbital_rad_s_offset_-13",
+    "d_orbital_rad_s_offset_-12",
+    "d_orbital_rad_s_offset_-11",
+    "d_orbital_rad_s_offset_-10",
+    "d_orbital_rad_s_offset_-9",
+    "d_orbital_rad_s_offset_-8",
+    "d_orbital_rad_s_offset_-7",
+    "d_orbital_rad_s_offset_-6",
+    "d_orbital_rad_s_offset_-5",
+    "d_orbital_rad_s_offset_-4",
+    "d_orbital_rad_s_offset_-3",
+    "d_orbital_rad_s_offset_-2",
+    "d_orbital_rad_s_offset_-1",
+    "d_orbital_rad_s_offset_+0",
+    "d_orbital_rad_s_offset_+1",
+    "d_orbital_rad_s_offset_+2",
+    "d_orbital_rad_s_offset_+3",
+    "d_orbital_rad_s_offset_+4",
+    "d_orbital_rad_s_offset_+5",
+    "d_orbital_rad_s_offset_+6",
+    "d_orbital_rad_s_offset_+7",
+    "d_orbital_rad_s_offset_+8",
+    "d_orbital_rad_s_offset_+9",
+    "d_orbital_rad_s_offset_+10",
+    "d_orbital_rad_s_offset_+11",
+    "d_orbital_rad_s_offset_+12",
+    "d_orbital_rad_s_offset_+13",
+    "d_orbital_rad_s_offset_+14",
+    "d_orbital_rad_s_offset_+15",
+    "d_orbital_rad_s_offset_+16",
+    "d_orbital_rad_s_offset_+17",
+    "d_orbital_rad_s_offset_+18",
+    "d_orbital_rad_s_offset_+19",
+    "d_orbital_rad_s_offset_+20",
+    "d_orbital_rad_s_offset_+21",
+    "d_orbital_rad_s_offset_+22",
+    "d_orbital_rad_s_offset_+23",
+    "d_orbital_rad_s_offset_+24",
+    "d_orbital_rad_s_offset_+25",
+    "d_orbital_rad_s_offset_+26",
+    "d_orbital_rad_s_offset_+27",
+    "d_orbital_rad_s_offset_+28",
+    "d_orbital_rad_s_offset_+29",
+    "d_orbital_rad_s_offset_+30",
+    "d_orbital_rad_s_offset_+31",
+    "d_orbital_rad_s_offset_+32",
+    "d_orbital_rad_s_offset_+33",
+    "d_orbital_rad_s_offset_+34",
+    "d_orbital_rad_s_offset_+35",
+    "d_orbital_rad_s_offset_+36",
+    "d_orbital_rad_s_offset_+37",
+    "d_orbital_rad_s_offset_+38",
+    "d_orbital_rad_s_offset_+39",
+    "d_orbital_rad_s_offset_+40",
+    "d_orbital_rad_s_offset_+41",
+    "d_orbital_rad_s_offset_+42",
+    "d_orbital_rad_s_offset_+43",
+    "d_orbital_rad_s_offset_+44",
+    "d_orbital_rad_s_offset_+45",
+    "d_orbital_rad_s_offset_+46",
+    "d_orbital_rad_s_offset_+47",
+    "d_orbital_rad_s_offset_+48",
+    "d_orbital_rad_s_offset_+49",
+    "d_orbital_rad_s_offset_+50",
+    "d_orbital_rad_s_offset_+51",
+    "d_orbital_rad_s_offset_+52",
+    "d_orbital_rad_s_offset_+53",
+    "d_orbital_rad_s_offset_+54",
+    "d_orbital_rad_s_offset_+55",
+    "d_orbital_rad_s_offset_+56",
+    "d_orbital_rad_s_offset_+57",
+    "d_orbital_rad_s_offset_+58",
+    "d_orbital_rad_s_offset_+59",
+    "d_orbital_rad_s_offset_+60",
+    "centroid_distance_rate_px_s_offset_-60",
+    "centroid_distance_rate_px_s_offset_-59",
+    "centroid_distance_rate_px_s_offset_-58",
+    "centroid_distance_rate_px_s_offset_-57",
+    "centroid_distance_rate_px_s_offset_-56",
+    "centroid_distance_rate_px_s_offset_-55",
+    "centroid_distance_rate_px_s_offset_-54",
+    "centroid_distance_rate_px_s_offset_-53",
+    "centroid_distance_rate_px_s_offset_-52",
+    "centroid_distance_rate_px_s_offset_-51",
+    "centroid_distance_rate_px_s_offset_-50",
+    "centroid_distance_rate_px_s_offset_-49",
+    "centroid_distance_rate_px_s_offset_-48",
+    "centroid_distance_rate_px_s_offset_-47",
+    "centroid_distance_rate_px_s_offset_-46",
+    "centroid_distance_rate_px_s_offset_-45",
+    "centroid_distance_rate_px_s_offset_-44",
+    "centroid_distance_rate_px_s_offset_-43",
+    "centroid_distance_rate_px_s_offset_-42",
+    "centroid_distance_rate_px_s_offset_-41",
+    "centroid_distance_rate_px_s_offset_-40",
+    "centroid_distance_rate_px_s_offset_-39",
+    "centroid_distance_rate_px_s_offset_-38",
+    "centroid_distance_rate_px_s_offset_-37",
+    "centroid_distance_rate_px_s_offset_-36",
+    "centroid_distance_rate_px_s_offset_-35",
+    "centroid_distance_rate_px_s_offset_-34",
+    "centroid_distance_rate_px_s_offset_-33",
+    "centroid_distance_rate_px_s_offset_-32",
+    "centroid_distance_rate_px_s_offset_-31",
+    "centroid_distance_rate_px_s_offset_-30",
+    "centroid_distance_rate_px_s_offset_-29",
+    "centroid_distance_rate_px_s_offset_-28",
+    "centroid_distance_rate_px_s_offset_-27",
+    "centroid_distance_rate_px_s_offset_-26",
+    "centroid_distance_rate_px_s_offset_-25",
+    "centroid_distance_rate_px_s_offset_-24",
+    "centroid_distance_rate_px_s_offset_-23",
+    "centroid_distance_rate_px_s_offset_-22",
+    "centroid_distance_rate_px_s_offset_-21",
+    "centroid_distance_rate_px_s_offset_-20",
+    "centroid_distance_rate_px_s_offset_-19",
+    "centroid_distance_rate_px_s_offset_-18",
+    "centroid_distance_rate_px_s_offset_-17",
+    "centroid_distance_rate_px_s_offset_-16",
+    "centroid_distance_rate_px_s_offset_-15",
+    "centroid_distance_rate_px_s_offset_-14",
+    "centroid_distance_rate_px_s_offset_-13",
+    "centroid_distance_rate_px_s_offset_-12",
+    "centroid_distance_rate_px_s_offset_-11",
+    "centroid_distance_rate_px_s_offset_-10",
+    "centroid_distance_rate_px_s_offset_-9",
+    "centroid_distance_rate_px_s_offset_-8",
+    "centroid_distance_rate_px_s_offset_-7",
+    "centroid_distance_rate_px_s_offset_-6",
+    "centroid_distance_rate_px_s_offset_-5",
+    "centroid_distance_rate_px_s_offset_-4",
+    "centroid_distance_rate_px_s_offset_-3",
+    "centroid_distance_rate_px_s_offset_-2",
+    "centroid_distance_rate_px_s_offset_-1",
+    "centroid_distance_rate_px_s_offset_+0",
+    "centroid_distance_rate_px_s_offset_+1",
+    "centroid_distance_rate_px_s_offset_+2",
+    "centroid_distance_rate_px_s_offset_+3",
+    "centroid_distance_rate_px_s_offset_+4",
+    "centroid_distance_rate_px_s_offset_+5",
+    "centroid_distance_rate_px_s_offset_+6",
+    "centroid_distance_rate_px_s_offset_+7",
+    "centroid_distance_rate_px_s_offset_+8",
+    "centroid_distance_rate_px_s_offset_+9",
+    "centroid_distance_rate_px_s_offset_+10",
+    "centroid_distance_rate_px_s_offset_+11",
+    "centroid_distance_rate_px_s_offset_+12",
+    "centroid_distance_rate_px_s_offset_+13",
+    "centroid_distance_rate_px_s_offset_+14",
+    "centroid_distance_rate_px_s_offset_+15",
+    "centroid_distance_rate_px_s_offset_+16",
+    "centroid_distance_rate_px_s_offset_+17",
+    "centroid_distance_rate_px_s_offset_+18",
+    "centroid_distance_rate_px_s_offset_+19",
+    "centroid_distance_rate_px_s_offset_+20",
+    "centroid_distance_rate_px_s_offset_+21",
+    "centroid_distance_rate_px_s_offset_+22",
+    "centroid_distance_rate_px_s_offset_+23",
+    "centroid_distance_rate_px_s_offset_+24",
+    "centroid_distance_rate_px_s_offset_+25",
+    "centroid_distance_rate_px_s_offset_+26",
+    "centroid_distance_rate_px_s_offset_+27",
+    "centroid_distance_rate_px_s_offset_+28",
+    "centroid_distance_rate_px_s_offset_+29",
+    "centroid_distance_rate_px_s_offset_+30",
+    "centroid_distance_rate_px_s_offset_+31",
+    "centroid_distance_rate_px_s_offset_+32",
+    "centroid_distance_rate_px_s_offset_+33",
+    "centroid_distance_rate_px_s_offset_+34",
+    "centroid_distance_rate_px_s_offset_+35",
+    "centroid_distance_rate_px_s_offset_+36",
+    "centroid_distance_rate_px_s_offset_+37",
+    "centroid_distance_rate_px_s_offset_+38",
+    "centroid_distance_rate_px_s_offset_+39",
+    "centroid_distance_rate_px_s_offset_+40",
+    "centroid_distance_rate_px_s_offset_+41",
+    "centroid_distance_rate_px_s_offset_+42",
+    "centroid_distance_rate_px_s_offset_+43",
+    "centroid_distance_rate_px_s_offset_+44",
+    "centroid_distance_rate_px_s_offset_+45",
+    "centroid_distance_rate_px_s_offset_+46",
+    "centroid_distance_rate_px_s_offset_+47",
+    "centroid_distance_rate_px_s_offset_+48",
+    "centroid_distance_rate_px_s_offset_+49",
+    "centroid_distance_rate_px_s_offset_+50",
+    "centroid_distance_rate_px_s_offset_+51",
+    "centroid_distance_rate_px_s_offset_+52",
+    "centroid_distance_rate_px_s_offset_+53",
+    "centroid_distance_rate_px_s_offset_+54",
+    "centroid_distance_rate_px_s_offset_+55",
+    "centroid_distance_rate_px_s_offset_+56",
+    "centroid_distance_rate_px_s_offset_+57",
+    "centroid_distance_rate_px_s_offset_+58",
+    "centroid_distance_rate_px_s_offset_+59",
+    "centroid_distance_rate_px_s_offset_+60",
+    "d_orbital_rate_rad_s2_offset_-60",
+    "d_orbital_rate_rad_s2_offset_-59",
+    "d_orbital_rate_rad_s2_offset_-58",
+    "d_orbital_rate_rad_s2_offset_-57",
+    "d_orbital_rate_rad_s2_offset_-56",
+    "d_orbital_rate_rad_s2_offset_-55",
+    "d_orbital_rate_rad_s2_offset_-54",
+    "d_orbital_rate_rad_s2_offset_-53",
+    "d_orbital_rate_rad_s2_offset_-52",
+    "d_orbital_rate_rad_s2_offset_-51",
+    "d_orbital_rate_rad_s2_offset_-50",
+    "d_orbital_rate_rad_s2_offset_-49",
+    "d_orbital_rate_rad_s2_offset_-48",
+    "d_orbital_rate_rad_s2_offset_-47",
+    "d_orbital_rate_rad_s2_offset_-46",
+    "d_orbital_rate_rad_s2_offset_-45",
+    "d_orbital_rate_rad_s2_offset_-44",
+    "d_orbital_rate_rad_s2_offset_-43",
+    "d_orbital_rate_rad_s2_offset_-42",
+    "d_orbital_rate_rad_s2_offset_-41",
+    "d_orbital_rate_rad_s2_offset_-40",
+    "d_orbital_rate_rad_s2_offset_-39",
+    "d_orbital_rate_rad_s2_offset_-38",
+    "d_orbital_rate_rad_s2_offset_-37",
+    "d_orbital_rate_rad_s2_offset_-36",
+    "d_orbital_rate_rad_s2_offset_-35",
+    "d_orbital_rate_rad_s2_offset_-34",
+    "d_orbital_rate_rad_s2_offset_-33",
+    "d_orbital_rate_rad_s2_offset_-32",
+    "d_orbital_rate_rad_s2_offset_-31",
+    "d_orbital_rate_rad_s2_offset_-30",
+    "d_orbital_rate_rad_s2_offset_-29",
+    "d_orbital_rate_rad_s2_offset_-28",
+    "d_orbital_rate_rad_s2_offset_-27",
+    "d_orbital_rate_rad_s2_offset_-26",
+    "d_orbital_rate_rad_s2_offset_-25",
+    "d_orbital_rate_rad_s2_offset_-24",
+    "d_orbital_rate_rad_s2_offset_-23",
+    "d_orbital_rate_rad_s2_offset_-22",
+    "d_orbital_rate_rad_s2_offset_-21",
+    "d_orbital_rate_rad_s2_offset_-20",
+    "d_orbital_rate_rad_s2_offset_-19",
+    "d_orbital_rate_rad_s2_offset_-18",
+    "d_orbital_rate_rad_s2_offset_-17",
+    "d_orbital_rate_rad_s2_offset_-16",
+    "d_orbital_rate_rad_s2_offset_-15",
+    "d_orbital_rate_rad_s2_offset_-14",
+    "d_orbital_rate_rad_s2_offset_-13",
+    "d_orbital_rate_rad_s2_offset_-12",
+    "d_orbital_rate_rad_s2_offset_-11",
+    "d_orbital_rate_rad_s2_offset_-10",
+    "d_orbital_rate_rad_s2_offset_-9",
+    "d_orbital_rate_rad_s2_offset_-8",
+    "d_orbital_rate_rad_s2_offset_-7",
+    "d_orbital_rate_rad_s2_offset_-6",
+    "d_orbital_rate_rad_s2_offset_-5",
+    "d_orbital_rate_rad_s2_offset_-4",
+    "d_orbital_rate_rad_s2_offset_-3",
+    "d_orbital_rate_rad_s2_offset_-2",
+    "d_orbital_rate_rad_s2_offset_-1",
+    "d_orbital_rate_rad_s2_offset_+0",
+    "d_orbital_rate_rad_s2_offset_+1",
+    "d_orbital_rate_rad_s2_offset_+2",
+    "d_orbital_rate_rad_s2_offset_+3",
+    "d_orbital_rate_rad_s2_offset_+4",
+    "d_orbital_rate_rad_s2_offset_+5",
+    "d_orbital_rate_rad_s2_offset_+6",
+    "d_orbital_rate_rad_s2_offset_+7",
+    "d_orbital_rate_rad_s2_offset_+8",
+    "d_orbital_rate_rad_s2_offset_+9",
+    "d_orbital_rate_rad_s2_offset_+10",
+    "d_orbital_rate_rad_s2_offset_+11",
+    "d_orbital_rate_rad_s2_offset_+12",
+    "d_orbital_rate_rad_s2_offset_+13",
+    "d_orbital_rate_rad_s2_offset_+14",
+    "d_orbital_rate_rad_s2_offset_+15",
+    "d_orbital_rate_rad_s2_offset_+16",
+    "d_orbital_rate_rad_s2_offset_+17",
+    "d_orbital_rate_rad_s2_offset_+18",
+    "d_orbital_rate_rad_s2_offset_+19",
+    "d_orbital_rate_rad_s2_offset_+20",
+    "d_orbital_rate_rad_s2_offset_+21",
+    "d_orbital_rate_rad_s2_offset_+22",
+    "d_orbital_rate_rad_s2_offset_+23",
+    "d_orbital_rate_rad_s2_offset_+24",
+    "d_orbital_rate_rad_s2_offset_+25",
+    "d_orbital_rate_rad_s2_offset_+26",
+    "d_orbital_rate_rad_s2_offset_+27",
+    "d_orbital_rate_rad_s2_offset_+28",
+    "d_orbital_rate_rad_s2_offset_+29",
+    "d_orbital_rate_rad_s2_offset_+30",
+    "d_orbital_rate_rad_s2_offset_+31",
+    "d_orbital_rate_rad_s2_offset_+32",
+    "d_orbital_rate_rad_s2_offset_+33",
+    "d_orbital_rate_rad_s2_offset_+34",
+    "d_orbital_rate_rad_s2_offset_+35",
+    "d_orbital_rate_rad_s2_offset_+36",
+    "d_orbital_rate_rad_s2_offset_+37",
+    "d_orbital_rate_rad_s2_offset_+38",
+    "d_orbital_rate_rad_s2_offset_+39",
+    "d_orbital_rate_rad_s2_offset_+40",
+    "d_orbital_rate_rad_s2_offset_+41",
+    "d_orbital_rate_rad_s2_offset_+42",
+    "d_orbital_rate_rad_s2_offset_+43",
+    "d_orbital_rate_rad_s2_offset_+44",
+    "d_orbital_rate_rad_s2_offset_+45",
+    "d_orbital_rate_rad_s2_offset_+46",
+    "d_orbital_rate_rad_s2_offset_+47",
+    "d_orbital_rate_rad_s2_offset_+48",
+    "d_orbital_rate_rad_s2_offset_+49",
+    "d_orbital_rate_rad_s2_offset_+50",
+    "d_orbital_rate_rad_s2_offset_+51",
+    "d_orbital_rate_rad_s2_offset_+52",
+    "d_orbital_rate_rad_s2_offset_+53",
+    "d_orbital_rate_rad_s2_offset_+54",
+    "d_orbital_rate_rad_s2_offset_+55",
+    "d_orbital_rate_rad_s2_offset_+56",
+    "d_orbital_rate_rad_s2_offset_+57",
+    "d_orbital_rate_rad_s2_offset_+58",
+    "d_orbital_rate_rad_s2_offset_+59",
+    "d_orbital_rate_rad_s2_offset_+60",
+    "intersection_midpoint_speed_px_s_offset_-60",
+    "intersection_midpoint_speed_px_s_offset_-59",
+    "intersection_midpoint_speed_px_s_offset_-58",
+    "intersection_midpoint_speed_px_s_offset_-57",
+    "intersection_midpoint_speed_px_s_offset_-56",
+    "intersection_midpoint_speed_px_s_offset_-55",
+    "intersection_midpoint_speed_px_s_offset_-54",
+    "intersection_midpoint_speed_px_s_offset_-53",
+    "intersection_midpoint_speed_px_s_offset_-52",
+    "intersection_midpoint_speed_px_s_offset_-51",
+    "intersection_midpoint_speed_px_s_offset_-50",
+    "intersection_midpoint_speed_px_s_offset_-49",
+    "intersection_midpoint_speed_px_s_offset_-48",
+    "intersection_midpoint_speed_px_s_offset_-47",
+    "intersection_midpoint_speed_px_s_offset_-46",
+    "intersection_midpoint_speed_px_s_offset_-45",
+    "intersection_midpoint_speed_px_s_offset_-44",
+    "intersection_midpoint_speed_px_s_offset_-43",
+    "intersection_midpoint_speed_px_s_offset_-42",
+    "intersection_midpoint_speed_px_s_offset_-41",
+    "intersection_midpoint_speed_px_s_offset_-40",
+    "intersection_midpoint_speed_px_s_offset_-39",
+    "intersection_midpoint_speed_px_s_offset_-38",
+    "intersection_midpoint_speed_px_s_offset_-37",
+    "intersection_midpoint_speed_px_s_offset_-36",
+    "intersection_midpoint_speed_px_s_offset_-35",
+    "intersection_midpoint_speed_px_s_offset_-34",
+    "intersection_midpoint_speed_px_s_offset_-33",
+    "intersection_midpoint_speed_px_s_offset_-32",
+    "intersection_midpoint_speed_px_s_offset_-31",
+    "intersection_midpoint_speed_px_s_offset_-30",
+    "intersection_midpoint_speed_px_s_offset_-29",
+    "intersection_midpoint_speed_px_s_offset_-28",
+    "intersection_midpoint_speed_px_s_offset_-27",
+    "intersection_midpoint_speed_px_s_offset_-26",
+    "intersection_midpoint_speed_px_s_offset_-25",
+    "intersection_midpoint_speed_px_s_offset_-24",
+    "intersection_midpoint_speed_px_s_offset_-23",
+    "intersection_midpoint_speed_px_s_offset_-22",
+    "intersection_midpoint_speed_px_s_offset_-21",
+    "intersection_midpoint_speed_px_s_offset_-20",
+    "intersection_midpoint_speed_px_s_offset_-19",
+    "intersection_midpoint_speed_px_s_offset_-18",
+    "intersection_midpoint_speed_px_s_offset_-17",
+    "intersection_midpoint_speed_px_s_offset_-16",
+    "intersection_midpoint_speed_px_s_offset_-15",
+    "intersection_midpoint_speed_px_s_offset_-14",
+    "intersection_midpoint_speed_px_s_offset_-13",
+    "intersection_midpoint_speed_px_s_offset_-12",
+    "intersection_midpoint_speed_px_s_offset_-11",
+    "intersection_midpoint_speed_px_s_offset_-10",
+    "intersection_midpoint_speed_px_s_offset_-9",
+    "intersection_midpoint_speed_px_s_offset_-8",
+    "intersection_midpoint_speed_px_s_offset_-7",
+    "intersection_midpoint_speed_px_s_offset_-6",
+    "intersection_midpoint_speed_px_s_offset_-5",
+    "intersection_midpoint_speed_px_s_offset_-4",
+    "intersection_midpoint_speed_px_s_offset_-3",
+    "intersection_midpoint_speed_px_s_offset_-2",
+    "intersection_midpoint_speed_px_s_offset_-1",
+    "intersection_midpoint_speed_px_s_offset_+0",
+    "intersection_midpoint_speed_px_s_offset_+1",
+    "intersection_midpoint_speed_px_s_offset_+2",
+    "intersection_midpoint_speed_px_s_offset_+3",
+    "intersection_midpoint_speed_px_s_offset_+4",
+    "intersection_midpoint_speed_px_s_offset_+5",
+    "intersection_midpoint_speed_px_s_offset_+6",
+    "intersection_midpoint_speed_px_s_offset_+7",
+    "intersection_midpoint_speed_px_s_offset_+8",
+    "intersection_midpoint_speed_px_s_offset_+9",
+    "intersection_midpoint_speed_px_s_offset_+10",
+    "intersection_midpoint_speed_px_s_offset_+11",
+    "intersection_midpoint_speed_px_s_offset_+12",
+    "intersection_midpoint_speed_px_s_offset_+13",
+    "intersection_midpoint_speed_px_s_offset_+14",
+    "intersection_midpoint_speed_px_s_offset_+15",
+    "intersection_midpoint_speed_px_s_offset_+16",
+    "intersection_midpoint_speed_px_s_offset_+17",
+    "intersection_midpoint_speed_px_s_offset_+18",
+    "intersection_midpoint_speed_px_s_offset_+19",
+    "intersection_midpoint_speed_px_s_offset_+20",
+    "intersection_midpoint_speed_px_s_offset_+21",
+    "intersection_midpoint_speed_px_s_offset_+22",
+    "intersection_midpoint_speed_px_s_offset_+23",
+    "intersection_midpoint_speed_px_s_offset_+24",
+    "intersection_midpoint_speed_px_s_offset_+25",
+    "intersection_midpoint_speed_px_s_offset_+26",
+    "intersection_midpoint_speed_px_s_offset_+27",
+    "intersection_midpoint_speed_px_s_offset_+28",
+    "intersection_midpoint_speed_px_s_offset_+29",
+    "intersection_midpoint_speed_px_s_offset_+30",
+    "intersection_midpoint_speed_px_s_offset_+31",
+    "intersection_midpoint_speed_px_s_offset_+32",
+    "intersection_midpoint_speed_px_s_offset_+33",
+    "intersection_midpoint_speed_px_s_offset_+34",
+    "intersection_midpoint_speed_px_s_offset_+35",
+    "intersection_midpoint_speed_px_s_offset_+36",
+    "intersection_midpoint_speed_px_s_offset_+37",
+    "intersection_midpoint_speed_px_s_offset_+38",
+    "intersection_midpoint_speed_px_s_offset_+39",
+    "intersection_midpoint_speed_px_s_offset_+40",
+    "intersection_midpoint_speed_px_s_offset_+41",
+    "intersection_midpoint_speed_px_s_offset_+42",
+    "intersection_midpoint_speed_px_s_offset_+43",
+    "intersection_midpoint_speed_px_s_offset_+44",
+    "intersection_midpoint_speed_px_s_offset_+45",
+    "intersection_midpoint_speed_px_s_offset_+46",
+    "intersection_midpoint_speed_px_s_offset_+47",
+    "intersection_midpoint_speed_px_s_offset_+48",
+    "intersection_midpoint_speed_px_s_offset_+49",
+    "intersection_midpoint_speed_px_s_offset_+50",
+    "intersection_midpoint_speed_px_s_offset_+51",
+    "intersection_midpoint_speed_px_s_offset_+52",
+    "intersection_midpoint_speed_px_s_offset_+53",
+    "intersection_midpoint_speed_px_s_offset_+54",
+    "intersection_midpoint_speed_px_s_offset_+55",
+    "intersection_midpoint_speed_px_s_offset_+56",
+    "intersection_midpoint_speed_px_s_offset_+57",
+    "intersection_midpoint_speed_px_s_offset_+58",
+    "intersection_midpoint_speed_px_s_offset_+59",
+    "intersection_midpoint_speed_px_s_offset_+60"
+  ],
+  "seed": 42,
+  "threshold": 0.5,
+  "feature_source": "Rule-based cleaning; closest retained pair's centroid_distance_px and d_orbital_rad_s, offsets -60..+60. Missing or abs>15 orbital rates become 0 in raw windows. Three additional per-frame signals: signed distance change (px/s), signed orbital-rate change (rad/s^2), and head-to-head/tail-to-tail segment-intersection speed (px/s). All five signals are flattened at every window offset, with no averaging. Each derivative at frame t uses consecutive same-pair frames t-1 and t at 30 fps, including a preceding context frame for the window's leftmost offset. Missing measurements, pair switches, and episode changes invalidate derivatives. No unique finite segment intersection or invalid consecutive step yields NaN.",
+  "ground_truth": "ground_truth_annotations/finalized_annotations/merged_spans.csv",
+  "spans": {
+    "0028_vid": [
+      [
+        206356,
+        206596
+      ],
+      [
+        332855,
+        333156
+      ],
+      [
+        334658,
+        334835
+      ],
+      [
+        334952,
+        335118
+      ],
+      [
+        335409,
+        335502
+      ],
+      [
+        336150,
+        336285
+      ],
+      [
+        350997,
+        351254
+      ],
+      [
+        351535,
+        352006
+      ],
+      [
+        352251,
+        352392
+      ],
+      [
+        367693,
+        367772
+      ],
+      [
+        368382,
+        368743
+      ],
+      [
+        368842,
+        369268
+      ],
+      [
+        369806,
+        370412
+      ],
+      [
+        378568,
+        378697
+      ],
+      [
+        380203,
+        380439
+      ],
+      [
+        380655,
+        381085
+      ],
+      [
+        381308,
+        381433
+      ],
+      [
+        382490,
+        382677
+      ],
+      [
+        382852,
+        382994
+      ],
+      [
+        383099,
+        383272
+      ],
+      [
+        383445,
+        384033
+      ],
+      [
+        390789,
+        390931
+      ],
+      [
+        391393,
+        391488
+      ],
+      [
+        391735,
+        391900
+      ],
+      [
+        392369,
+        392777
+      ],
+      [
+        393082,
+        393258
+      ],
+      [
+        393398,
+        393887
+      ],
+      [
+        394321,
+        394834
+      ],
+      [
+        395143,
+        395606
+      ],
+      [
+        395728,
+        396225
+      ],
+      [
+        406958,
+        407096
+      ],
+      [
+        407887,
+        408316
+      ],
+      [
+        420411,
+        420660
+      ],
+      [
+        421053,
+        421424
+      ],
+      [
+        422612,
+        422863
+      ],
+      [
+        423432,
+        423666
+      ],
+      [
+        423987,
+        424238
+      ],
+      [
+        425305,
+        425746
+      ],
+      [
+        426756,
+        427192
+      ],
+      [
+        428136,
+        428461
+      ],
+      [
+        429314,
+        429555
+      ],
+      [
+        431202,
+        431490
+      ],
+      [
+        431617,
+        432266
+      ],
+      [
+        432744,
+        433080
+      ],
+      [
+        434945,
+        435479
+      ],
+      [
+        436604,
+        436917
+      ],
+      [
+        437168,
+        437453
+      ],
+      [
+        439415,
+        440128
+      ],
+      [
+        441677,
+        442324
+      ],
+      [
+        444555,
+        444642
+      ],
+      [
+        445473,
+        445659
+      ],
+      [
+        448891,
+        449487
+      ],
+      [
+        450545,
+        451235
+      ],
+      [
+        462451,
+        462770
+      ],
+      [
+        465752,
+        466075
+      ],
+      [
+        466282,
+        466608
+      ],
+      [
+        466955,
+        467972
+      ],
+      [
+        477527,
+        477990
+      ],
+      [
+        478248,
+        478897
+      ],
+      [
+        489251,
+        489893
+      ],
+      [
+        490382,
+        490613
+      ],
+      [
+        491246,
+        491719
+      ],
+      [
+        504008,
+        504704
+      ],
+      [
+        505058,
+        505779
+      ],
+      [
+        509824,
+        510311
+      ],
+      [
+        510392,
+        510814
+      ],
+      [
+        511141,
+        511674
+      ],
+      [
+        515269,
+        515369
+      ],
+      [
+        515686,
+        516434
+      ],
+      [
+        520287,
+        520560
+      ],
+      [
+        520951,
+        521542
+      ],
+      [
+        525622,
+        526540
+      ],
+      [
+        535485,
+        535600
+      ],
+      [
+        535956,
+        536302
+      ],
+      [
+        536411,
+        536714
+      ],
+      [
+        545312,
+        545826
+      ],
+      [
+        547713,
+        548136
+      ],
+      [
+        559441,
+        559547
+      ],
+      [
+        562473,
+        562897
+      ],
+      [
+        578997,
+        579107
+      ],
+      [
+        713042,
+        713342
+      ]
+    ],
+    "0031_vid": [
+      [
+        98132,
+        98362
+      ],
+      [
+        98980,
+        99205
+      ],
+      [
+        119900,
+        120708
+      ],
+      [
+        121503,
+        121795
+      ],
+      [
+        122748,
+        125284
+      ],
+      [
+        129208,
+        129306
+      ],
+      [
+        130018,
+        130295
+      ],
+      [
+        138159,
+        138700
+      ],
+      [
+        139256,
+        139491
+      ],
+      [
+        178863,
+        179209
+      ],
+      [
+        180660,
+        181538
+      ],
+      [
+        183808,
+        185516
+      ],
+      [
+        189155,
+        189709
+      ],
+      [
+        210496,
+        210641
+      ],
+      [
+        212861,
+        213004
+      ],
+      [
+        214472,
+        215165
+      ],
+      [
+        216987,
+        217110
+      ],
+      [
+        219115,
+        220009
+      ],
+      [
+        247017,
+        247560
+      ],
+      [
+        247862,
+        248868
+      ],
+      [
+        255877,
+        255979
+      ],
+      [
+        262877,
+        263236
+      ],
+      [
+        263555,
+        263687
+      ],
+      [
+        264712,
+        265114
+      ],
+      [
+        265490,
+        266247
+      ],
+      [
+        266827,
+        267102
+      ],
+      [
+        267263,
+        267850
+      ],
+      [
+        269072,
+        271849
+      ],
+      [
+        272241,
+        273053
+      ],
+      [
+        273572,
+        274810
+      ],
+      [
+        275040,
+        275190
+      ],
+      [
+        276439,
+        276533
+      ],
+      [
+        276785,
+        276899
+      ],
+      [
+        277630,
+        278798
+      ],
+      [
+        284308,
+        285248
+      ],
+      [
+        285910,
+        286492
+      ],
+      [
+        287427,
+        287549
+      ],
+      [
+        290415,
+        291967
+      ],
+      [
+        297374,
+        297867
+      ],
+      [
+        298370,
+        298541
+      ],
+      [
+        299070,
+        299342
+      ],
+      [
+        300814,
+        301485
+      ],
+      [
+        302548,
+        303488
+      ],
+      [
+        310706,
+        310821
+      ],
+      [
+        311191,
+        311277
+      ],
+      [
+        311703,
+        311864
+      ],
+      [
+        312403,
+        312678
+      ],
+      [
+        312890,
+        313274
+      ],
+      [
+        314426,
+        314830
+      ],
+      [
+        315500,
+        316123
+      ],
+      [
+        316941,
+        317109
+      ],
+      [
+        317293,
+        317485
+      ],
+      [
+        317914,
+        318607
+      ],
+      [
+        319319,
+        320672
+      ],
+      [
+        323003,
+        323274
+      ],
+      [
+        323989,
+        325440
+      ],
+      [
+        330419,
+        330554
+      ],
+      [
+        336893,
+        337898
+      ]
+    ]
+  },
+  "data_dir": "/Users/ding/omscs-rs/cichlid-analysis/data",
+  "sampling": "All positive centers; ceil(inclusive segment length / 2) negative context frames on each side. Union overlapping buffers; clip to video; positive labels take precedence. One row per (video, center frame).",
+  "split": "Stratified random 70/30 frame split, seed 42; fitted on training rows only.",
+  "postprocessing": {
+    "window_frames": 30,
+    "positive_fraction": 0.5,
+    "description": "Centered rolling vote over thresholded predictions, offsets -15..+14; ties positive. Video boundaries use only available frames. Apply after concatenating full-video scores; export processed spans.",
+    "processed_ranking_metrics": "AP and ROC AUC use the rolling positive-vote fraction, not model probabilities.",
+    "holdout": "Raw classifier predictions; sampled holdout rows are not contiguous."
+  },
+  "limitations": [
+    "Adjacent windows overlap across train/test; holdout is not independent-event or new-video evaluation.",
+    "Full-video evaluation includes training frames and assumes all unannotated frames are negative; annotations may be incomplete.",
+    "Centered windows use future frames. Scores trained on near-balanced data are not calibrated at full-video prevalence."
+  ],
+  "model_parameters": {
+    "objective": "binary:logistic",
+    "base_score": null,
+    "booster": null,
+    "callbacks": null,
+    "colsample_bylevel": null,
+    "colsample_bynode": null,
+    "colsample_bytree": 0.8,
+    "device": null,
+    "early_stopping_rounds": null,
+    "enable_categorical": true,
+    "eval_metric": "logloss",
+    "feature_types": null,
+    "feature_weights": null,
+    "gamma": null,
+    "grow_policy": null,
+    "importance_type": null,
+    "interaction_constraints": null,
+    "learning_rate": 0.05,
+    "max_bin": null,
+    "max_cat_threshold": null,
+    "max_cat_to_onehot": null,
+    "max_delta_step": null,
+    "max_depth": 3,
+    "max_leaves": null,
+    "min_child_weight": 5,
+    "missing": "NaN",
+    "monotone_constraints": null,
+    "multi_strategy": null,
+    "n_estimators": 400,
+    "n_jobs": 4,
+    "num_parallel_tree": null,
+    "random_state": 42,
+    "reg_alpha": null,
+    "reg_lambda": null,
+    "sampling_method": null,
+    "scale_pos_weight": null,
+    "subsample": 0.8,
+    "tree_method": "hist",
+    "validate_parameters": null,
+    "verbosity": null
+  },
+  "sample_counts": [
+    {
+      "VideoID": "0028_vid",
+      "split": "test",
+      "circling": 0,
+      "frames": 7782
+    },
+    {
+      "VideoID": "0028_vid",
+      "split": "test",
+      "circling": 1,
+      "frames": 9010
+    },
+    {
+      "VideoID": "0028_vid",
+      "split": "train",
+      "circling": 0,
+      "frames": 17842
+    },
+    {
+      "VideoID": "0028_vid",
+      "split": "train",
+      "circling": 1,
+      "frames": 20745
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "test",
+      "circling": 0,
+      "frames": 8784
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "test",
+      "circling": 1,
+      "frames": 10224
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "train",
+      "circling": 0,
+      "frames": 20811
+    },
+    {
+      "VideoID": "0031_vid",
+      "split": "train",
+      "circling": 1,
+      "frames": 24135
+    }
+  ],
+  "holdout": {
+    "frames": 35800,
+    "positive_frames": 19234,
+    "prevalence": 0.5372625698324023,
+    "accuracy": 0.9606145251396648,
+    "average_precision": 0.9945825361713897,
+    "roc_auc": 0.9939012528884402,
+    "precision": 0.9580592105263158,
+    "recall": 0.9691171883123635,
+    "f1": 0.9635564745412252,
+    "tn": 15750,
+    "fp": 816,
+    "fn": 594,
+    "tp": 18640
+  },
+  "full_video": {
+    "frame_metrics": {
+      "0028_vid": {
+        "frames": 1080175,
+        "positive_frames": 29755,
+        "prevalence": 0.027546462378781215,
+        "accuracy": 0.9959228828662022,
+        "average_precision": 0.9842334897461138,
+        "roc_auc": 0.9995286703876356,
+        "precision": 0.901339328119558,
+        "recall": 0.9567131574525289,
+        "f1": 0.9282011151325442,
+        "tn": 1047304,
+        "fp": 3116,
+        "fn": 1288,
+        "tp": 28467
+      },
+      "0031_vid": {
+        "frames": 1080398,
+        "positive_frames": 34359,
+        "prevalence": 0.0318021692006094,
+        "accuracy": 0.9876952752596728,
+        "average_precision": 0.9499412873314429,
+        "roc_auc": 0.9983841278785868,
+        "precision": 0.7258206299178834,
+        "recall": 0.9852731453185483,
+        "f1": 0.8358765432098766,
+        "tn": 1033251,
+        "fp": 12788,
+        "fn": 506,
+        "tp": 33853
+      }
+    },
+    "segment_metrics": {
+      "0028_vid": {
+        "num_frames": 1080175,
+        "mof": 0.9959228828662022,
+        "edit_score": 24.076809453471192,
+        "frame_tp": 28467,
+        "frame_fp": 3116,
+        "frame_fn": 1288,
+        "frame_precision": 0.901339328119558,
+        "frame_recall": 0.9567131574525289,
+        "frame_f1": 0.9282011151325442,
+        "gt_segments": 81,
+        "pred_segments": 338,
+        "tp@10": 81,
+        "tp@25": 81,
+        "tp@50": 81,
+        "f1@10": 0.38663484486873506,
+        "f1@25": 0.38663484486873506,
+        "f1@50": 0.38663484486873506
+      },
+      "0031_vid": {
+        "num_frames": 1080398,
+        "mof": 0.9876952752596728,
+        "edit_score": 8.096885813148791,
+        "frame_tp": 33853,
+        "frame_fp": 12788,
+        "frame_fn": 506,
+        "frame_precision": 0.7258206299178834,
+        "frame_recall": 0.9852731453185483,
+        "frame_f1": 0.8358765432098766,
+        "gt_segments": 58,
+        "pred_segments": 722,
+        "tp@10": 58,
+        "tp@25": 57,
+        "tp@50": 55,
+        "f1@10": 0.14871794871794872,
+        "f1@25": 0.14615384615384616,
+        "f1@50": 0.14102564102564102
+      }
+    },
+    "overall_segments": {
+      "num_frames": 2160573,
+      "mof": 0.9918086544634225,
+      "edit_score": 16.086847633309993,
+      "frame_tp": 62320,
+      "frame_fp": 15904,
+      "frame_fn": 1794,
+      "frame_precision": 0.7966864389445695,
+      "frame_recall": 0.972018591883208,
+      "frame_f1": 0.8756621562759067,
+      "gt_segments": 139,
+      "pred_segments": 1060,
+      "tp@10": 139,
+      "tp@25": 138,
+      "tp@50": 136,
+      "f1@10": 0.23185988323603002,
+      "f1@25": 0.23019182652210174,
+      "f1@50": 0.2268557130942452
+    },
+    "postprocessed": {
+      "frame_metrics": {
+        "0028_vid": {
+          "frames": 1080175,
+          "positive_frames": 29755,
+          "prevalence": 0.027546462378781215,
+          "accuracy": 0.9960126831300484,
+          "average_precision": 0.9384224118040299,
+          "roc_auc": 0.994259402175707,
+          "precision": 0.9020221169036335,
+          "recall": 0.9594689968072593,
+          "f1": 0.9298591319925088,
+          "tn": 1047319,
+          "fp": 3101,
+          "fn": 1206,
+          "tp": 28549
+        },
+        "0031_vid": {
+          "frames": 1080398,
+          "positive_frames": 34359,
+          "prevalence": 0.0318021692006094,
+          "accuracy": 0.9878091221938582,
+          "average_precision": 0.7908602349167919,
+          "roc_auc": 0.9940381655930034,
+          "precision": 0.7274366680978961,
+          "recall": 0.9861753834512064,
+          "f1": 0.8372725138684688,
+          "tn": 1033343,
+          "fp": 12696,
+          "fn": 475,
+          "tp": 33884
+        }
+      },
+      "segment_metrics": {
+        "0028_vid": {
+          "num_frames": 1080175,
+          "mof": 0.9960126831300484,
+          "edit_score": 71.80616740088107,
+          "frame_tp": 28549,
+          "frame_fp": 3101,
+          "frame_fn": 1206,
+          "frame_precision": 0.9020221169036335,
+          "frame_recall": 0.9594689968072593,
+          "frame_f1": 0.9298591319925089,
+          "gt_segments": 81,
+          "pred_segments": 113,
+          "tp@10": 81,
+          "tp@25": 81,
+          "tp@50": 81,
+          "f1@10": 0.8350515463917526,
+          "f1@25": 0.8350515463917526,
+          "f1@50": 0.8350515463917526
+        },
+        "0031_vid": {
+          "num_frames": 1080398,
+          "mof": 0.9878091221938582,
+          "edit_score": 38.11074918566775,
+          "frame_tp": 33884,
+          "frame_fp": 12696,
+          "frame_fn": 475,
+          "frame_precision": 0.7274366680978961,
+          "frame_recall": 0.9861753834512064,
+          "frame_f1": 0.8372725138684689,
+          "gt_segments": 58,
+          "pred_segments": 153,
+          "tp@10": 58,
+          "tp@25": 57,
+          "tp@50": 55,
+          "f1@10": 0.5497630331753555,
+          "f1@25": 0.5402843601895735,
+          "f1@50": 0.5213270142180095
+        }
+      },
+      "overall_segments": {
+        "num_frames": 2160573,
+        "mof": 0.991910479303407,
+        "edit_score": 54.958458293274404,
+        "frame_tp": 62433,
+        "frame_fp": 15797,
+        "frame_fn": 1681,
+        "frame_precision": 0.7980697941965997,
+        "frame_recall": 0.9737810774557819,
+        "frame_f1": 0.8772129489124938,
+        "gt_segments": 139,
+        "pred_segments": 266,
+        "tp@10": 139,
+        "tp@25": 138,
+        "tp@50": 136,
+        "f1@10": 0.6864197530864198,
+        "f1@25": 0.6814814814814815,
+        "f1@50": 0.671604938271605
+      }
+    }
+  }
+}

@@ -26,6 +26,7 @@ with app.setup:
     import polars as pl
 
     from model_performance_report import overlay_legend, overlay_poses
+    from video_source import TABLE_URLS, VIDEO_URLS, VideoReader, download, video_frame_count
 
     ROOT = Path(__file__).resolve().parent
     PREVIEW_DIR = ROOT / "outputs" / "clips" / "merged_spans"
@@ -44,32 +45,29 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
     """Cache a small video with pose points and a per-frame TrackID legend."""
     video_path, output_dir = Path(video_path), Path(output_dir)
     pose_path = video_path.with_suffix(".parquet")
-    if not pose_path.exists():
+    if not pose_path.exists() and pose_path.name not in TABLE_URLS:
         raise FileNotFoundError(f"Pose data not found: {pose_path}")
+    if not pose_path.exists():
+        download(TABLE_URLS[pose_path.name], pose_path)
 
-    capture = cv2.VideoCapture(str(video_path))
-    if not capture.isOpened():
-        capture.release()
-        raise RuntimeError(f"Could not open {video_path}")
-    try:
-        fps = float(capture.get(cv2.CAP_PROP_FPS))
-        frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_count = video_frame_count(video_path)
+    preview_start, preview_end = buffered_bounds(start, end, buffer_frames, frame_count)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    # Keep the notebook payload small; older 960 px previews can exceed
+    # marimo's output limit when VS Code serializes the video.
+    preview = output_dir / (
+        f"{video_path.stem}_{start}-{end}_buffer_{buffer_frames}"
+        f"_w{max_width}_crf30_overlay.mp4"
+    )
+    sources = (pose_path, Path(__file__), ROOT / "model_performance_report.py",
+               *([video_path] if video_path.exists() else []))
+    if preview.exists() and preview.stat().st_mtime_ns >= max(p.stat().st_mtime_ns for p in sources):
+        return preview, preview_start, preview_end
+
+    with VideoReader(video_path) as reader:
+        fps, width, height = reader.fps, reader.width, reader.height
         if fps <= 0 or width <= 0 or height <= 0 or max_width < 2:
             raise ValueError(f"Invalid video metadata: {video_path}")
-        preview_start, preview_end = buffered_bounds(start, end, buffer_frames, frame_count)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        # Keep the notebook payload small; older 960 px previews can exceed
-        # marimo's output limit when VS Code serializes the video.
-        preview = output_dir / (
-            f"{video_path.stem}_{start}-{end}_buffer_{buffer_frames}"
-            f"_w{max_width}_crf30_overlay.mp4"
-        )
-        sources = (video_path, pose_path, Path(__file__), ROOT / "model_performance_report.py")
-        if preview.exists() and preview.stat().st_mtime_ns >= max(p.stat().st_mtime_ns for p in sources):
-            return preview, preview_start, preview_end
-
         poses = (pl.scan_parquet(pose_path)
                  .filter(pl.col("FrameNum").is_between(preview_start, preview_end))
                  .collect())
@@ -91,11 +89,7 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
         )
         try:
             writer.send(None)
-            capture.set(cv2.CAP_PROP_POS_FRAMES, preview_start)
-            for frame_number in range(preview_start, preview_end + 1):
-                ok, frame = capture.read()
-                if not ok:
-                    raise RuntimeError(f"Could not decode frame {frame_number} from {video_path}")
+            for frame_number, frame in reader.frames(preview_start, preview_end):
                 frame_poses = groups.get((frame_number,), empty)
                 annotated = cv2.resize(frame, (output_width, output_height),
                                        interpolation=cv2.INTER_AREA)
@@ -115,9 +109,7 @@ def render_merged_preview(video_path, start, end, buffer_frames, output_dir, max
         finally:
             writer.close()
             partial.unlink(missing_ok=True)
-        return preview, preview_start, preview_end
-    finally:
-        capture.release()
+    return preview, preview_start, preview_end
 
 
 @app.cell(hide_code=True)
@@ -139,9 +131,9 @@ def _():
     _span_columns = {"VideoID", "EventID", "StartFrame", "EndFrame", "Source", "Circling", "ShouldUse", "Notes"}
     _span_files = [path for path in sorted(_span_dir.rglob("*.csv"))
                    if _span_columns <= set(pl.read_csv(path, n_rows=0, infer_schema=False, encoding="utf8-lossy").columns)]
-    _video_files = sorted((ROOT / "data").glob("*_vid.mp4"))
+    _video_files = sorted({ROOT / "data" / name for name in VIDEO_URLS}
+                          | set((ROOT / "data").glob("*_vid.mp4")))
     mo.stop(not _span_files, mo.md("No merged-span CSV files under `ground_truth_annotations/`."))
-    mo.stop(not _video_files, mo.md("Put the source videos in `data/` to preview the spans."))
 
     spans_file = mo.ui.dropdown(
         options={str(path.relative_to(_span_dir)): str(path) for path in _span_files},
@@ -216,15 +208,8 @@ def _(span_choice, spans):
 
 @app.cell(hide_code=True)
 def _(video_path):
-    _capture = cv2.VideoCapture(str(video_path))
-    try:
-        if not _capture.isOpened():
-            raise RuntimeError(f"Could not open {video_path}")
-        _fps = float(_capture.get(cv2.CAP_PROP_FPS))
-        frame_count = int(_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    finally:
-        _capture.release()
-    if _fps <= 0 or frame_count <= 0:
+    frame_count = video_frame_count(video_path)
+    if frame_count <= 0:
         raise ValueError(f"Invalid video metadata: {video_path}")
     return (frame_count,)
 

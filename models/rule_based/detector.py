@@ -24,6 +24,7 @@ with app.setup:
     import pandas as pd
 
     import circling_cleaning as cc
+    import episode_labels as el
 
     FPS = 30
     # Chart styling (validated categorical slot 1 for detections; neutral ink for labels and thresholds)
@@ -74,6 +75,10 @@ def _():
     | **Keep going** | ≥ **0.4 turns** in a 4 s window | a looser bar once started, so a brief slowdown doesn't end the episode |
     | Join pauses | gaps < **3 s** are bridged | the annotators never split events closer than 4.7 s apart |
     | Minimum length | ≥ **2 s** | ignore flickers |
+    | **Direction** | sign of the rotation in the 4 s window, majority over the episode | positive rotation is clockwise on screen |
+    | **Circles** | net rotation of each same-direction stretch, summed | back-and-forth jitter cancels out |
+
+    Direction and circles live in `models/rule_based/episode_labels.py`, which can label any detector's intervals.
 
     The first two numbers (160 px, ¾ turn) are the original rule. The "keep going" threshold and pause-joining
     were added this week, tuned on video 0031 only, and then tested on video 0028.
@@ -85,7 +90,6 @@ def _():
 def _():
     DATA_DIR = cc.default_data_dir(cc.ROOT)           # $CIRCLING_DATA_DIR, <repo>/data or ~/Downloads
     OUT_DIR = cc.ROOT / "outputs" / "predictions" / "rule_based"
-    CACHE = DATA_DIR / "rule_detector_cache"          # kept next to the data, outside git
     VIDEOS = ["0031", "0028"]
     LABELS = {
         "0031": [(265510, 266227), (266809, 267100), (267242, 267837), (269089, 271817),
@@ -95,37 +99,14 @@ def _():
     }
     REVIEWED = {"0031": [(265510, 276530)],
                 "0028": [(334703, 336285), (436636, 437437), (713035, 713330)]}
-    return CACHE, DATA_DIR, LABELS, OUT_DIR, REVIEWED, VIDEOS
+    return DATA_DIR, LABELS, OUT_DIR, REVIEWED, VIDEOS
 
 
 @app.cell
-def _(CACHE, DATA_DIR, VIDEOS):
+def _(DATA_DIR, VIDEOS):
     # Per-frame closest-pair distance and rotation rate, before and after cleaning (rules in circling_cleaning.py).
-    # The first run reads the full tracking tables (~1 min); later runs load a small cache (seconds).
-    def build_series(v):
-        _, p = cc.load_flagged(DATA_DIR, v, ["FrameNum", "TrackID_1", "TrackID_2", "centroid_distance_px",
-                                             "d_orbital_rad_s"])
-        n = int(p.FrameNum.max()) + 1
-        out = {}
-        for tag, q in (("raw", p), ("clean", p[p.keep])):
-            q = q.sort_values(["FrameNum", "centroid_distance_px"]).drop_duplicates("FrameNum").set_index("FrameNum")
-            q = q.reindex(pd.RangeIndex(0, n))
-            out[f"dist_{tag}"] = q.centroid_distance_px.to_numpy()
-            out[f"rate_{tag}"] = q.d_orbital_rad_s.where(q.d_orbital_rad_s.abs() <= 15).fillna(0).to_numpy()
-        return out
-
-
-    def load_series(v):
-        path = CACHE / f"series_{v}.npz"
-        if path.exists():
-            return dict(np.load(path))
-        s = build_series(v)
-        CACHE.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(path, **s)
-        return s
-
-
-    series = {_v: load_series(_v) for _v in VIDEOS}
+    # The first run reads the full tracking tables (~1 min); later runs load a small cache next to the data.
+    series = {_v: el.load_series(DATA_DIR, _v) for _v in VIDEOS}
     return (series,)
 
 
@@ -162,6 +143,7 @@ def _():
                     merged.append([s, e])
             segs = merged
         return [tuple(s) for s in segs]
+
     return detect, signals
 
 
@@ -169,13 +151,16 @@ def _():
 def _(VIDEOS, detect, series, signals):
     sig = {}
     detections = {}
+    episode_labels = {}
     for _v in VIDEOS:
         _s = series[_v]
         sig[("original", _v)] = signals(_s["dist_raw"], _s["rate_raw"])
         sig[("refined", _v)] = signals(_s["dist_clean"], _s["rate_clean"])
         detections[("original", _v)] = detect(*sig[("original", _v)])
         detections[("refined", _v)] = detect(*sig[("refined", _v)], keep_turns=0.4, merge_s=3)
-    return detections, sig
+        # Direction and circles per episode; episode_labels.py applies the same rules to any detector's intervals.
+        episode_labels[_v] = el.label_intervals(_s["dist_clean"], _s["rate_clean"], detections[("refined", _v)])
+    return detections, episode_labels, sig
 
 
 @app.cell
@@ -368,6 +353,8 @@ def _():
     * **Precision over the full videos is unknown.** Only a few minutes of each 10-hour video are labeled. Spot
       checks of detections outside the labels mostly showed real circling, but that needs a proper count.
     * **15 labeled events from 2 videos** is a small sample; treat the settings as provisional.
+    * **Direction and circles are per episode.** An episode that reverses direction gets the majority
+      direction, with circles counted both ways; it is not split in two.
     * **Frame-level only.** The detector says *when* circling happens, not *which* fish: track IDs break up in
       under a second and the sex label flips, so per-fish questions need track stitching first.
 
@@ -384,17 +371,20 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(LABELS, OUT_DIR, VIDEOS, detections):
+def _(LABELS, OUT_DIR, VIDEOS, detections, episode_labels):
     _tables = []
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for _v in VIDEOS:
         _rows = [{"VideoID": f"{_v}_vid", "EventID": f"{_v}-R{_i:03d}", "StartFrame": _s, "EndFrame": _e,
                   "start_s": round(_s / FPS, 2), "end_s": round(_e / FPS, 2),
-                  "duration_s": round((_e - _s + 1) / FPS, 2), "detector_name": "rule_v2",
+                  "duration_s": round((_e - _s + 1) / FPS, 2), "Direction": _d, "Cycles": round(_c, 2),
+                  "detector_name": "rule_v2",
                   "overlaps_label": any(not (_e < a or _s > b) for a, b in LABELS[_v])}
-                 for _i, (_s, _e) in enumerate(detections[("refined", _v)], start=1)]
+                 for _i, ((_s, _e), (_d, _c)) in enumerate(zip(detections[("refined", _v)], episode_labels[_v]),
+                                                           start=1)]
         _table = pd.DataFrame(_rows, columns=["VideoID", "EventID", "StartFrame", "EndFrame", "start_s", "end_s",
-                                              "duration_s", "detector_name", "overlaps_label"])
+                                              "duration_s", "Direction", "Cycles", "detector_name",
+                                              "overlaps_label"])
         _table.to_csv(OUT_DIR / f"{_v}_vid.csv", index=False)
         _tables.append(_table)
     _export = pd.concat(_tables, ignore_index=True)

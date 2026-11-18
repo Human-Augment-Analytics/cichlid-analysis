@@ -21,13 +21,16 @@ from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read
                                  read_predictions, summary_view)
 
 gt = read_intervals(GROUND_TRUTH)
+gt_labels = read_ground_truth_labels()  # direction and cycles of annotated events
 for name, folder in prediction_models().items():  # e.g. {'rule_based': Path(...)}
-    results, warnings = evaluate(gt, read_predictions(folder))
+    results, warnings = evaluate(gt, read_predictions(folder, labels=True), gt_labels=gt_labels)
     summary_view(results, warnings)
 ```
 
-`predicted` has `video_id`, `start` and `end` columns. `evaluate` also takes an
-optional `num_frames` mapping of video ID to frame count.
+`predicted` has `video_id`, `start` and `end` columns, plus `direction` and
+`cycles` with `labels=True`. `evaluate` also takes an optional `num_frames`
+mapping of video ID to frame count; direction and cycle metrics are only added
+when `gt_labels` is given.
 
 ## Input format
 
@@ -35,21 +38,30 @@ Each model writes one file per video to `outputs/predictions/<model_name>/<video
 Write a file for every video, even if it only has the header row. Files are CSV
 with a video ID column plus start/end frame columns, e.g. `VideoID`, `StartFrame`,
 `EndFrame` (header case, spaces and punctuation are ignored, so `Video ID` and
-`Start Frame` also work). Other columns are ignored by the standard metrics and
-every row is used, so ground truth must contain only valid circling events.
-ActionFormer additionally writes `Confidence`; `tal_report.py` uses that native
-score for mAP@IoU ranking. Frame ranges are zero-based and inclusive.
+`Start Frame` also work). Optionally add a `Direction` column (`CW` or `CCW`)
+and a `Cycles` column (number of circles, may be fractional) to be scored on
+those too. Other columns are ignored and every row
+is used, so ground truth must contain only valid circling events. Frame ranges
+are zero-based and inclusive.
+
+A model that only finds intervals can borrow the rule-based direction and cycle
+count: `uv run python -m models.rule_based.episode_labels outputs/predictions/<model>`
+writes a copy with `Direction` and `Cycles` to `outputs/predictions/<model>_rule_labels/`,
+which is then evaluated as its own model.
 
 ## Metrics
 
 - **MoF**: fraction of all frames (circling and background) labelled correctly.
   It needs each video's total frame count, which comes from `num_frames`, else
-  `data/<video>.mp4`, else the last frame in any interval + 1 (with a warning).
+  `VIDEO_FRAMES`, else `data/<video>.mp4`, else the last frame in any interval + 1 (with a warning).
 - **Edit score**: `100 × (1 − Levenshtein / max segments)` over the ordered
   circling/background segment sequence, so it ignores exact timing. The overall
   figure is the average across videos.
 - **Frame precision / recall / F1**: for the circling class, pooled across videos
   for the overall figure.
+- **Frame IoU**: `|A ∩ B| / |A ∪ B|`, where A is all frames predicted as circling
+  in a video and B is all frames annotated as circling, so it is `TP / (TP + FP + FN)`
+  over frames. The overall figure is the average across videos.
 - **IoU** (intersection over union) of a predicted segment P and a ground-truth
   segment G, both inclusive frame ranges:
 
@@ -76,24 +88,31 @@ score for mAP@IoU ranking. Frame ranges are zero-based and inclusive.
   True positives (`tp@τ`) and segment counts are pooled across videos for the
   overall figure.
 
-Predictions outside the evaluation set are ignored with a warning. When
-`num_frames` is supplied, its keys define that set; therefore an explicitly
-selected negative-only video is retained and any predicted frames count as
-false positives. `python -m evaluation.evaluate_models` prints family metrics by
-default and writes overall, per-video, held-out, and 60 s window tables to
-`outputs/figures/family_metrics_*.csv`. Raw per-model audit tables are written to
-`outputs/figures/details/model_metrics_*.csv`; `--details` additionally prints
-the raw overall and held-out variant tables.
+- **Direction precision / recall / F1**, for models with a `Direction` column.
+  Predicted and ground-truth segments are paired as in F1@10 (`LABEL_TAU`). For
+  each direction d, a predicted d segment paired with a ground-truth d segment is
+  a TP; any other predicted d segment is a FP (except one paired with a segment of
+  unknown direction, which is ignored); ground-truth d segments without a TP are
+  FNs. `direction_f1` is the mean of `cw_f1` and `ccw_f1`, so it also penalises
+  missed and spurious events; `direction_accuracy` is the fraction of paired
+  segments with the right direction, so it judges direction alone.
+- **Cycle MAE / RMSE / bias**, for models with a `Cycles` column: error
+  (predicted − annotated circles) over paired segments; bias > 0 means
+  over-counting. `gt_cycles` and `pred_cycles` are the totals per video. Errors are
+  pooled across videos for the overall figure.
 
-Family values are equal-weight arithmetic means over available model variants,
-calculated separately for each metric and video. They are descriptive summaries,
-not predictions from a family ensemble. The visual report writes complete
-versions to `outputs/figures/without_actionformer/` and
-`outputs/figures/with_actionformer/`, restricted to Rule-based, Deep learning
-(MS-TCN), XGBoost, and (in the second version) ActionFormer. In addition to the
-existing comparisons, each version contains `family_metric_profile.csv/.png`,
-which puts whole-video metrics and TAL mAP on a common percentage scale, and
-`family_video_distributions.png`, which shows per-video Frame F1 and F1@50 spread.
+Ground-truth direction and cycles come from the annotated events in
+`circling_annotations_vid*.csv`, since `merged_spans.csv` has neither. Each
+merged span takes the direction covering most of its frames and the circles of
+the events it overlaps, prorated by the fraction of each event inside it
+(`label_spans`). Predicted segments are labelled the same way when overlapping
+predictions are merged. The 8 merged spans with no annotated event are left out
+of these metrics, with a warning, and the 6 that overlap events of both
+directions take the majority one.
+
+Metrics for a label a model does not predict are NaN, with counts left empty.
+
+Predictions for videos without ground truth are ignored with a warning.
 
 ## Tests
 

@@ -1,3 +1,4 @@
+/.venv-viz
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -221,6 +222,8 @@ __marimo__/
 data/
 .DS_Store
 outputs/clips/
+/outputs/visualization/
+
 
 # Local pair-motion feature engineering artifacts
 outputs/pair_motion/
@@ -249,3 +252,15 @@ outputs/circling*
 model_performance_report_viz.py
 run.ps1
 evaluation/cross_check_postprocess.py
+
+# Regenerable XGBoost frame tables and notebook exports
+outputs/xgboost/*.parquet
+outputs/xgboost/scores/
+outputs/xgboost/*.html
+
+# Local-only assistant context
+PROJECT_CONTEXT.md
+
+# Leave-one-video-out experiment artifacts (regenerable)
+outputs/experiments/
+outputs/predictions/lovo_*/

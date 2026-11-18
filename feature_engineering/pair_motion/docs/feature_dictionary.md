@@ -78,8 +78,8 @@ tracking artifacts: they are flagged and replaced by NaN in the `_clean` columns
 
 ## Time-windowed features
 
-Columns are named `w<seconds>s_<statistic>` for 0.5, 1, 2, 4, 8 and 16 s
-(`w0p5s_`, `w1s_`, `w2s_`, `w4s_`, `w8s_`, `w16s_`). Windows are measured in frames, centered on the row by
+Columns are named `w<seconds>s_<statistic>` for 0.5, 1, 2 and 4 s (`w0p5s_`,
+`w1s_`, `w2s_`, `w4s_`). Windows are measured in frames, centered on the row by
 default (`trailing` is available for causal use), and stop at pair-episode and
 gap boundaries. Rows missing from a window count as "not close" in the fractions
 and are left out of the means.
@@ -87,8 +87,6 @@ and are left out of the means.
 | Statistic | Meaning |
 | --- | --- |
 | `close_frac` | Fraction of window frames with `proximity` true. |
-| `turn_support_frac` | At 4/8/16 s only: fraction of close frames with orbital and both heading rates at least 0.05 rad/s. |
-| `corotation_frac` | At 4/8/16 s only: fraction of close frames where both fish turn with the orbit. |
 | `mutual_facing_frac` | Fraction of window frames with `mutual_facing` true. |
 | `coverage` | Fraction of window frames that have a row for this pair. |
 | `distance_bl_mean`, `speed_mean_bl_s_mean`, `closing_speed_bl_s_mean`, `bend_abs_mean` | Window means over available rows. |

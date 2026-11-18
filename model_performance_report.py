@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.24.2"
 app = marimo.App(width="full")
 
 with app.setup(hide_code=True):
@@ -19,7 +19,6 @@ with app.setup(hide_code=True):
     from io import BytesIO
     from math import isfinite
     from pathlib import Path
-    from urllib.request import urlretrieve
 
     import cv2
     import imageio_ffmpeg
@@ -29,13 +28,12 @@ with app.setup(hide_code=True):
     from matplotlib.patches import Patch
     from matplotlib.ticker import StrMethodFormatter
 
-    from evaluation.evaluate import (GROUND_TRUTH, display_path, prediction_models, read_intervals,
-                                     summary_view)
-    from evaluation.evaluate_models import comparable_models, evaluate_models, heldout_metrics, window_report
-    from models.common.config import LABELS, VIDEOS, video_frames
+    from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_ground_truth_labels,
+                                     read_intervals, read_predictions, summary_view)
+    from evaluation.metrics import LABEL_TAU
     from models.logistic_regression.features import KEYPOINTS
-
-    VIDEO_FRAMES = video_frames()
+    from models.logistic_regression.train import VIDEO_FRAMES
+    from video_source import TABLE_URLS, VideoReader, download
 
     ROOT = Path(__file__).resolve().parent
     # data/ next to this notebook, else ../data; downloads go to ./data if neither exists
@@ -112,42 +110,51 @@ def _():
     to convert one segment sequence into another.
 
     $$\text{Edit Score} = \big ( 1 - \frac{e[|X|, |Y |]}{ max(|X|, |Y |) } \big ) \cdot 100 $$
+
+    ### Frame IoU
+    With $A$ the frames a model predicts as circling in a video and $B$ the frames annotated
+    as circling:
+
+    $$\text{IoU} = \frac{|A \cap B|}{|A \cup B|}$$
+
+    ### Circling direction
+    For models whose predictions have a `Direction` column (`CW` / `CCW`). Predicted
+    and ground-truth segments are paired as in F1@10. For each direction $d$, a
+    predicted $d$ segment paired with a ground-truth $d$ segment is a true positive;
+    any other predicted $d$ segment is a false positive, and ground-truth $d$ segments
+    without a true positive are false negatives:
+
+    $$P_d = \frac{TP_d}{TP_d + FP_d} \qquad R_d = \frac{TP_d}{TP_d + FN_d} \qquad
+      F1_d = \frac{2 P_d R_d}{P_d + R_d}$$
+
+    Direction F1 is the mean of $F1_{CW}$ and $F1_{CCW}$, so it also penalises missed and
+    spurious events. Direction accuracy is the fraction of paired segments with the
+    correct direction, so it judges direction alone.
+
+    ### Number of cycles
+    For models whose predictions have a `Cycles` column. With $e_i$ = predicted −
+    annotated circles for each of the $n$ paired segments:
+
+    $$\text{MAE} = \frac{1}{n}\sum |e_i| \qquad \text{RMSE} = \sqrt{\frac{1}{n}\sum e_i^2}
+      \qquad \text{bias} = \frac{1}{n}\sum e_i$$
+
+    Positive bias means over-counting. Total annotated and predicted cycles per video are
+    in the per-video table (`gt_cycles`, `pred_cycles`).
+
+    Ground-truth direction and circles come from `circling_annotations_vid*.csv`: each
+    merged span takes the direction covering most of its frames and the circles of the
+    annotated events it overlaps, prorated by overlap. Spans with no annotated event
+    are left out of these metrics.
     """)
     return
 
 
 @app.cell
 def _():
-    # Download the source videos (~31 GB each, for clip previews) and the pose and
-    # pair tables when missing.
-    _downloads = {
-        "0028_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AMkLWMbEcHxMGEXGPuxG1NI/0028_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=m42jq5db&dl=1",
-        "0031_vid.mp4": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ADCA61tJU9SWYSnh9DNWkkk/0031_vid.mp4?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=xmrzc3hs&dl=1",
-        "0028_vid.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AIzGAhjimK-vvUN1IRetNrI/0028_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=zd96dl6g&dl=1",
-        "0028_vid_pairs.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AL6msxoSPODIp3jfuXxWb6Q/0028_vid_pairs.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=nb7wminh&dl=1",
-        "0031_vid_pairs.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/AOLNU5Q-ydFtOxPr3Bppvss/0031_vid_pairs.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=pkqm83so&dl=1",
-        "0031_vid.parquet": "https://www.dropbox.com/scl/fo/zdkqd0n1tt6i9hf9wyta9/ACNtNV3xM1k06lXgc4zpB0o/0031_vid.parquet?rlkey=l0gupg6wkgdd0fq5dbycuqm8v&st=nox9c3q0&dl=1",
-    }
-
-    data_files = [download(_url, DATA_DIR / _filename) for _filename, _url in _downloads.items()]
+    # Download the pose and pair tables when missing; source videos are streamed for clip
+    # previews unless they are already in `data/`.
+    data_files = [download(_url, DATA_DIR / _filename) for _filename, _url in TABLE_URLS.items()]
     return
-
-
-@app.function(hide_code=True)
-def download(url, destination):
-    """Download to a .part file first so interrupted downloads are retried."""
-    if destination.exists():
-        return destination
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    partial = destination.with_suffix(destination.suffix + ".part")
-    print(f"Downloading {destination.name}...")
-    try:
-        urlretrieve(url, partial)
-        partial.replace(destination)
-    except Exception:
-        partial.unlink(missing_ok=True)
-        raise
-    return destination
 
 
 @app.cell(hide_code=True)
@@ -155,9 +162,10 @@ def _():
     models = comparable_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
     gt = read_intervals(GROUND_TRUTH)
-    evaluations, predictions = evaluate_models(gt, models)
-    mo.stop(not evaluations, mo.md(f"No predictions for the selected videos {VIDEOS}."))
-    models = {_name: models[_name] for _name in evaluations}
+    _gt_labels = read_ground_truth_labels()
+    predictions = {_name: read_predictions(_dir, labels=True) for _name, _dir in models.items()}
+    evaluations = {_name: evaluate(gt, _predicted, num_frames=VIDEO_FRAMES, gt_labels=_gt_labels)
+                   for _name, _predicted in predictions.items()}
     return evaluations, gt, models, predictions
 
 
@@ -166,14 +174,17 @@ def _(evaluations, predictions):
     _comparison = pl.DataFrame([
         {"model": _name, "predicted_spans": predictions[_name].height,
          **{_key: _overall[_key] for _key in ("mof", "edit_score", "f1@10", "f1@25", "f1@50",
-                                             "frame_precision", "frame_recall", "frame_f1")}}
+                                             "frame_precision", "frame_recall", "frame_f1",
+                                             "frame_iou", "direction_f1", "cw_f1", "ccw_f1",
+                                             "direction_accuracy", "cycle_mae", "cycle_rmse",
+                                             "cycle_bias")}}
         for _name, (_results, _) in evaluations.items()
         for _overall in [_results.row(-1, named=True)]
     ])
     mo.vstack([
-        mo.md(f"## Model comparison\n\nOverall metrics across the evaluated videos · training labels "
-              f"`{LABELS}` · ground truth "
-              f"`{display_path(GROUND_TRUTH)}`"),
+        mo.md(f"## Model comparison\n\nOverall metrics across both videos · ground truth "
+              f"`{GROUND_TRUTH.relative_to(ROOT)}`. Direction and cycle metrics pair segments at "
+              f"IoU ≥ {LABEL_TAU / 100} and are NaN for models that do not predict them."),
         mo.ui.table(_comparison, selection=None, pagination=False),
         mo.ui.tabs({_name: summary_view(_results, _warnings)
                     for _name, (_results, _warnings) in evaluations.items()}),
@@ -281,11 +292,11 @@ def _(clip_model, predictions):
     mo.stop(_predicted.is_empty(), mo.md("No predicted spans to preview."))
     _options = {
         f"{_video} · {_start:,}–{_end:,} · {(_end - _start + 1) / FPS:.1f} s": (_video, _start, _end)
-        for _video, _start, _end in _predicted.iter_rows()
+        for _video, _start, _end in _predicted.select("video_id", "start", "end").iter_rows()
     }
     clip_selection = mo.ui.dropdown(options=_options, value=next(iter(_options)),
                                     label="Predicted span", allow_select_none=False)
-    clip_padding = mo.ui.number(start=0, stop=30, step=1, value=1, label="Padding (s)")
+    clip_padding = mo.ui.number(start=0, stop=30, step=0.25, value=1, label="Padding (s)")
     mo.hstack([clip_selection, clip_padding], justify="start")
     return clip_padding, clip_selection
 
@@ -306,44 +317,36 @@ def render_clip(video_id, start, end, gt_spans, output_dir, padding=0, width=648
              .filter(pl.col("FrameNum").is_between(first, last)).collect())
     groups = poses.partition_by("FrameNum", as_dict=True)
     empty = poses.head(0)
-    capture = cv2.VideoCapture(str(DATA_DIR / f"{video_id}.mp4"))
-    if not capture.isOpened():
-        capture.release()
-        raise RuntimeError(f"Could not open {video_id}.mp4")
-    scale = width / capture.get(cv2.CAP_PROP_FRAME_WIDTH)
-    size = (width, round(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) * scale / 2) * 2)
-    bitrate = max(1000, min(250_000, int(12_000_000 / ((last - first + 1) / FPS))))
-    output_dir.mkdir(parents=True, exist_ok=True)
-    partial = output.with_suffix(".part.mp4")
-    writer = imageio_ffmpeg.write_frames(
-        str(partial), size, fps=FPS, pix_fmt_in="bgr24", codec="libx264",
-        quality=None, macro_block_size=1, ffmpeg_log_level="error",
-        output_params=["-preset", "fast", "-b:v", str(bitrate), "-maxrate", str(bitrate),
-                       "-bufsize", str(2 * bitrate), "-movflags", "+faststart"],
-    )
-    try:
-        writer.send(None)
-        capture.set(cv2.CAP_PROP_POS_FRAMES, first)
-        for frame_number in range(first, last + 1):
-            ok, frame = capture.read()
-            if not ok:
-                raise RuntimeError(f"Could not decode {video_id} frame {frame_number}")
-            frame = cv2.resize(frame, size, interpolation=cv2.INTER_AREA)
-            frame_poses = groups.get((frame_number,), empty)
-            overlay_poses(frame, frame_poses, scale)
-            labels = [(f"Frame {frame_number:,}", (40, 40, 40))]
-            if start <= frame_number <= end:
-                labels.append(("Predicted circling", (199, 84, 121)))
-            if any(s <= frame_number <= e for s, e in gt_spans):
-                labels.append(("Ground truth circling", (142, 155, 21)))
-            track_ids = sorted(frame_poses["TrackID"].drop_nulls().to_list())
-            writer.send(overlay_legend(frame, track_ids, labels))
-        writer.close()
-        partial.replace(output)
-    finally:
-        capture.release()
-        writer.close()
-        partial.unlink(missing_ok=True)
+    with VideoReader(DATA_DIR / f"{video_id}.mp4") as reader:
+        scale = width / reader.width
+        size = (width, round(reader.height * scale / 2) * 2)
+        bitrate = max(1000, min(250_000, int(12_000_000 / ((last - first + 1) / FPS))))
+        output_dir.mkdir(parents=True, exist_ok=True)
+        partial = output.with_suffix(".part.mp4")
+        writer = imageio_ffmpeg.write_frames(
+            str(partial), size, fps=FPS, pix_fmt_in="bgr24", codec="libx264",
+            quality=None, macro_block_size=1, ffmpeg_log_level="error",
+            output_params=["-preset", "fast", "-b:v", str(bitrate), "-maxrate", str(bitrate),
+                           "-bufsize", str(2 * bitrate), "-movflags", "+faststart"],
+        )
+        try:
+            writer.send(None)
+            for frame_number, frame in reader.frames(first, last):
+                frame = cv2.resize(frame, size, interpolation=cv2.INTER_AREA)
+                frame_poses = groups.get((frame_number,), empty)
+                overlay_poses(frame, frame_poses, scale)
+                labels = [(f"Frame {frame_number:,}", (40, 40, 40))]
+                if start <= frame_number <= end:
+                    labels.append(("Predicted circling", (199, 84, 121)))
+                if any(s <= frame_number <= e for s, e in gt_spans):
+                    labels.append(("Ground truth circling", (142, 155, 21)))
+                track_ids = sorted(frame_poses["TrackID"].drop_nulls().to_list())
+                writer.send(overlay_legend(frame, track_ids, labels))
+            writer.close()
+            partial.replace(output)
+        finally:
+            writer.close()
+            partial.unlink(missing_ok=True)
     return output
 
 

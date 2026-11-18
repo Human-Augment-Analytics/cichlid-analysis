@@ -5,14 +5,15 @@
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if needed, then run from the repository root:
 
 ```sh
-uv sync
+uv sync --locked
 ```
 
 `uv sync` installs the locked dependencies and the required Python version. Open the
 local URL printed by marimo to use the notebook. `model_performance_report.py` evaluates
-the committed predictions in `outputs/predictions/`. On first launch it downloads the source
-videos and the pose and pair Parquet files into `data/` for clip previews; the two videos are
-about 31 GB each, so allow time and disk space for the initial download.
+the committed predictions in `outputs/predictions/`. On first launch it downloads the pose and
+pair Parquet files into `data/` (about 260 MB per video). Clip previews stream only the frames
+they need from the source videos (about 13 s to start, then cached in `outputs/clips/`); a video
+already in `data/` is used instead. Scripts that scan whole videos still need local copies.
 
 ```sh
 uv run marimo edit model_performance_report.py
@@ -32,10 +33,15 @@ VSCode with the Marimo extension, just like Jupyter.
   documentation, checked-in sample data, and ignored generated outputs.
 - `tests/`: regression tests for the model feature, span and evaluation functions.
 - `evaluation/`: library for action segmentation evaluation
+- `experiments/shared_features/`: leave-one-video-out comparison of feature sets and
+  learners on the shared pair-motion features (additive; the `models/` detectors are
+  unchanged). See [experiments/README.md](experiments/README.md).
 - `models/logistic_regression/`: frame-level logistic regression: features, training,
   per-frame scoring and post-processing into sustained spans.
 - `models/rule_based/`: rule-based detector (closest-pair distance plus rotation) and the
   data-cleaning rules and notebook it relies on.
+- `models/xgboost/`: marimo training notebook using centered 121-frame windows of
+  the cleaned rule-based distance and rotation features, with 70/30 holdout and full-video evaluation.
 - `model_performance_report.py`: evaluation metrics for every model in `outputs/predictions/`,
   using the functions from `evaluation/evaluate.py`, plus pose-overlay clip previews of
   predicted spans.
@@ -71,11 +77,25 @@ uv run marimo edit models/rule_based/data_cleaning.py  # tracking artifacts remo
 Running the detector (`uv run python models/rule_based/detector.py`, or opening it in
 marimo) writes its episodes to `outputs/predictions/rule_based/`.
 
+### XGBoost
+
+```sh
+uv run marimo edit models/xgboost/notebook.py
+```
+
+The notebook samples all positive centers plus nearby negative frames, trains on
+70% of the sampled rows, evaluates the 30% holdout, and scores both full videos.
+It writes artifacts to `outputs/xgboost/` and standard prediction CSVs to
+`outputs/predictions/xgboost/`. On macOS, run `brew install libomp` first.
+See [models/xgboost/README.md](models/xgboost/README.md) for feature and evaluation details.
+
 ### Pair-motion feature pipeline
 
-`feature_engineering/pair_motion/` creates a frame-level pair table for distance,
-orientation, and speed. It expects the four validated pose parquets in `data/`;
-they are local inputs and are not committed.
+`feature_engineering/pair_motion/` creates a frame-level pair table. It covers
+body-length-normalized distance, facing, speed and closing rate, angular movement
+(orbital and heading rates, corotation), and 0.5, 1, 2 and 4 s window summaries
+(close fraction, orbit turns, mean distance). It expects the four validated pose
+parquets in `data/`; they are local inputs and are not committed.
 
 ```sh
 uv run python -m feature_engineering.pair_motion.build_features --data-dir data
@@ -84,12 +104,18 @@ uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
 quality checks, parameters, and a small committed sample are kept alongside the
 pipeline. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+Nothing in `models/` imports these features; any model can read the parquet and use
+the columns it wants (`feature_groups.py` lists them by group).
 
-### MST-CN + DINOv2
-Same labels, sampling, split and span post-processing as the logistic regression but includes embeddings
+### Shared-feature experiments
+
+`experiments/shared_features/` scores these features, and the existing models' feature
+sets, with leave-one-video-out validation (each video held out once) using the
+same `evaluation/` metrics and the same `outputs/predictions/<name>/` format.
 
 ```sh
-uv  run python -m models.mstcn_dlc2action.train
-uv run python -m models.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
-
+uv run python -m experiments.shared_features.dataset --data-dir ~/Downloads
+uv run python -m experiments.shared_features.lovo --variants all
 ```
+
+See [experiments/README.md](experiments/README.md) for the protocol, variants and results.

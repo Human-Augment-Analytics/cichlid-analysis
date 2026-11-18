@@ -22,9 +22,7 @@ import pandas as pd
 FPS = 30.0
 ANGULAR_RATE_MAX_RAD_S = 15.0
 BODY_LENGTH_RATIO_RANGE = (0.5, 2.0)
-WINDOW_SECONDS = (0.5, 1.0, 2.0, 4.0, 8.0, 16.0)
-PERSISTENCE_WINDOWS = (4.0, 8.0, 16.0)
-TURN_RATE_MIN_RAD_S = 0.05
+WINDOW_SECONDS = (0.5, 1.0, 2.0, 4.0)
 WINDOW_DIRECTION = "centered"
 _FRAME_STRIDE = 1 << 24  # larger than any frame number, keeps segments apart
 
@@ -33,8 +31,6 @@ PARAMETERS = {
     "angular_rate_rule": "abs(rate) > max is flagged and set to NaN in *_clean columns",
     "body_length_ratio_range": list(BODY_LENGTH_RATIO_RANGE),
     "body_length_rule": "either body length outside range x the video median (or not positive) is flagged",
-    "turn_rate_min_rad_s": TURN_RATE_MIN_RAD_S,
-    "persistence_windows": list(PERSISTENCE_WINDOWS),
     "window_seconds": list(WINDOW_SECONDS),
     "window_direction": WINDOW_DIRECTION,
     "window_unit": "frames; windows stop at smooth-segment boundaries",
@@ -72,8 +68,6 @@ ANGULAR_COLUMNS = [
 # name -> description, one entry per windowed statistic
 WINDOW_STATS = {
     "close_frac": "fraction of window frames with the pair within the proximity cutoff",
-    "turn_support_frac": "fraction of frames that are close and have sustained orbit plus both heading rates >= 0.05 rad/s",
-    "corotation_frac": "fraction of close frames where both fish turn with the orbit",
     "mutual_facing_frac": "fraction of window frames with both fish facing each other",
     "coverage": "fraction of window frames that have a pair row",
     "distance_bl_mean": "mean centroid distance in body lengths",
@@ -94,8 +88,7 @@ def window_label(seconds: float) -> str:
 
 
 def window_columns(window_seconds=WINDOW_SECONDS) -> list[str]:
-    return [f"{window_label(s)}_{stat}" for s in window_seconds for stat in WINDOW_STATS
-            if stat not in ('turn_support_frac', 'corotation_frac') or s in PERSISTENCE_WINDOWS]
+    return [f"{window_label(s)}_{stat}" for s in window_seconds for stat in WINDOW_STATS]
 
 
 def wrap_rad(values: np.ndarray) -> np.ndarray:
@@ -224,11 +217,6 @@ def add_window_features(
     orbit_rate = frame["d_orbital_rad_s_clean"].to_numpy(dtype=float)
     step = frame["orbital_step_rad"].to_numpy(dtype=float)
     corotation = frame["corotation"].to_numpy(dtype=float)
-    heading_1 = np.abs(frame["d_heading_1_rad_s_clean"].to_numpy(dtype=float))
-    heading_2 = np.abs(frame["d_heading_2_rad_s_clean"].to_numpy(dtype=float))
-    turn_support = (close & (orbit_abs >= TURN_RATE_MIN_RAD_S)
-                    & (heading_1 >= TURN_RATE_MIN_RAD_S) & (heading_2 >= TURN_RATE_MIN_RAD_S))
-    corotating = close & np.isfinite(corotation) & (corotation >= 0.999)
 
     series = {
         "distance": frame["centroid_distance_bl"].to_numpy(dtype=float),
@@ -249,11 +237,6 @@ def add_window_features(
 
         close_sum, _ = _window_sum(close.astype(float), everything, low, high)
         col("close_frac", close_sum / span)
-        if seconds in PERSISTENCE_WINDOWS:
-            support_sum, _ = _window_sum(turn_support.astype(float), everything, low, high)
-            col("turn_support_frac", support_sum / span)
-            corotation_sum, _ = _window_sum(corotating.astype(float), everything, low, high)
-            col("corotation_frac", corotation_sum / span)
         mutual_sum, _ = _window_sum(mutual.astype(float), everything, low, high)
         col("mutual_facing_frac", mutual_sum / span)
         count = (high - low).astype(float)
