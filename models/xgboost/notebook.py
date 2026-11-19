@@ -33,7 +33,7 @@ def _():
 
     Each row is a **{WINDOW}-frame sliding window**, from center −{HALF_WINDOW} to center +{HALF_WINDOW}.
     The label is whether the **center (median) frame** belongs to a usable positive
-    interval in `ground_truth_annotations/finalized_annotations/merged_spans.csv`.
+    interval in the finalized `circling_annotations_vid*.csv` files.
 
     The inputs match `models/rule_based/detector.py`: remove reflections, duplicate
     fish and keypoint jumps, then pick the closest retained pair in each frame.

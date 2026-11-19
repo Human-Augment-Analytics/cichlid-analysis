@@ -52,7 +52,11 @@ No model is trained or run by the viewer. Streaming a saved Dropbox video is not
 | Shared pair feature Parquet | Additional team-feature graph | Optional |
 | Cleaned individual pose Parquet | Inspect cleaned overlays | Optional |
 
-The default human reference is `ground_truth_annotations/finalized_annotations/merged_spans.csv`. No research video, Parquet or model artifacts are included in this download. Merge main for its committed outputs; obtain branch-specific or ignored outputs from the producing teammate or run their pipeline separately.
+Human references are the finalized
+`ground_truth_annotations/finalized_annotations/circling_annotations_vid*.csv`
+files. No research video, Parquet or model artifacts are included in this
+download. Merge main for its committed outputs; obtain branch-specific or
+ignored outputs from the producing teammate or run their pipeline separately.
 
 ## Daily use
 
