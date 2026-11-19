@@ -27,8 +27,8 @@ VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Behavior,Rotation direct
 0028_vid,0028_vid_evt_0025,03:38:22,03:38:27,393060,393210,Circling,CCW,1,Bower region,,
 0028_vid,0028_vid_evt_0026,03:38:36,03:38:49,393480,393870,Circling,CW,4,Bower region,,
 0028_vid,0028_vid_evt_0027,03:39:05,03:39:20,394350,394800,Circling,CCW,5,Bower region,,
-0028_vid,0028_vid_evt_0028,03:39:33,03:39:42,395190,397290,Circling,CCW,3.5,Bower region,Direction CCW --> CW --> CCW,Should be broken up into 3 distinct events
-0028_vid,0028_vid_evt_0029,03:39:44,03:40:03,395520,396090,Circling,CW,6,Bower region,,
+0028_vid,0028_vid_evt_0028,03:39:33,03:39:42,395190,395460,Circling,CCW,3.5,Bower region,Direction CCW --> CW --> CCW,Should be broken up into 3 distinct events
+0028_vid,0028_vid_evt_0029,03:39:44,03:40:03,395520,396090,Circling,CCW,6,Bower region,,
 0028_vid,0028_vid_evt_0030,03:46:05,03:46:10,406950,407100,Circling,CCW,1,Bower region,,
 0028_vid,0028_vid_evt_0031,03:46:37,03:46:49,407910,408270,Circling,CCW,4,Bower region,,
 0028_vid,0028_vid_evt_0032,03:52:24,03:52:27,418320,418410,Circling,CW,1,Bower region,,
