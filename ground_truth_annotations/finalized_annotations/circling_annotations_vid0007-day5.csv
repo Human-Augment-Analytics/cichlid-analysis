@@ -22,7 +22,7 @@ vid5-v07_d05,vid5-v07_d05_evt_0020,00:30:27,00:30:36,54808,55066,Circling,CCW,1.
 vid5-v07_d05,vid5-v07_d05_evt_0021,00:31:17,00:31:30,56323,56710,Circling,CW,3,Bower,,,
 vid5-v07_d05,vid5-v07_d05_evt_0022,00:31:53,00:32:14,57377,58033,Circling,CCW,5.5,Bower,,,
 vid5-v07_d05,vid5-v07_d05_evt_0023,00:32:42,00:32:51,58855,59132,Circling,CCW,1.5,Bower,,Female fish did a spin during the circle,
-vid5-v07_d05,vid5-v07_d05_evt_0024,00:32:59,00:33:06,59357,59575,Circling,CCW,2,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0024,00:32:59,00:33:06,59357,59575,Circling,CW,2,Bower,,,
 vid5-v07_d05,vid5-v07_d05_evt_0025,00:33:32,00:33:51,60373,60944,Circling,CCW,3.5,Bower,,Female fish did some spins on its own,Even the male fish almost broke off before completing the first turn
 vid5-v07_d05,vid5-v07_d05_evt_0026,00:34:05,00:34:13,61358,61578,Circling,CCW,1.5,Bower,,,
 vid5-v07_d05,vid5-v07_d05_evt_0027,00:42:06,00:42:39,75783,76779,Circling,CW,7.5,Bower,,,
@@ -40,7 +40,7 @@ vid5-v07_d05,vid5-v07_d05_evt_0038,01:05:38,01:05:47,118148,118396,Circling,CCW,
 vid5-v07_d05,vid5-v07_d05_evt_0039,01:05:51,01:06:01,118532,118843,Circling,CW,2,Bower,,,"Starts from 01:05:51, I guess. Frame nos. would also change"
 vid5-v07_d05,vid5-v07_d05_evt_0040,01:08:11,01:08:20,122723,122995,Circling,CW,1.5,Bower,,,1.5 turns; Also starts from 1 second earlier; 2nd turn not completed fully
 vid5-v07_d05,vid5-v07_d05_evt_0041,01:09:04,01:09:10,124306,124502,Circling,CCW,1,Bower,,,consider it circling
-vid5-v07_d05,vid5-v07_d05_evt_0042,01:09:48,01:09:24,125647,124930,Circling,CCW,1.5,Bower,,,
+vid5-v07_d05,vid5-v07_d05_evt_0042,01:09:15,01:09:24,124647,124930,Circling,CCW,1.5,Bower,,,
 vid5-v07_d05,vid5-v07_d05_evt_0043,01:09:51,01:10:11,125738,126321,Circling,CW,3,Bower,,,"Should start from 01:09:51; That makes it 3 turns; Change starting frame number accordingly; From 48 secs - 51 secs, the fish is far away from being close and in the preferred orientation"
 vid5-v07_d05,vid5-v07_d05_evt_0044,01:10:18,01:10:34,126544,127014,Circling,CW,2.5,Bower,,,
 vid5-v07_d05,vid5-v07_d05_evt_0045,01:17:27,01:18:53,139408,141978,Circling,CW,18.5,Bower,,,
