@@ -264,3 +264,18 @@ PROJECT_CONTEXT.md
 # Leave-one-video-out experiment artifacts (regenerable)
 outputs/experiments/
 outputs/predictions/lovo_*/
+
+# Local ActionFormer experiment artifacts
+/outputs/experiment_backups/
+/outputs/overnight_backup/
+
+# Local annotated training data
+/experiments/actionformer/data/
+
+# Temporary dependency lockfile backups
+/uv.lock.backup
+/uv.lock.broken
+/uv.lock.old
+
+# Local research archives
+/cichlid_multirecording_update.zip
