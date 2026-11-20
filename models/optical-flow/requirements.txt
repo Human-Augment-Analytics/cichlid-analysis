@@ -1,0 +1,13 @@
+# Python dependencies for the optical-flow circling detector
+# (tested on Python 3.11)
+
+opencv-python>=4.5
+numpy>=1.22
+pandas>=1.5
+scipy>=1.8
+matplotlib>=3.5
+pyarrow>=10.0        # parquet I/O
+jupyter>=1.0         # for direction_eval.ipynb
+
+# System-level (not installable via pip):
+#   ffmpeg >= 4.0   (used by cv2.VideoCapture for mp4 decoding)

@@ -30,7 +30,7 @@ VideoID,EventID,StartTime,EndTime,Start Frame,End Frame,Primary label/behavior,R
 0037_vid,vid8-v0037_evt_0029,03:28:11,03:28:47,374733,375816,Circling,CCW,6,bower,,,
 0037_vid,vid8-v0037_evt_0030,03:29:41,03:30:21,377419,378618,Circling,CCW,7,bower,,,
 0037_vid,vid8-v0037_evt_0031,03:34:18,03:35:04,385751,387117,Circling,CW,10,bower,,,
-0037_vid,vid8-v0037_evt_0032,03:35:18,03:35:24,387546,387725,Circling,CW,1,bower,,,
+0037_vid,vid8-v0037_evt_0032,03:35:18,03:35:24,387546,387725,Circling,CCW,1,bower,,,
 0037_vid,vid8-v0037_evt_0033,03:35:49,03:36:30,388483,389696,Circling,CCW,7,bower,,,
 0037_vid,vid8-v0037_evt_0034,03:38:21,03:39:00,393032,394186,Circling,CCW,7,bower,,,
 0037_vid,vid8-v0037_evt_0035,03:39:00,03:39:30,394213,395098,Circling,CW,5,bower,,,
