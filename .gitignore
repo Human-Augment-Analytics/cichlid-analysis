@@ -249,8 +249,6 @@ outputs/frame_features/*
 outputs/runs
 outputs/circling*
 
-model_performance_report_viz.py
-run.ps1
 evaluation/cross_check_postprocess.py
 
 # Regenerable XGBoost frame tables and notebook exports
@@ -264,3 +262,6 @@ PROJECT_CONTEXT.md
 # Leave-one-video-out experiment artifacts (regenerable)
 outputs/experiments/
 outputs/predictions/lovo_*/
+
+# Combined from the per-video finalized annotations by models/common/config.py
+outputs/ground_truth_spans.csv

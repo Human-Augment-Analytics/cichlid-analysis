@@ -4,11 +4,11 @@ from pathlib import Path
 
 import polars as pl
 
-from evaluation.evaluate import GROUND_TRUTH, evaluate, prediction_models, read_intervals, read_predictions
+from evaluation.evaluate import evaluate, prediction_models, read_intervals, read_predictions
 from evaluation.families import (family_evaluations, family_metric_table, family_summary_table,
                                  selected_predictions)
 from evaluation.windows import window_metrics
-from models.common.config import BASELINE, BASELINE_SUFFIX, LABELS, OUTPUTS, VIDEOS, video_frames
+from models.common.config import BASELINE, BASELINE_SUFFIX, GROUND_TRUTH, LABELS, OUTPUTS, VIDEOS, video_frames
 
 METRICS_DIRS = {'logistic_regression': 'circling_baseline', 'rule_based': None}
 BASELINE_MODELS = ('logistic_regression', 'rule_based')
@@ -41,7 +41,8 @@ def evaluate_models(gt=None, models=None, videos=None):
             continue
         truth = gt.filter(pl.col('video_id').is_in(covered))
         predicted = read_predictions(folder).filter(pl.col('video_id').is_in(covered))
-        results, warnings = evaluate(truth, predicted, num_frames={v: frames[v] for v in covered})
+        results, warnings = evaluate(truth, predicted, num_frames={v: frames[v] for v in covered},
+                                     videos=covered)
         missing = sorted(set(videos) - set(covered))
         if missing:
             warnings = [*warnings, f'No predictions for {missing}: evaluated on {covered} only']

@@ -6,10 +6,10 @@ import joblib
 import numpy as np
 import polars as pl
 
-from evaluation.evaluate import GROUND_TRUTH, read_intervals, read_predictions
+from evaluation.evaluate import read_intervals, read_predictions
 from evaluation.evaluate_models import comparable_models, model_videos
 from evaluation.metrics import iou, merge
-from models.common.config import OUTPUTS, VIDEOS, model_name, mstcn_workdir, video_frames
+from models.common.config import GROUND_TRUTH, OUTPUTS, VIDEOS, model_name, mstcn_workdir, video_frames
 from models.common.predict import merge_spans
 from models.logistic_regression.postprocess import find_positive_spans
 from models.logistic_regression.predict import FPS

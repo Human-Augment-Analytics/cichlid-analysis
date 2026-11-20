@@ -9,7 +9,8 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
-from evaluation.evaluate import GROUND_TRUTH, evaluate, read_intervals, read_predictions
+from evaluation.evaluate import evaluate, read_intervals, read_predictions
+from models.common.config import GROUND_TRUTH
 from models.logistic_regression.postprocess import find_positive_spans
 from models.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, VIDEO_FRAMES
 from models.mstcn_dlc2action import predict as mstcn_predict
@@ -119,7 +120,7 @@ class PredictTest(unittest.TestCase):
                 self.assertEqual(got['StartFrame'].to_list(), expected['start_frame'].to_list())
                 self.assertEqual(got['EndFrame'].to_list(), expected['end_frame'].to_list())
             results, _ = evaluate(read_intervals(GROUND_TRUTH), read_predictions(out / 'predictions' / 'm'),
-                                  num_frames=VIDEO_FRAMES)
+                                  num_frames=VIDEO_FRAMES, videos=list(VIDEO_FRAMES))
             self.assertEqual(results['video_id'].to_list(), ['0028_vid', '0031_vid', 'overall'])
 
 

@@ -7,14 +7,14 @@ authors = [
     { name = "Ding YuChen", email = "hi@ding.gg" },
     { name = "Rijan Ghimire", email = "work@rijan.dev" }
 ]
-requires-python = "==3.11.6"
+requires-python = ">=3.13"
 dependencies = [
     "altair",
     "imageio-ffmpeg>=0.6.0",
     "joblib>=1.6.0",
     "marimo>=0.25.1",
     "matplotlib>=3.11.2",
-    "numpy<=2.5.2",
+    "numpy>=2.5.2",
     "opencv-python>=5.0.0.93",
     "opencv-python-headless",
     "pandas>=2.2",
@@ -24,7 +24,7 @@ dependencies = [
     "tqdm>=4.65.0",
     "dlc2action>=1.0",
     "python-dotenv>=1.0.0",
-    "xgboost>=3.2.0",
+    "torch",
     "transformers>=5.22.2",
     "xgboost>=3.2,<4",
 ]
