@@ -8,8 +8,28 @@ import polars as pl
 
 from models.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, ROOT, VIDEO_FRAMES as KNOWN_VIDEO_FRAMES
 
-GROUND_TRUTH = os.environ.get('CIRCLING_GROUND_TRUTH') or str(
-    ROOT / 'ground_truth_annotations' / 'finalized_annotations' / 'merged_spans.csv')
+GROUND_TRUTH_SPANS = ROOT / 'outputs' / 'ground_truth_spans.csv'
+
+
+def write_ground_truth_spans(path=GROUND_TRUTH_SPANS):
+    """One VideoID/StartFrame/EndFrame CSV of the finalized circling annotations.
+
+    The finalized annotations are one CSV per video; the training and preflight code
+    take a single file, so they are combined here (rewritten only when they change).
+    """
+    from evaluation.evaluate import read_ground_truth
+
+    spans = (read_ground_truth().sort('video_id', 'start', 'end')
+             .rename({'video_id': 'VideoID', 'start': 'StartFrame', 'end': 'EndFrame'}))
+    path = Path(path)
+    text = spans.write_csv()
+    if not path.is_file() or path.read_text() != text:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    return str(path)
+
+
+GROUND_TRUTH = os.environ.get('CIRCLING_GROUND_TRUTH') or write_ground_truth_spans()
 LABELS = (os.environ.get('CIRCLING_LABELS') or 'ground_truth').strip().lower()
 if LABELS not in ('ground_truth', 'baseline'):
     raise SystemExit(f'CIRCLING_LABELS must be ground_truth or baseline, not {LABELS!r}')

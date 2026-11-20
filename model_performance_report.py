@@ -28,8 +28,10 @@ with app.setup(hide_code=True):
     from matplotlib.patches import Patch
     from matplotlib.ticker import StrMethodFormatter
 
-    from evaluation.evaluate import (GROUND_TRUTH, evaluate, prediction_models, read_ground_truth_labels,
-                                     read_intervals, read_predictions, summary_view)
+    from evaluation.evaluate import (ANNOTATION_DIR, evaluate, prediction_models, prediction_video_ids,
+                                     read_ground_truth, read_ground_truth_labels, read_predictions,
+                                     summary_view)
+    from evaluation.evaluate_models import comparable_models, heldout_metrics, window_report
     from evaluation.metrics import LABEL_TAU
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES
@@ -83,7 +85,8 @@ def _():
     `run.ps1` trains and predicts all of them in order. Every predict command takes
     `[--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]`.
 
-    The ground truth is `CIRCLING_GROUND_TRUTH` (default `merged_spans.csv`) and the videos are
+    Training labels are `CIRCLING_GROUND_TRUTH` (default: the finalized per-video annotations,
+    combined into `outputs/ground_truth_spans.csv`) and the videos are
     `CIRCLING_VIDEOS` (default `0028_vid,0031_vid`). Each model is scored on the selected videos it
     has prediction files for. The logistic regression and the rule-based detector cover 0028 and 0031 only.
 
@@ -93,7 +96,7 @@ def _():
     With `CIRCLING_LABELS=baseline` (`run.ps1 -Labels baseline`) the added models train on the logistic
     regression's 15 hard-coded spans on 0028/0031, are named `<model>_15spans`, and this report shows only
     them next to `logistic_regression` and `rule_based`. Otherwise it shows every model except the
-    `_15spans` ones. Evaluation is always against `CIRCLING_GROUND_TRUTH`.
+    `_15spans` ones. Evaluation is always against the finalized annotations.
 
     The whole-video numbers include training frames for every learned model, and the rule-based
     detector was tuned on video 0031, so none of them is a fully held-out evaluation. Held-out numbers
@@ -161,11 +164,14 @@ def _():
 def _():
     models = comparable_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
-    gt = read_intervals(GROUND_TRUTH)
+    gt = read_ground_truth()
     _gt_labels = read_ground_truth_labels()
-    predictions = {_name: read_predictions(_dir, labels=True) for _name, _dir in models.items()}
-    evaluations = {_name: evaluate(gt, _predicted, num_frames=VIDEO_FRAMES, gt_labels=_gt_labels)
-                   for _name, _predicted in predictions.items()}
+    predictions = {_name: read_predictions(_dir, labels=True, scores=True) for _name, _dir in models.items()}
+    evaluations = {
+        _name: evaluate(gt, _predicted, num_frames=VIDEO_FRAMES, gt_labels=_gt_labels,
+                        videos=prediction_video_ids(models[_name]))
+        for _name, _predicted in predictions.items()
+    }
     return evaluations, gt, models, predictions
 
 
@@ -173,18 +179,24 @@ def _():
 def _(evaluations, predictions):
     _comparison = pl.DataFrame([
         {"model": _name, "predicted_spans": predictions[_name].height,
-         **{_key: _overall[_key] for _key in ("mof", "edit_score", "f1@10", "f1@25", "f1@50",
-                                             "frame_precision", "frame_recall", "frame_f1",
-                                             "frame_iou", "direction_f1", "cw_f1", "ccw_f1",
-                                             "direction_accuracy", "cycle_mae", "cycle_rmse",
-                                             "cycle_bias")}}
+         **{_key: _overall.get(_key) for _key in (
+             "mof", "edit_score", "f1@10", "f1@25", "f1@50", "map@10", "map@30",
+             "map@50", "map@70", "map_avg", "frame_precision", "frame_recall",
+             "frame_f1", "frame_iou", "direction_f1", "cw_f1", "ccw_f1",
+             "direction_accuracy", "cycle_mae", "cycle_rmse", "cycle_bias",
+             "strict_attribute_direction_accuracy",
+             "strict_attribute_direction_balanced_accuracy",
+             "strict_attribute_cycle_mae", "strict_attribute_cycle_wape",
+             "strict_attribute_cycle_within_1")}}
         for _name, (_results, _) in evaluations.items()
         for _overall in [_results.row(-1, named=True)]
     ])
     mo.vstack([
         mo.md(f"## Model comparison\n\nOverall metrics across both videos · ground truth "
-              f"`{GROUND_TRUTH.relative_to(ROOT)}`. Direction and cycle metrics pair segments at "
-              f"IoU ≥ {LABEL_TAU / 100} and are NaN for models that do not predict them."),
+              f"`{ANNOTATION_DIR.relative_to(ROOT)}/circling_annotations_vid*.csv`. "
+              "Direction and cycle metrics pair segments at "
+              f"IoU ≥ {LABEL_TAU / 100}; strict attribute columns use IoU ≥ 0.5. "
+              "mAP is shown only when predictions contain a finite Score."),
         mo.ui.table(_comparison, selection=None, pagination=False),
         mo.ui.tabs({_name: summary_view(_results, _warnings)
                     for _name, (_results, _warnings) in evaluations.items()}),
