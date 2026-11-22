@@ -53,8 +53,8 @@ def read_gt_csvs(annotation_dir: Path) -> dict[str, list[tuple[int, int]]]:
         elif "0007" in filename and ("day6" in filename or "day06" in filename):
             expected = "0007a_vid"
         else:
-            m = re.search(r"vid(\d{4})", filename)
-            expected = (m.group(1) + "_vid") if m else None
+            m = re.search(r"vid(\d{1,4})(?=\.csv$)", filename)
+            expected = (m.group(1).zfill(4) + "_vid") if m else None
             if expected == "0007_vid":
                 fail(f"Ambiguous 0007 annotations in {path.name}; filename must specify day5/day6")
         with path.open(newline="", encoding="utf-8-sig") as fh:
