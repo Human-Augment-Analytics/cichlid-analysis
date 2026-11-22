@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from models.rule_based.episode_labels import (FPS, label_intervals, label_predictions, label_table,
-                                              video_key)
+from models.rule_based.episode_labels import (FPS, label_interval_file, label_intervals,
+                                              label_predictions, label_table, video_key)
 
 
 
@@ -85,6 +85,15 @@ class LabelPredictionsTest(unittest.TestCase):
         self.assertEqual(len(pd.read_csv(out / "0028_vid.csv")), 0)
         with self.assertRaises(ValueError):
             label_predictions(self.model_dir, self.model_dir, data_dir=self.data_dir)
+
+    def test_writes_oracle_labels_from_multi_video_interval_file(self):
+        source = self.model_dir / "merged.csv"
+        pd.DataFrame({"VideoID": ["0031_vid"], "StartFrame": [0],
+                      "EndFrame": [2 * FPS - 1]}).to_csv(source, index=False)
+        output = self.model_dir / "oracle"
+        self.assertEqual(label_interval_file(source, output, self.data_dir), output)
+        labelled = pd.read_csv(output / "0031_vid.csv")
+        self.assertEqual(labelled[["Direction", "Cycles"]].values.tolist(), [["CCW", 2.0]])
 
 
 if __name__ == "__main__":

@@ -29,14 +29,32 @@ FEATURE_DESCRIPTION = (
 )
 VIDEO_FRAMES = {"0028_vid": 1_080_175, "0031_vid": 1_080_398}
 ROOT = Path(__file__).resolve().parents[2]
-GROUND_TRUTH = ROOT / "ground_truth_annotations/finalized_annotations/merged_spans.csv"
+GROUND_TRUTH = ROOT / "ground_truth_annotations/finalized_annotations"
 
 
 def read_spans(path=GROUND_TRUTH):
     """Read usable positive annotations, merging overlaps before sampling."""
     from evaluation.metrics import merge
 
-    table = pd.read_csv(path)
+    path = Path(path)
+    paths = sorted(path.glob("circling_annotations_vid*.csv")) if path.is_dir() else [path]
+    tables = []
+    for source in paths:
+        table = pd.read_csv(source)
+        columns = {column.lower().replace(" ", ""): column for column in table}
+        table = table.rename(columns={
+            columns.get("videoid", "VideoID"): "VideoID",
+            columns.get("startframe", "StartFrame"): "StartFrame",
+            columns.get("endframe", "EndFrame"): "EndFrame",
+        })
+        behavior = next((column for column in table if column.lower().replace(" ", "") in
+                         ("behavior", "primarylabel/behavior")), None)
+        if behavior:
+            table = table[table[behavior].astype(str).str.strip().str.lower() == "circling"]
+        tables.append(table)
+    if not tables:
+        raise FileNotFoundError(f"No circling annotation CSVs in {path}")
+    table = pd.concat(tables, ignore_index=True)
     for flag in ("Circling", "ShouldUse"):
         if flag in table:
             table = table[table[flag].astype(str).str.lower().isin(("true", "1"))]
