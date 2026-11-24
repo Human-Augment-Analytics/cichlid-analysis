@@ -51,19 +51,19 @@ def feature_chunk(workdir, video, feature, meta, frame_count, first, last):
     return table
 
 
-def decode_video(model, video, frame_count, columns, mean, std, workdir, features, meta, device):
+def decode_video(model, video, frame_count, columns, mean, std, workdir, features, meta, device, window=WINDOW):
     """Decode raw proposals over a complete video using fold-specific normalization."""
-    starts = window_starts(frame_count)
+    starts = window_starts(frame_count, window=window, stride=window // 2)
     decoded = []
     for chunk_start in range(0, len(starts), CHUNK_WINDOWS):
         chunk = starts[chunk_start:chunk_start + CHUNK_WINDOWS]
-        first, last = chunk[0], min(frame_count, chunk[-1] + WINDOW)
+        first, last = chunk[0], min(frame_count, chunk[-1] + window)
         table = feature_chunk(workdir, video, features, meta, frame_count, first, last)
         positions = {int(frame): i for i, frame in enumerate(table['FrameNum'].to_numpy())}
         array = table.select(columns).to_numpy().astype(np.float32)
         windows = []
         for start in chunk:
-            end = min(frame_count, start + WINDOW)
+            end = min(frame_count, start + window)
             values = normalize(array[[positions[frame] for frame in range(start, end)]], mean, std)
             windows.append((start, values))
         decoded.extend(infer_windows(model, windows, device, min_score=DECODE_MIN_SCORE))
@@ -112,7 +112,8 @@ def predict(features='pairmotion', min_score=None, min_seconds=None, merge_secon
     paths = []
     diagnostics = {}
     for video, count in frames.items():
-        decoded = decode_video(model, video, count, columns, mean, std, workdir, features, meta, device)
+        decoded = decode_video(model, video, count, columns, mean, std, workdir, features, meta, device,
+                               window=int(checkpoint.get("window", WINDOW)))
         pl.DataFrame({
             'start': [float(item[0][0]) for item in decoded],
             'end': [float(item[0][1]) for item in decoded],
@@ -140,7 +141,9 @@ def predict(features='pairmotion', min_score=None, min_seconds=None, merge_secon
         'settings': settings, 'decode_min_score': DECODE_MIN_SCORE, 'videos': diagnostics,
     }, indent=2) + '\n')
     (output_dir / 'inference.json').write_text(json.dumps({
-        'model': name, 'features': features, 'window_frames': WINDOW, 'window_stride': STRIDE,
+        'model': name, 'features': features,
+        'window_frames': int(checkpoint.get('window', WINDOW)),
+        'window_stride': int(checkpoint.get('window', WINDOW)) // 2,
         'min_score': min_score, 'min_seconds': min_seconds, 'merge_seconds': merge_seconds,
         'decode_min_score': DECODE_MIN_SCORE, 'diagnostics': diagnostics,
         'nms': 'Gaussian Soft-NMS within windows; class-agnostic hard NMS across windows (IoU 0.3)',

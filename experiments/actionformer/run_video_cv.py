@@ -24,6 +24,7 @@ import statistics
 import sys
 import time
 from pathlib import Path
+from functools import partial
 
 VIDEOS = ("0002_vid", "0007a_vid", "0007b_vid", "0013_vid",
           "0018_vid", "0028_vid", "0031_vid", "0037_vid")
@@ -256,6 +257,10 @@ def run():
     p.add_argument("--output", type=Path, default=Path("outputs/actionformer_video_cv"))
     p.add_argument("--epochs", type=int, default=60)
     p.add_argument("--batch-size", type=int, default=4)
+    p.add_argument("--window", type=int, choices=(256, 512, 1024), default=256,
+                   help="Temporal window in original video frames (30 FPS)")
+    p.add_argument("--max-proposals", type=int, default=1000,
+                   help="Maximum proposals after full-video cross-window NMS")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--device", type=str, default=None)
     p.add_argument("--dry-run", action="store_true", help="Check inputs, labels and print fold schedule")
@@ -263,8 +268,9 @@ def run():
     p.add_argument("--max-folds", type=int, help="Run at most this many incomplete folds (resume later)")
     p.add_argument("--final-test", action="store_true", help="After CV, fit all 7 dev videos, score untouched holdout once")
     args = p.parse_args()
-    if args.epochs < 1 or args.batch_size < 1 or (args.max_folds is not None and args.max_folds < 1):
-        p.error("epochs, batch-size and max-folds must be positive")
+    if (args.epochs < 1 or args.batch_size < 1 or args.max_proposals < 1
+            or (args.max_folds is not None and args.max_folds < 1)):
+        p.error("epochs, batch-size, max-proposals and max-folds must be positive")
     data_dir, output = args.data_dir.resolve(), args.output.resolve()
     derived_dir = output / "normalized_data"
     if data_dir == derived_dir:
@@ -282,8 +288,9 @@ def run():
     output.mkdir(parents=True, exist_ok=True)
     gt_csv = output / "normalized_annotations.csv"
     write_gt_csv(spans, gt_csv)
-    cfg = {"holdout": args.holdout, "videos": VIDEOS, "epochs": args.epochs,
+    cfg = {"holdout": args.holdout, "videos": list(VIDEOS), "epochs": args.epochs,
            "batch_size": args.batch_size, "seed": args.seed, "feature": "pairmotion",
+           "window": args.window, "max_proposals": args.max_proposals,
            "GT_SHA256": hashlib.sha256(gt_csv.read_bytes()).hexdigest()}
     manifest = output / "manifest.json"
     if manifest.exists() and json.loads(manifest.read_text()) != cfg:
@@ -308,11 +315,12 @@ def run():
     from models.actionformer.predict import decode_video
     from models.actionformer.tuning import select_inference_settings
     from models.common.config import mstcn_workdir, video_frames
-    from models.common.segments import load_meta, shared_segments
+    from models.common.segments import STRIDE as DATA_STRIDE, load_meta, shared_segments
     from models.mstcn_dlc2action.train import prepare_data
     trainer = importlib.import_module("models.actionformer.train")
 
-    tools = (suppress_cross_window_duplicates, prediction_table, evaluate_video, map_at_tiou)
+    tools = (partial(suppress_cross_window_duplicates, max_segments=args.max_proposals),
+             prediction_table, evaluate_video, map_at_tiou)
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     counts = video_frames(VIDEOS)
     for video in VIDEOS:
@@ -326,7 +334,11 @@ def run():
         return
     # Important: only *development* annotations enter the sampling/splitting process.
     dev_spans = {v: spans[v] for v in dev}
-    segments, _ = shared_segments(workdir, dev_spans, output / "development_segments")
+    if args.window % DATA_STRIDE:
+        fail(f"--window must be a multiple of data stride {DATA_STRIDE}")
+    segments, _ = shared_segments(
+        workdir, dev_spans, output / "development_segments",
+        len_segment=args.window // DATA_STRIDE)
     meta = load_meta(workdir, VIDEOS)
     results = []
     finished_new = 0
@@ -360,7 +372,7 @@ def run():
         if len(columns) != 132:
             fail(f"Expected 132 features; found {len(columns)}. Check pairmotion configuration.")
         seed_all(torch, np, args.seed)
-        model, model_config = build_model(len(columns))
+        model, model_config = build_model(len(columns), dataset={"max_seq_len": args.window})
         start_time = time.monotonic()
         print(f"FOLD {fold_num}/7: fit {fit_videos}; evaluate FULL {val_video} | "
               f"{len(fitting)} training segments, {len(checking)} inner-validation", flush=True)
@@ -373,11 +385,11 @@ def run():
         torch.save({"model_state_dict": model.state_dict(), "config": model_config,
                     "feature_columns": columns, "feature_set": "pairmotion",
                     "normalization_mean": mean, "normalization_std": std,
-                    "window": 256, "seed": args.seed,
+                    "window": args.window, "seed": args.seed,
                     "best_epoch": best["epoch"] if best else len(history),
                     "inference_settings": settings}, fold_dir / "model.pt")
         proposals = decode_video(model, val_video, counts[val_video], columns, mean, std,
-                                 workdir, "pairmotion", meta, device)
+                                 workdir, "pairmotion", meta, device, window=args.window)
         table, measurements = metrics_for_video(val_video, proposals, settings, spans, counts, tools)
         table.write_csv(fold_dir / "predictions.csv")
         record = {"study_id": cfg["GT_SHA256"], "fold": fold_num,
@@ -417,7 +429,7 @@ def run():
         train_rows, {v: meta[v] for v in dev}, dev_spans,
         {v: counts[v] for v in dev}, workdir, "pairmotion")
     seed_all(torch, np, args.seed)
-    model, model_config = build_model(len(columns))
+    model, model_config = build_model(len(columns), dataset={"max_seq_len": args.window})
     began = time.monotonic()
     history = trainer.train_model(model, samples, device, epochs=epochs_final,
                                   batch_size=args.batch_size, learning_rate=1e-4,
@@ -425,10 +437,10 @@ def run():
     torch.save({"model_state_dict": model.state_dict(), "config": model_config,
                 "feature_columns": columns, "feature_set": "pairmotion",
                 "normalization_mean": mean, "normalization_std": std,
-                "window": 256, "seed": args.seed, "best_epoch": epochs_final,
+                "window": args.window, "seed": args.seed, "best_epoch": epochs_final,
                 "inference_settings": settings}, final_dir / "model.pt")
     proposals = decode_video(model, args.holdout, counts[args.holdout], columns, mean,
-                             std, workdir, "pairmotion", meta, device)
+                             std, workdir, "pairmotion", meta, device, window=args.window)
     table, measurements = metrics_for_video(args.holdout, proposals, settings, spans, counts, tools)
     table.write_csv(final_dir / "predictions.csv")
     (final_dir / "DONE.json").write_text(json.dumps({
