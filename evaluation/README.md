@@ -21,6 +21,8 @@ Other notebooks can import these functions, as `model_performance_report.py` doe
 ```python
 from evaluation.evaluate import (evaluate, prediction_models, prediction_video_ids,
                                  read_ground_truth, read_ground_truth_labels,
+from evaluation.evaluate import (evaluate, prediction_models, prediction_video_ids,
+                                 read_ground_truth, read_ground_truth_labels,
                                  read_predictions, summary_view)
 
 gt = read_ground_truth()
@@ -33,6 +35,7 @@ for name, folder in prediction_models().items():  # e.g. {'rule_based': Path(...
 ```
 
 `predicted` has `video_id`, `start` and `end` columns, plus `direction` and
+`cycles` with `labels=True` and `score` with `scores=True`. `evaluate` also takes an optional `num_frames`
 `cycles` with `labels=True` and `score` with `scores=True`. `evaluate` also takes an optional `num_frames`
 mapping of video ID to frame count; direction and cycle metrics are only added
 when `gt_labels` is given.
@@ -51,6 +54,13 @@ ignored. Frame ranges are zero-based and inclusive.
 A model that only finds intervals can borrow the rule-based direction and cycle
 count: `uv run python -m models.rule_based.episode_labels outputs/predictions/<model>`
 writes a copy with `Direction` and `Cycles` to `outputs/predictions/<model>_rule_labels/`,
+which is then evaluated as its own model. For that estimator (and the oracle-span
+helper below), **positive `d_orbital_rad_s` is clockwise (CW) on screen** with
+image y pointing down.
+
+Joint metrics (`direction_f1`, cycle MAE at IoU ≥ 0.1) are the end-to-end product
+score (Layer C). Use the strict-IoU (Layer B) and oracle-span tables to judge
+attribute quality without detection noise.
 which is then evaluated as its own model. For that estimator (and the oracle-span
 helper below), **positive `d_orbital_rad_s` is clockwise (CW) on screen** with
 image y pointing down.
@@ -86,6 +96,30 @@ attribute quality without detection noise.
 every row is used, so ground truth must contain only valid circling events.
 ActionFormer additionally writes `Confidence`; `tal_report.py` uses that native
 score for mAP@IoU ranking. Frame ranges are zero-based and inclusive.
+
+### Why three layers, and how to read the τ thresholds
+
+- **Layer C, joint (IoU ≥ 0.1):** detection and attributes together. A span counts
+  once it overlaps a ground-truth event by 10%, so a wrong or missing event lowers
+  the score. This is what a user of the full pipeline gets. τ = 0.1 is deliberately
+  loose: the question is "did it find this event and label it correctly", not
+  "are the boundaries right".
+- **Layer B, strict (IoU ≥ 0.5):** attributes judged only on well-localized spans.
+  Missed or spurious events are excluded, because F1/mAP already measure them. If
+  Layer B is much better than Layer C, the attribute estimator is fine and detection
+  is the bottleneck. If both are low, the attribute estimator itself is weak.
+- **Oracle spans (Layer A):** attributes computed on the ground-truth intervals, with
+  no detection error. This is the ceiling for the attribute estimator. I expect it
+  to be the most salient number (it isolates direction and cycle estimation); the
+  other layers can be argued for qualitatively as measures of how much detection
+  noise costs.
+- **Reading the gap:** C < B means detection or boundary errors drag the product
+  down. B < oracle means localization noise corrupts the attributes. A low oracle
+  means the direction and cycle estimator needs work regardless of the detector.
+- **Choice of τ:** 0.1 (joint) suits a behavior whose start and end are ambiguous by
+  a second or two, 0.5 (strict) requires clearly the same event, and mAP averages
+  0.1 to 0.7 to show how quality degrades as boundaries tighten. These cut-offs are
+  conventions (MS-TCN F1@10/25/50, FSH-TAL mAP), not tuned values.
 
 ## Metrics
 
@@ -125,6 +159,18 @@ score for mAP@IoU ranking. Frame ranges are zero-based and inclusive.
   Lower τ rewards finding events; higher τ also requires accurate boundaries.
   True positives (`tp@τ`) and segment counts are pooled across videos for the
   overall figure.
+- **Temporal mAP** follows the FSH-TAL temporal action-localization protocol.
+  Predictions are sorted by `Score`, greedily matched one-to-one to the
+  highest-IoU unmatched ground-truth event, and integrated with all-point
+  interpolated precision-recall. The report shows mAP@0.1, 0.3, 0.5 and 0.7;
+  `mAP@0.1:0.7` averages all seven 0.1-spaced thresholds and then videos.
+  Inclusive frame intervals become half-open time intervals
+  `[start / fps, (end + 1) / fps)`. Without genuine scores, mAP is unavailable;
+  row order is never treated as confidence. FSH-TAL's published score is not
+  directly comparable because its behaviors, point-derived ground truth,
+  supervision, camera and species differ.
+
+- **Joint direction precision / recall / F1**, for models with a `Direction` column.
 - **Temporal mAP** follows the FSH-TAL temporal action-localization protocol.
   Predictions are sorted by `Score`, greedily matched one-to-one to the
   highest-IoU unmatched ground-truth event, and integrated with all-point
