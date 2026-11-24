@@ -90,6 +90,10 @@ def _():
 def _():
     DATA_DIR = cc.default_data_dir(cc.ROOT)           # $CIRCLING_DATA_DIR, <repo>/data or ~/Downloads
     OUT_DIR = cc.ROOT / "outputs" / "predictions" / "rule_based"
+<<<<<<< HEAD
+=======
+    CACHE = DATA_DIR / "rule_detector_cache"          # kept next to the data, outside git
+>>>>>>> b27b994 (added all new models)
     VIDEOS = ["0031", "0028"]
     LABELS = {
         "0031": [(265510, 266227), (266809, 267100), (267242, 267837), (269089, 271817),
@@ -103,10 +107,33 @@ def _():
 
 
 @app.cell
-def _(DATA_DIR, VIDEOS):
+def _(CACHE, DATA_DIR, VIDEOS):
     # Per-frame closest-pair distance and rotation rate, before and after cleaning (rules in circling_cleaning.py).
-    # The first run reads the full tracking tables (~1 min); later runs load a small cache next to the data.
-    series = {_v: el.load_series(DATA_DIR, _v) for _v in VIDEOS}
+    # The first run reads the full tracking tables (~1 min); later runs load a small cache (seconds).
+    def build_series(v):
+        _, p = cc.load_flagged(DATA_DIR, v, ["FrameNum", "TrackID_1", "TrackID_2", "centroid_distance_px",
+                                             "d_orbital_rad_s"])
+        n = int(p.FrameNum.max()) + 1
+        out = {}
+        for tag, q in (("raw", p), ("clean", p[p.keep])):
+            q = q.sort_values(["FrameNum", "centroid_distance_px"]).drop_duplicates("FrameNum").set_index("FrameNum")
+            q = q.reindex(pd.RangeIndex(0, n))
+            out[f"dist_{tag}"] = q.centroid_distance_px.to_numpy()
+            out[f"rate_{tag}"] = q.d_orbital_rad_s.where(q.d_orbital_rad_s.abs() <= 15).fillna(0).to_numpy()
+        return out
+
+
+    def load_series(v):
+        path = CACHE / f"series_{v}.npz"
+        if path.exists():
+            return dict(np.load(path))
+        s = build_series(v)
+        CACHE.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(path, **s)
+        return s
+
+
+    series = {_v: load_series(_v) for _v in VIDEOS}
     return (series,)
 
 

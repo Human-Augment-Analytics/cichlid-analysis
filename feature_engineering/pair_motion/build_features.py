@@ -48,6 +48,8 @@ def write_sample(features, path: Path, rows_per_video: int = 80) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build frame-level pair-motion features")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
+    parser.add_argument("--videos", nargs="+", default=None,
+                        help="video IDs to build (default: discover every <video>_pairs.parquet)")
     parser.add_argument(
         "--out",
         type=Path,
@@ -66,7 +68,7 @@ def main() -> None:
     run_synthetic_checks()
 
     print(f"Loading pose tables from {args.data_dir}...", flush=True)
-    tracks, pairs, metadata = load_pose(args.data_dir)
+    tracks, pairs, metadata = load_pose(args.data_dir, args.videos)
     print(f"Tracks {len(tracks):,}  pairs {len(pairs):,}", flush=True)
 
     print("Building distance, orientation, and speed features...", flush=True)
