@@ -56,3 +56,10 @@ Training outputs are written under `outputs/`.
 - Hard negatives replaced ordinary negatives rather than being added.
 - Default-threshold precision, recall, and F1 were all zero.
 - Validation event metrics should not be confused with held-out test metrics.
+
+## Separate seven-video ActionFormer study (2026)
+
+The newer [full-video ActionFormer localization study](VIDEO_CV_STUDY.md)
+uses seven video-disjoint development folds and evaluates temporal mAP
+and event F1. Its results are **not directly comparable** with the
+sampled-segment frame AP and ROC-AUC results above.

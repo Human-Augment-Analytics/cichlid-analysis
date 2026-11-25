@@ -51,6 +51,14 @@ VSCode with the Marimo extension, just like Jupyter.
   with buffered pose-overlay previews (drawing functions imported from
   `model_performance_report.py`).
 
+### ActionFormer: seven-video circling localization study
+
+Our full-video ActionFormer cross-validation, temporal-window, proposal-cap,
+postprocessing, and hard-negative experiments are documented in
+[the seven-video ActionFormer study](experiments/actionformer/VIDEO_CV_STUDY.md).
+The linked report includes aggregate results, evaluation caveats, and exact
+reproduction commands. Generated checkpoints and raw proposals remain local.
+
 ### Logistic regression
 
 The committed model is `outputs/circling_baseline/model.joblib`. To retrain it (writes the

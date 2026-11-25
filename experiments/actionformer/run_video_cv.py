@@ -268,12 +268,28 @@ def run():
     p.add_argument("--dry-run", action="store_true", help="Check inputs, labels and print fold schedule")
     p.add_argument("--prepare-only", action="store_true", help="Create normalized inputs and feature caches only")
     p.add_argument("--max-folds", type=int, help="Run at most this many incomplete folds (resume later)")
-    p.add_argument("--final-test", action="store_true", help="After CV, fit all 7 dev videos, score untouched holdout once")
+    p.add_argument("--final-test", action="store_true",
+                   help="Fit all 7 development videos and score the reserved holdout once; requires frozen postprocessing arguments")
+    p.add_argument("--final-min-score", type=float, default=None,
+                   help="Frozen confidence threshold (only with --final-test)")
+    p.add_argument("--final-min-seconds", type=float, default=None,
+                   help="Frozen minimum duration in seconds (only with --final-test)")
+    p.add_argument("--final-merge-seconds", type=float, default=None,
+                   help="Frozen gap to merge in seconds (only with --final-test)")
     args = p.parse_args()
     if (args.epochs < 1 or args.batch_size < 1 or args.max_proposals < 1
             or not 0 <= args.hard_negative_fraction <= 1
             or (args.max_folds is not None and args.max_folds < 1)):
         p.error("epochs, batch-size, max-proposals and max-folds must be positive; hard-negative-fraction must be 0 to 1")
+    frozen_values = (args.final_min_score, args.final_min_seconds, args.final_merge_seconds)
+    if args.final_test and any(value is None for value in frozen_values):
+        p.error("--final-test requires --final-min-score, --final-min-seconds, and --final-merge-seconds. Freeze these on development data first.")
+    if not args.final_test and any(value is not None for value in frozen_values):
+        p.error("--final-min-* settings can only be used with --final-test")
+    if args.final_test and (not 0 <= args.final_min_score <= 1
+                            or not 0 <= args.final_min_seconds < float("inf")
+                            or not 0 <= args.final_merge_seconds < float("inf")):
+        p.error("Frozen final settings must be nonnegative; min-score must be in [0, 1]")
     data_dir, output = args.data_dir.resolve(), args.output.resolve()
     derived_dir = output / "normalized_data"
     if data_dir == derived_dir:
@@ -281,7 +297,7 @@ def run():
     inspect_inputs(data_dir)
     spans = read_gt_csvs(args.annotations)
     dev = [v for v in VIDEOS if v != args.holdout]
-    print(f"FINAL HOLDOUT (never used for development): {args.holdout}")
+    print(f"RESERVED HOLDOUT (excluded from development folds): {args.holdout}")
     for i, video in enumerate(dev, 1):
         print(f"Fold {i}: train={[v for v in dev if v != video]}, validate={video}")
     print("Annotations:", ", ".join(f"{v}:{len(spans[v])}" for v in VIDEOS))
@@ -426,8 +442,10 @@ def run():
     final_dir.mkdir(parents=True, exist_ok=True)
     # Mean best epoch is determined on development folds, before seeing test data.
     epochs_final = max(1, round(statistics.mean(int(r["best_epoch"]) for r in results)))
-    settings = {key: float(statistics.median(float(r[f"post_{key}"]) for r in results))
-                for key in ("min_score", "min_seconds", "merge_seconds")}
+    # Use the explicitly frozen development-selected rule, NOT fold-setting medians.
+    settings = {"min_score": args.final_min_score,
+                "min_seconds": args.final_min_seconds,
+                "merge_seconds": args.final_merge_seconds}
     # All dev segments, including those used for inner validation in CV, are training here.
     train_rows = segments.with_columns(pl.lit("train").alias("split"))
     samples, columns, mean, std = trainer.prepare_samples(
@@ -450,7 +468,7 @@ def run():
     table.write_csv(final_dir / "predictions.csv")
     (final_dir / "DONE.json").write_text(json.dumps({
         "test_video": args.holdout, "trained_on": dev, "epochs": epochs_final,
-        "settings_from": "medians of 7 development folds",
+        "settings_from": "explicit frozen development-selected rule",
         "train_and_infer_seconds": time.monotonic() - began, **measurements,
     }, indent=2) + "\n")
     print(f"FINAL TEST: mAP={measurements['map_avg']:.4f}, "
