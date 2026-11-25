@@ -261,6 +261,8 @@ def run():
                    help="Temporal window in original video frames (30 FPS)")
     p.add_argument("--max-proposals", type=int, default=1000,
                    help="Maximum proposals after full-video cross-window NMS")
+    p.add_argument("--hard-negative-fraction", type=float, default=0.0,
+                   help="Fraction of sampled negative training segments drawn from nearby-pair cases (0 to 1)")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--device", type=str, default=None)
     p.add_argument("--dry-run", action="store_true", help="Check inputs, labels and print fold schedule")
@@ -269,8 +271,9 @@ def run():
     p.add_argument("--final-test", action="store_true", help="After CV, fit all 7 dev videos, score untouched holdout once")
     args = p.parse_args()
     if (args.epochs < 1 or args.batch_size < 1 or args.max_proposals < 1
+            or not 0 <= args.hard_negative_fraction <= 1
             or (args.max_folds is not None and args.max_folds < 1)):
-        p.error("epochs, batch-size, max-proposals and max-folds must be positive")
+        p.error("epochs, batch-size, max-proposals and max-folds must be positive; hard-negative-fraction must be 0 to 1")
     data_dir, output = args.data_dir.resolve(), args.output.resolve()
     derived_dir = output / "normalized_data"
     if data_dir == derived_dir:
@@ -292,6 +295,8 @@ def run():
            "batch_size": args.batch_size, "seed": args.seed, "feature": "pairmotion",
            "window": args.window, "max_proposals": args.max_proposals,
            "GT_SHA256": hashlib.sha256(gt_csv.read_bytes()).hexdigest()}
+    if args.hard_negative_fraction > 0:
+        cfg["hard_negative_fraction"] = args.hard_negative_fraction
     manifest = output / "manifest.json"
     if manifest.exists() and json.loads(manifest.read_text()) != cfg:
         fail(f"Config or ground truth changed; use a new --output folder, not {output}")
@@ -304,7 +309,7 @@ def run():
     os.environ["CIRCLING_GROUND_TRUTH"] = str(gt_csv)
     os.environ["CIRCLING_VIDEOS"] = ",".join(VIDEOS)
     os.environ["CIRCLING_LABELS"] = "ground_truth"
-    os.environ["CIRCLING_HARD_NEGATIVES"] = "0"
+    os.environ["CIRCLING_HARD_NEGATIVES"] = str(args.hard_negative_fraction)
 
     import numpy as np
     import polars as pl
