@@ -21,6 +21,10 @@ dependencies = [
     "polars",
     "pyarrow>=15",
     "scikit-learn>=1.9.1",
+    "dlc2action>=1.0",
+    "python-dotenv>=1.0.0",
+    "torch",
+    "transformers>=5.22.2",
     "xgboost>=3.2,<4",
 ]
 [tool.marimo.runtime]

@@ -301,7 +301,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "python-dotenv" },
     { name = "scikit-learn" },
-    { name = "tqdm" },
+    { name = "torch" },
     { name = "transformers" },
     { name = "xgboost" },
 ]
@@ -322,9 +322,8 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=15" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "scikit-learn", specifier = ">=1.9.1" },
-    { name = "tqdm", specifier = ">=4.65.0" },
+    { name = "torch" },
     { name = "transformers", specifier = ">=5.22.2" },
-    { name = "xgboost", specifier = ">=3.2.0" },
     { name = "xgboost", specifier = ">=3.2,<4" },
 ]
 

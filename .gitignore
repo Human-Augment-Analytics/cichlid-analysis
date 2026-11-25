@@ -239,7 +239,6 @@ outputs/mstcn*
 outputs/actionformer*
 outputs/xgboost*
 outputs/sartab
-outputs/mstcn*
 outputs/lrcv*
 outputs/predictions/*
 outputs/metrics/*
@@ -252,9 +251,6 @@ outputs/circling*
 model_performance_report_viz.py
 run.ps1
 evaluation/cross_check_postprocess.py
-outputs/mstcn_dlc2action/*
-gpu_ins
-models/mstcn_dlc2action/README.md
 
 # Local ActionFormer experiment artifacts
 /outputs/experiment_backups/
@@ -270,3 +266,11 @@ models/mstcn_dlc2action/README.md
 
 # Local research archives
 /cichlid_multirecording_update.zip
+
+# Restored local/regenerable research artifacts
+outputs/xgboost/*.parquet
+outputs/xgboost/scores/
+outputs/xgboost/*.html
+PROJECT_CONTEXT.md
+outputs/experiments/
+outputs/predictions/lovo_*/
