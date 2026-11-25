@@ -6,14 +6,15 @@ and, per event, reports:
 - **Rotation direction** (CW / CCW)
 - **Number of turns** (quantized: integer, half-turn, or round-up)
 - **`is_circling` flag** (true iff quantized turns ≥ 1)
-- (Optional) **Dense per-frame OF features** inside each fish mask,
-  for downstream TAL / span-detection models
+- (Optional) **Dense per-frame Optical Flow (OF) features** inside each
+  fish mask, for downstream TAL / span-detection models
 
 The pipeline is organised as **three parallel methods**, each independent,
 each with its own cost / accuracy / annotation profile. You can mix and match depending on whether pose-tracker output and / or a GPU are available for the incoming video.
 
-- **Method A — OF direction** on raw pixels (Farneback + sign-majority).
-  No tracker, no GPU, no annotation. 100 % accuracy over 658 events.
+- **Method A — Optical Flow (OF) direction** on raw pixels (Farneback +
+  sign-majority). No tracker, no GPU, no annotation. 100 % accuracy
+  over 658 events.
 - **Method B — Pose turns** on pre-computed per-pair orbital angle.
   No GPU, no annotation. 99.8 % direction, MAE 0.72 turns / 94 % within 2 turns across 658 events, but *only runs on videos for which a pose parquet already exists*.
 - **Method C — SAM 2 masks** (initialised from a single click per fish per
@@ -124,7 +125,7 @@ Scored on the full 8-video, 658-event GT set.
 
 | Method | annotation | compute | direction correct |
 |---|---|---|---|
-| **A — OF Farneback + sign-majority** | **none** | **~45 s / event** (CPU) | **658 / 658 = 100 %** |
+| **A — Optical Flow (Farneback) + sign-majority** | **none** | **~45 s / event** (CPU) | **658 / 658 = 100 %** |
 | **B — Pose + sign of raw turns** | none | ~10 ms / event | 657 / 658 = **99.8 %** |
 | **C — SAM 2 centroid unwrap + sign** | 2 clicks / event *or* DINO | 3-20 min / event (GPU) | 5 / 5 test cases = **100 %** |
 
@@ -205,13 +206,37 @@ for turn counting.
 
 ### 3.3 Span detection (both methods)
 
-Still an open problem. Current OF-only span detector hits mAP = 0.52
-(mean over tIoU ∈ {0.1 … 0.9}) on one hour of vid0007_day05 — localises
-events well enough to overlap but boundaries drift by ~1 s.
+Still an open problem. Evaluated on one hour of `vid0007_day05`
+(34 GT events) using the rule-based event proposer in `detect.py` and
+the event-level metrics in `evaluate.py`, at the detector's native
+`frame_stride = 1` (full 30 fps).
 
-Working Method C plan: compute dense OF features on SAM 2 masks (via
-`sam2_of_features.py`), feed the per-frame feature stream to an
-ActionFormer-style TAL model. Mask-level flow is far cleaner than
+Standard TAL (Temporal Action Localization) practice reports mAP as the
+mean of AP over tIoU thresholds `{0.1, 0.3, 0.5, 0.7}` — the 0.9
+threshold is rarely included because sub-frame boundary precision is
+below what most detectors achieve.
+
+| metric | value |
+|---|---:|
+| **mAP** (mean over tIoU ∈ {0.1, 0.3, 0.5, 0.7}) | **0.629** |
+| AP @ tIoU = 0.1 | 0.887 |
+| AP @ tIoU = 0.3 | 0.792 |
+| AP @ tIoU = 0.5 | 0.597 |
+| AP @ tIoU = 0.7 | 0.238 |
+| F1 @ tIoU = 0.1 | 0.607 |
+| F1 @ tIoU = 0.5 | 0.429 |
+| F1 @ tIoU = 0.9 | 0.107 |
+| Segmental edit score (direction-aware) | 0.436 |
+
+The sharp drop from AP@0.3 → AP@0.7 is the expected failure mode for
+pose-free Optical Flow: events are localised well enough to overlap,
+but boundaries drift by ~1 s because the sign-consistency window has
+~2 s inertia. Span detection on more than one video requires per-video
+calibration of the `activity_area_range` filter; see Section 7.4.
+
+Working Method C plan: compute dense Optical Flow features on SAM 2
+masks (via `sam2_of_features.py`), feed the per-frame feature stream to
+an ActionFormer-style TAL model. Mask-level flow is far cleaner than
 whole-frame flow and should push mAP@0.5 materially above 0.6.
 
 
@@ -259,7 +284,7 @@ models/optical-flow/
   README.md               # this file
   requirements.txt        # pip deps (SAM 2 / DINO are optional extras)
 
-  # --- Method A: OF direction ---
+  # --- Method A: Optical Flow direction ---
   flow.py                 # Farneback + per-frame flow features
   detect.py               # event proposer + direction + num_turns stub
   evaluate.py             # mAP, F1@k, edit score, direction accuracy
@@ -318,7 +343,7 @@ decode mp4 files. For Method C: CUDA 12.1+ and an NVIDIA GPU — see
 Section 7.3 for VRAM requirements (minimum 12 GB for real-time
 streaming; less works for batch / research use with CPU-offload flags).
 
-### 6.2 Method A — OF direction evaluation across all videos
+### 6.2 Method A — Optical Flow direction evaluation across all videos
 
 Open `direction_eval.ipynb` and Run All. Writes
 `outputs/optical-flow/direction_only/all_videos_direction.csv` and
