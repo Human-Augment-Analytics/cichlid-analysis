@@ -30,7 +30,7 @@ with app.setup(hide_code=True):
 
     from evaluation.evaluate import (ANNOTATION_DIR, evaluate, prediction_models, prediction_video_ids,
                                      read_ground_truth, read_ground_truth_labels, read_predictions,
-                                     summary_view)
+                                     summary_view,heldout_metrics, window_report, comparable_models)
     from evaluation.metrics import LABEL_TAU
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES

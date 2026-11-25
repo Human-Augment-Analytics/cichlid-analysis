@@ -252,18 +252,9 @@ outputs/circling*
 model_performance_report_viz.py
 run.ps1
 evaluation/cross_check_postprocess.py
-
-# Regenerable XGBoost frame tables and notebook exports
-outputs/xgboost/*.parquet
-outputs/xgboost/scores/
-outputs/xgboost/*.html
-
-# Local-only assistant context
-PROJECT_CONTEXT.md
-
-# Leave-one-video-out experiment artifacts (regenerable)
-outputs/experiments/
-outputs/predictions/lovo_*/
+outputs/mstcn_dlc2action/*
+gpu_ins
+models/mstcn_dlc2action/README.md
 
 # Local ActionFormer experiment artifacts
 /outputs/experiment_backups/

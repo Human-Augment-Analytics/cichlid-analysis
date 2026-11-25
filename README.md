@@ -112,6 +112,19 @@ uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
 quality checks, parameters, and a small committed sample are kept alongside the
 pipeline. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+
+### MST-CN + DINOv2
+Same labels, sampling, split and span post-processing as the logistic regression but includes embeddings
+
+
+
+```sh
+uv  run python -m models.mstcn_dlc2action.train
+uv run python -m models.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
+
+```
+
+
 Nothing in `models/` imports these features; any model can read the parquet and use
 the columns it wants (`feature_groups.py` lists them by group).
 
