@@ -1,0 +1,35 @@
+# Python dependencies for the circling pipeline
+# (tested on Python 3.11)
+
+# Core (always required)
+opencv-python>=4.5
+numpy>=1.22,<2
+pandas>=1.5
+scipy>=1.8
+matplotlib>=3.5
+pyarrow>=10.0        # parquet I/O (pose features; flow.parquet caches)
+jupyter>=1.0         # for direction_eval.ipynb
+
+# SAM 2 + DINO path (required only if you run sam2_segment_event.py / sam2_dino_init.py)
+# Install SAM 2 separately from GitHub -- it is not on PyPI:
+#   pip install git+https://github.com/facebookresearch/sam2.git
+# Checkpoints: download sam2.1_hiera_tiny.pt or sam2.1_hiera_base_plus.pt
+# from https://dl.fbaipublicfiles.com/segment_anything_2/092824/ into
+# ~/sam2_checkpoints/
+#
+# These packages pin a torch build that matches CUDA on your box. The
+# values below are known-good; your CUDA toolkit may require different
+# versions.
+torch>=2.1
+torchvision>=0.16
+transformers>=4.49,<5    # Grounding DINO lives here; 5.x pulls incompatible torchaudio
+accelerate>=0.30
+timm>=1.0
+safetensors>=0.4
+pillow>=10,<13
+
+# System-level (not pip-installable):
+#   ffmpeg >= 4.0        used by cv2.VideoCapture for mp4 decoding
+#   CUDA 12.1+           for SAM 2 / DINO GPU inference
+#   NVIDIA GPU with >=6 GB VRAM for SAM 2 tiny @ 360p
+#   (base_plus and/or higher resolutions need >=12 GB VRAM)
