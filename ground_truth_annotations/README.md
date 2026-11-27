@@ -30,6 +30,11 @@ ground_truth_annotations/
 Mp4 files are excluded from version control (`.gitignore`); place them
 into `data/` locally before running any downstream code.
 
+`hard_negatives/hard_negatives_annotated.csv` carries the video ID, event ID
+and inclusive frame bounds from the `Hard negatives` sheet of the reviewer
+workbook. XGBoost uses these intervals as background examples. Any frames that
+also appear in finalized positive annotations keep their positive label.
+
 ## Annotation CSV schema
 
 Columns in each `circling_annotations_vid<id>[-day<N>].csv`:

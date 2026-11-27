@@ -28,6 +28,8 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from feature_engineering.pair_motion.feature_groups import ALL_MODEL_FEATURES, FEATURE_GROUPS
+from models.common.annotated_negatives import (DEFAULT_ANNOTATED_NEGATIVES, annotated_negative_mask,
+                                              read_annotated_negatives)
 
 from .common import (
     EXPERIMENT_DIR, MODEL_FRAMES, PREDICTION_ROOT, SEED, VIDEO_FRAMES, VIDEOS,
@@ -128,10 +130,17 @@ def objective(metrics: dict) -> tuple[float, float]:
     return (metrics["f1@50"], metrics["frame_f1"])
 
 
-def folds(videos=VIDEOS):
-    """Each video is held out once and the remaining videos are the training set."""
-    for test_video in videos:
-        yield [video for video in videos if video != test_video], test_video
+def folds(videos=VIDEOS, holdout=None):
+    """Each video is held out once and the remaining videos are the training set.
+
+    With a holdout video, the cross-validation folds never use it; one last fold trains on
+    every other video and tests the holdout (the protocol of evaluation/generalizability.py).
+    """
+    cv_videos = [video for video in videos if video != holdout]
+    for test_video in cv_videos:
+        yield [video for video in cv_videos if video != test_video], test_video
+    if holdout is not None:
+        yield cv_videos, holdout
 
 
 def full_scores_by_video(table: pd.DataFrame, scores: np.ndarray) -> dict[str, np.ndarray]:
@@ -198,7 +207,8 @@ def fit_rule(train: pd.DataFrame, spans):
     return {"close_min": best[0], "turns_min": best[1], "min_length": best[2], "train_objective": best_key}
 
 
-def run_fold(variant: Variant, frames: pd.DataFrame, train_videos: list[str], test_video: str, spans, quick: bool):
+def run_fold(variant: Variant, frames: pd.DataFrame, train_videos: list[str], test_video: str, spans,
+             quick: bool, annotated_negatives=None):
     train = frames[frames["VideoID"].isin(train_videos)].reset_index(drop=True)
     test = frames[frames["VideoID"] == test_video].reset_index(drop=True)
     info: dict = {"train_videos": train_videos, "test_video": test_video, "features": list(variant.features)}
@@ -211,17 +221,31 @@ def run_fold(variant: Variant, frames: pd.DataFrame, train_videos: list[str], te
 
     columns = list(variant.features)
     x_train, y_train = train[columns].to_numpy(dtype=np.float32), train["label"].to_numpy()
+    fit_options = {}
+    if variant.model == "xgb" and annotated_negatives is not None:
+        # Every eligible frame is already sampled. Give reviewed negatives a second unit of weight.
+        weights = np.ones(len(train), dtype=np.float32)
+        videos = train["VideoID"].to_numpy()
+        frame_numbers = train["FrameNum"].to_numpy()
+        for video in train_videos:
+            rows = videos == video
+            mask = annotated_negative_mask(VIDEO_FRAMES[video], annotated_negatives[video], spans[video])
+            weights[rows] += mask[frame_numbers[rows]] & (y_train[rows] == 0)
+        if np.any(weights > 1):
+            fit_options["sample_weight"] = weights
+        info["reweighted_annotated_negative_frames"] = int((weights > 1).sum())
     oof = np.full(len(train), np.nan, dtype=np.float32)
     for inner_train, inner_valid in inner_folds(train):
         inner = make_model(variant.model, quick)
-        inner.fit(x_train[inner_train], y_train[inner_train])
+        inner_options = {key: value[inner_train] for key, value in fit_options.items()}
+        inner.fit(x_train[inner_train], y_train[inner_train], **inner_options)
         oof[inner_valid] = inner.predict_proba(x_train[inner_valid])[:, 1]
     known = np.isfinite(oof)
     (threshold, min_length), key = choose_postprocess(train.loc[known], oof[known], spans)
     info.update({"threshold": threshold, "min_length": min_length, "inner_objective": key})
 
     model = make_model(variant.model, quick)
-    model.fit(x_train, y_train)
+    model.fit(x_train, y_train, **fit_options)
     x_test = test[columns].to_numpy(dtype=np.float32)
     test_scores = model.predict_proba(x_test)[:, 1].astype(np.float32)
     return test, test_scores, threshold, min_length, info, model
@@ -248,12 +272,14 @@ def feature_importance(model, variant: Variant, test: pd.DataFrame, repeats: int
     return pd.DataFrame(rows).sort_values("importance", ascending=False)
 
 
-def run_variant(variant: Variant, frames: pd.DataFrame, spans, quick: bool, importance: bool, out_dir: Path):
+def run_variant(variant: Variant, frames: pd.DataFrame, spans, quick: bool, importance: bool, out_dir: Path,
+                annotated_negatives=None, holdout=None):
     per_video, fold_info, imports, coefs = [], [], [], []
     prediction_dir = PREDICTION_ROOT / f"lovo_{variant.name}"
     prediction_dir.mkdir(parents=True, exist_ok=True)
-    for train_videos, test_video in folds():
-        test, scores, threshold, min_length, info, model = run_fold(variant, frames, train_videos, test_video, spans, quick)
+    for train_videos, test_video in folds(holdout=holdout):
+        test, scores, threshold, min_length, info, model = run_fold(
+            variant, frames, train_videos, test_video, spans, quick, annotated_negatives)
         full = full_length_scores(test["FrameNum"].to_numpy(), scores, VIDEO_FRAMES[test_video])
         predicted = scores_to_spans(full, threshold, min_length)
         span_rows = [(test_video, s, e, float(np.mean(full[s:e + 1]))) for s, e in predicted]
@@ -274,7 +300,7 @@ def run_variant(variant: Variant, frames: pd.DataFrame, spans, quick: bool, impo
             if variant.model == "logreg":
                 weights = model[-1].coef_[0]
                 coefs.append(pd.DataFrame({"feature": list(variant.features), "coefficient": weights, "fold_test_video": test_video}))
-    overall = summarize(per_video)
+    overall = summarize([m for m in per_video if m["video"] != holdout])  # cross-validation videos only
     (out_dir / "folds").mkdir(parents=True, exist_ok=True)
     (out_dir / "folds" / f"{variant.name}.json").write_text(json.dumps(fold_info, indent=2, default=float) + "\n")
     if imports:
@@ -290,12 +316,17 @@ RESULT_COLUMNS = ["variant", "video", "f1@10", "f1@25", "f1@50", "edit_score", "
                   "frame_f1", "gt_segments", "pred_segments", "mof"]
 
 
-def write_summary(results: pd.DataFrame, variants: dict[str, Variant], out_dir: Path) -> None:
+def write_summary(results: pd.DataFrame, variants: dict[str, Variant], out_dir: Path, holdout=None) -> None:
     overall = results[results["video"] == "overall"].set_index("variant")
+    cv_videos = [video for video in VIDEOS if video != holdout]
+    folds_text = f"Folds: each of {', '.join(cv_videos)} is held out once. Overall pools the held-out videos."
+    if holdout is not None:
+        folds_text += (f" `{holdout}` is a final holdout: it is in no fold, and its row in `results.csv` "
+                       f"comes from a model trained on all {len(cv_videos)} other videos.")
     lines = [
         "# Leave-one-video-out results (held-out predictions only)",
         "",
-        f"Folds: each of {', '.join(VIDEOS)} is held out once. Overall pools the held-out videos.",
+        folds_text,
         "Annotations: finalized `circling_annotations_vid*.csv` files. Segment F1 is IoU based "
         "(see `evaluation/`).",
         "",
@@ -317,13 +348,21 @@ def main() -> None:
     parser.add_argument("--variants", nargs="+", default=["all"], help="variant names, or 'all'")
     parser.add_argument("--quick", action="store_true", help="fewer trees, for smoke tests")
     parser.add_argument("--no-importance", action="store_true")
+    negatives = parser.add_mutually_exclusive_group()
+    negatives.add_argument("--annotated-hard-negatives", type=Path, default=DEFAULT_ANNOTATED_NEGATIVES)
+    negatives.add_argument("--no-annotated-hard-negatives", action="store_const", const=None,
+                           dest="annotated_hard_negatives")
     parser.add_argument("--out-dir", type=Path, default=LOVO_DIR)
+    parser.add_argument("--holdout", default=None,
+                        help="video kept out of every fold and tested last on a model of all other videos")
     parser.add_argument("--list", action="store_true")
     args = parser.parse_args()
     variants = build_variants()
     if args.list:
         print("\n".join(f"{v.name:42s} {v.model:7s} {len(v.features):3d} features  {v.description}" for v in variants.values()))
         return
+    if args.holdout is not None and args.holdout not in VIDEOS:
+        raise SystemExit(f"--holdout {args.holdout} is not one of {VIDEOS}")
     names = list(variants) if args.variants == ["all"] else args.variants
     unknown = [n for n in names if n not in variants]
     if unknown:
@@ -332,6 +371,8 @@ def main() -> None:
     if BASELINE_FRAMES.exists():
         frames = frames.merge(pd.read_parquet(BASELINE_FRAMES), on=["VideoID", "FrameNum"], how="left", validate="1:1")
     spans = read_spans()
+    annotated_negatives = (read_annotated_negatives(args.annotated_hard_negatives, VIDEOS)
+                           if args.annotated_hard_negatives is not None else None)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     results_path = args.out_dir / "results.csv"
     existing = pd.read_csv(results_path) if results_path.exists() else pd.DataFrame()
@@ -341,13 +382,14 @@ def main() -> None:
             variants[name], frames, spans, args.quick,
             importance=(name.endswith("_all") or name.endswith("_all_agg")) and not args.no_importance,
             out_dir=args.out_dir,
+            annotated_negatives=annotated_negatives, holdout=args.holdout,
         )
         new = pd.DataFrame(rows)
         existing = pd.concat([existing[existing.get("variant") != name] if len(existing) else existing, new], ignore_index=True)
         existing.to_csv(results_path, index=False)
         row = new[new["video"] == "overall"].iloc[0]
         print(f"   F1@50 {row['f1@50']:.3f}  edit {row['edit_score']:.1f}  frameF1 {row['frame_f1']:.3f}  segs {int(row['pred_segments'])}", flush=True)
-    write_summary(existing, variants, args.out_dir)
+    write_summary(existing, variants, args.out_dir, args.holdout)
 
 
 if __name__ == "__main__":

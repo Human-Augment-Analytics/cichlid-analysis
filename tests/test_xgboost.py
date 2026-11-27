@@ -14,7 +14,7 @@ from models.xgboost.features import (FEATURES, FPS, HALF_WINDOW, SERIES_COLUMNS,
                                      segment_intersections, window_features)
 from models.xgboost.postprocess import majority_vote_fraction
 from models.xgboost.train import (evaluate_full_videos, fit_model, positive_spans,
-                                 score_series, split_dataset)
+                                 prepare_dataset, score_series, split_dataset)
 
 
 class SamplingTests(unittest.TestCase):
@@ -46,6 +46,29 @@ class SamplingTests(unittest.TestCase):
         self.assertFalse(set(train) & set(test))
         self.assertEqual(result.loc[test, "circling"].sum(), 15)
         np.testing.assert_array_equal(test, split_dataset(table)[2])
+
+    def test_annotated_negatives_extend_only_training_rows(self):
+        spans = {"a": [(5, 8)], "b": [(5, 8)]}
+        counts = {"a": 25, "b": 25}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "negatives.csv"
+            path.write_text("VideoID,StartFrame,EndFrame\na,5,15\na,13,16\n")
+            with patch("models.xgboost.train.load_series"), patch(
+                "models.xgboost.train.window_features", side_effect=lambda series, frames: frames[:, None]
+            ):
+                _, baseline, _ = prepare_dataset(None, spans, counts, annotated_negatives=None)
+                _, augmented, x = prepare_dataset(None, spans, counts, annotated_negatives=path)
+        base, _, base_test = split_dataset(baseline)
+        augmented, _, test = split_dataset(augmented)
+        columns = ["VideoID", "FrameNum", "circling"]
+        pd.testing.assert_frame_equal(base.iloc[base_test][columns].reset_index(drop=True),
+                                      augmented.iloc[test][columns].reset_index(drop=True))
+        extra = augmented[augmented.added_annotated_negative]
+        self.assertEqual(extra["FrameNum"].tolist(), list(range(11, 17)))
+        self.assertTrue((extra.circling == 0).all())
+        self.assertTrue((extra.split == "train").all())
+        self.assertFalse(augmented.duplicated(["VideoID", "FrameNum"]).any())
+        np.testing.assert_array_equal(x[:, 0], augmented.FrameNum)
 
 
 class WindowTests(unittest.TestCase):

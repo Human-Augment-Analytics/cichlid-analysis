@@ -1,5 +1,6 @@
 """Cleaned pair signals and per-frame motion features for XGBoost."""
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +31,21 @@ FEATURE_DESCRIPTION = (
 VIDEO_FRAMES = {"0028_vid": 1_080_175, "0031_vid": 1_080_398}
 ROOT = Path(__file__).resolve().parents[2]
 GROUND_TRUTH = ROOT / "ground_truth_annotations/finalized_annotations"
+
+
+def selected_videos():
+    """CIRCLING_VIDEOS when set, else the two videos this model was built on."""
+    videos = {v.strip() for v in os.environ.get("CIRCLING_VIDEOS", "").split(",") if v.strip()}
+    return sorted(videos or VIDEO_FRAMES)
+
+
+def frame_counts(videos, data_dir=None):
+    videos = sorted(videos)
+    if set(videos) <= VIDEO_FRAMES.keys():
+        return {video: VIDEO_FRAMES[video] for video in videos}
+    from models.common.config import video_frames  # counts other videos once, cached under CIRCLING_OUTPUTS
+
+    return video_frames(videos, data_dir)
 
 
 def read_spans(path=GROUND_TRUTH):
@@ -177,11 +193,34 @@ def closest_pair_series(pairs, count, fish=None):
                             step_rates(measured_rate, same_pair), midpoint_speed)).astype(np.float32)
 
 
-def load_series(data_dir, video, count):
+def input_paths(data_dir, video):
+    """Pose and pair tables: `<video>.parquet` (generalizability folds) or the rule-based names."""
+    data_dir = Path(data_dir)
+    fish, pairs = data_dir / f"{video}.parquet", data_dir / f"{video}_pairs.parquet"
+    if fish.exists() and pairs.exists():
+        return fish, pairs
     video_id = video.removesuffix("_vid")
-    fish = cc.flag_fish(pd.read_parquet(cc.fish_path(data_dir, video_id),
-                                      columns=[*cc.FISH_COLS, "Head_x", "Head_y", "TailTip_x", "TailTip_y"]), video_id)
-    pairs = cc.flag_pairs(pd.read_parquet(cc.pairs_path(data_dir, video_id),
+    return cc.fish_path(data_dir, video_id), cc.pairs_path(data_dir, video_id)
+
+
+def flag_fish(fish, video):
+    """Rule-based fish flags. Without a traced floor outline, no detection is flagged as a reflection
+    (as in models/common/turns.py); the keypoint-jump flag is unchanged."""
+    code = video.removesuffix("_vid")
+    if code in cc.FLOOR:
+        return cc.flag_fish(fish, code)
+    fish = fish.copy()
+    fish["reflection"] = False
+    offset = np.hypot(fish.X_center - fish.midline_centroid_x, fish.Y_center - fish.midline_centroid_y)
+    fish["keypoint_jump"] = offset > fish.body_length_px.median()
+    return fish
+
+
+def load_series(data_dir, video, count):
+    fish_path, pairs_path = input_paths(data_dir, video)
+    fish = flag_fish(pd.read_parquet(fish_path, columns=[*cc.FISH_COLS, "Head_x", "Head_y", "TailTip_x", "TailTip_y"]),
+                     video)
+    pairs = cc.flag_pairs(pd.read_parquet(pairs_path,
                                          columns=["FrameNum", "TrackID_1", "TrackID_2", "pair_episode_id", *SIGNALS]), fish)
     if len(pairs) and (pairs.FrameNum.min() < 0 or pairs.FrameNum.max() >= count):
         raise ValueError(f"Pair frames exceed video length: {video}")

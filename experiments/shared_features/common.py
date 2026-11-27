@@ -2,24 +2,30 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
 
 from evaluation.metrics import evaluate_video, merge, summarize
-from models.xgboost.features import GROUND_TRUTH, VIDEO_FRAMES, frame_labels, read_spans
+from models.rule_based.circling_cleaning import default_data_dir
+from models.xgboost.features import GROUND_TRUTH, frame_counts, frame_labels, read_spans, selected_videos
 from models.xgboost.postprocess import VOTE_FRACTION, majority_vote_fraction
 
 ROOT = Path(__file__).resolve().parents[2]
-FEATURE_TABLE = ROOT / "outputs/pair_motion/pair_features_frame.parquet"
-EXPERIMENT_DIR = ROOT / "outputs/experiments"
+# CIRCLING_OUTPUTS keeps a run with other videos (CIRCLING_VIDEOS) apart from the default two-video run.
+OUTPUTS = Path(os.environ.get("CIRCLING_OUTPUTS") or ROOT / "outputs").resolve()
+FEATURE_TABLE = OUTPUTS / "pair_motion/pair_features_frame.parquet"
+EXPERIMENT_DIR = OUTPUTS / "experiments"
 MODEL_FRAMES = EXPERIMENT_DIR / "model_frames.parquet"
-PREDICTION_ROOT = ROOT / "outputs/predictions"
-VIDEOS = list(VIDEO_FRAMES)  # ["0028_vid", "0031_vid"]
+PREDICTION_ROOT = OUTPUTS / "predictions"
+DATA_DIR = Path(os.environ.get("CIRCLING_DATA_DIR") or default_data_dir(ROOT))
+VIDEOS = selected_videos()  # default ["0028_vid", "0031_vid"]
+VIDEO_FRAMES = frame_counts(VIDEOS, DATA_DIR)
 SEED = 42
 
 __all__ = [
-    "EXPERIMENT_DIR", "FEATURE_TABLE", "GROUND_TRUTH", "MODEL_FRAMES", "PREDICTION_ROOT", "ROOT",
+    "DATA_DIR", "EXPERIMENT_DIR", "FEATURE_TABLE", "GROUND_TRUTH", "MODEL_FRAMES", "PREDICTION_ROOT", "ROOT",
     "SEED", "VIDEOS", "VIDEO_FRAMES", "VOTE_FRACTION", "evaluate_video", "frame_labels",
     "majority_vote_fraction", "merge", "positive_spans", "read_spans", "summarize",
     "scores_to_spans",

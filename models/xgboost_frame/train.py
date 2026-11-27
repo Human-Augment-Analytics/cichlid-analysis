@@ -1,7 +1,9 @@
 import argparse
+from pathlib import Path
 
 from sklearn.model_selection import StratifiedGroupKFold
 
+from models.common.annotated_negatives import DEFAULT_ANNOTATED_NEGATIVES
 from models.common.frame_model import train_frame_model
 
 NAMES = {'pair': 'xgboost_pose_pair', 'pairemb': 'xgboost_dinov2', 'pairvmae': 'xgboost_videomae',
@@ -29,13 +31,14 @@ def fit(x, y, groups):
     return model, details
 
 
-def train(features='pairmotion', tune_postprocess=True):
+def train(features='pairmotion', tune_postprocess=True, annotated_negatives=DEFAULT_ANNOTATED_NEGATIVES):
     return train_frame_model(
         NAMES[features], features, fit, f'Circling XGBoost (per frame), {features}', 'XGBoost',
         'XGBoost histogram trees with up to 1500 rounds, depth 4, learning rate 0.03, row/column subsampling, '
         'L2 regularization and 60-round AUC-PR early stopping on a segment-grouped training-only validation '
         'split. Missing values are handled by the trees. Span settings are selected on video-level OOF predictions '
-        'when enabled; final test predictions never choose those settings.', tune_postprocess=tune_postprocess)
+        'when enabled; final test predictions never choose those settings.', tune_postprocess=tune_postprocess,
+        annotated_negatives=annotated_negatives)
 
 
 if __name__ == '__main__':
@@ -44,5 +47,10 @@ if __name__ == '__main__':
                         help=', '.join(f'{k} -> {v}' for k, v in NAMES.items()))
     parser.add_argument('--skip-postprocess-tuning', action='store_true',
                         help='Disable video-level OOF span-rule selection')
+    negatives = parser.add_mutually_exclusive_group()
+    negatives.add_argument('--annotated-hard-negatives', type=Path, default=DEFAULT_ANNOTATED_NEGATIVES)
+    negatives.add_argument('--no-annotated-hard-negatives', action='store_const', const=None,
+                           dest='annotated_hard_negatives')
     args = parser.parse_args()
-    train(args.features, tune_postprocess=not args.skip_postprocess_tuning)
+    train(args.features, tune_postprocess=not args.skip_postprocess_tuning,
+          annotated_negatives=args.annotated_hard_negatives)

@@ -24,7 +24,9 @@ import pandas as pd
 from feature_engineering.pair_motion.feature_groups import ALL_MODEL_FEATURES, FEATURE_GROUPS
 from models.rule_based import circling_cleaning as cc
 
-from .common import FEATURE_TABLE, MODEL_FRAMES, VIDEO_FRAMES, VIDEOS, frame_labels, read_spans
+from models.xgboost import features as xgf
+
+from .common import DATA_DIR, FEATURE_TABLE, MODEL_FRAMES, VIDEO_FRAMES, VIDEOS, frame_labels, read_spans
 
 # (source column, statistic) pairs aggregated over all valid pairs in a frame.
 AGGREGATES = [
@@ -48,10 +50,10 @@ META_COLUMNS = [
 
 def valid_pair_keys(data_dir: Path, video: str) -> pd.DataFrame:
     """FrameNum/TrackID pairs that survive the rule-based artifact cleaning."""
-    video_id = video.removesuffix("_vid")
-    fish = cc.flag_fish(pd.read_parquet(cc.fish_path(data_dir, video_id), columns=cc.FISH_COLS), video_id)
+    fish_path, pairs_path = xgf.input_paths(data_dir, video)
+    fish = xgf.flag_fish(pd.read_parquet(fish_path, columns=cc.FISH_COLS), video)
     pairs = pd.read_parquet(
-        cc.pairs_path(data_dir, video_id),
+        pairs_path,
         columns=["FrameNum", "TrackID_1", "TrackID_2", "centroid_distance_px"],
     )
     flagged = cc.flag_pairs(pairs, fish)
@@ -59,7 +61,7 @@ def valid_pair_keys(data_dir: Path, video: str) -> pd.DataFrame:
 
 
 def build_video_frames(features: pd.DataFrame, keys: pd.DataFrame, video: str, spans) -> pd.DataFrame:
-    rows = features.loc[features["day_label"] == video]
+    rows = features.loc[features["day_label"] == video].copy()
     rows = rows.merge(keys, on=["FrameNum", "TrackID_1", "TrackID_2"], how="inner", validate="many_to_one")
     for column in ALL_MODEL_FEATURES:
         if rows[column].dtype == "boolean" or rows[column].dtype == bool:
@@ -85,11 +87,11 @@ def build_video_frames(features: pd.DataFrame, keys: pd.DataFrame, video: str, s
 
 
 def build_model_frames(data_dir: Path, feature_table: Path = FEATURE_TABLE) -> pd.DataFrame:
-    features = pd.read_parquet(feature_table)
     spans = read_spans()
     parts = []
     for video in VIDEOS:
         print(f"Building frame table: {video}", flush=True)
+        features = pd.read_parquet(feature_table, filters=[("day_label", "==", video)])  # one video in memory
         parts.append(build_video_frames(features, valid_pair_keys(data_dir, video), video, spans))
     return pd.concat(parts, ignore_index=True)
 
@@ -100,7 +102,7 @@ def load_model_frames(path: Path = MODEL_FRAMES) -> pd.DataFrame:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=cc.default_data_dir(cc.ROOT))
+    parser.add_argument("--data-dir", type=Path, default=DATA_DIR)
     parser.add_argument("--features", type=Path, default=FEATURE_TABLE)
     parser.add_argument("--out", type=Path, default=MODEL_FRAMES)
     args = parser.parse_args()

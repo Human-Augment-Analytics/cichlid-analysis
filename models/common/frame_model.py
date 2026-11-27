@@ -6,6 +6,7 @@ import joblib
 import numpy as np
 import polars as pl
 
+from models.common.annotated_negatives import annotated_negative_mask, read_annotated_negatives
 from models.common.config import (DATA_DIR, FINALIZED_ANNOTATIONS, OUTPUTS, model_name, mstcn_workdir,
                                   read_annotations, video_frames)
 from models.common.report import protocol, segment_counts, write_report
@@ -172,8 +173,28 @@ def tune_frame_postprocess(train, fit, columns, workdir, feature, meta, counts, 
     return select_postprocess(oof, spans, counts, output_dir, folds=folds)
 
 
+def append_annotated_training_rows(rows, counts, positives, negatives):
+    """Add unsampled negatives after the repository split, grouping each annotated run."""
+    added = {}
+    extra = []
+    next_group = int(rows['segment'].max()) + 1
+    for video, count in counts.items():
+        mask = annotated_negative_mask(count, negatives[video], positives[video])
+        starts = mask & ~np.r_[False, mask[:-1]]
+        groups = np.cumsum(starts) - 1 + next_group
+        next_group += int(starts.sum())
+        mask[rows.filter(pl.col('video') == video)['FrameNum'].to_numpy()] = False
+        frames = np.flatnonzero(mask)
+        added[video] = len(frames)
+        if len(frames):
+            extra.append(pl.DataFrame({'video': [video] * len(frames), 'FrameNum': frames,
+                                       'segment': groups[frames], 'split': ['train'] * len(frames)},
+                                      schema=rows.schema))
+    return pl.concat([rows, *extra]), added
+
+
 def train_frame_model(name, feature, fit, title, model_label, details, annotations=FINALIZED_ANNOTATIONS,
-                      tune_postprocess=True):
+                      tune_postprocess=True, annotated_negatives=None):
     name = model_name(name)
     output_dir = OUTPUTS / name
     workdir = mstcn_workdir()
@@ -181,6 +202,10 @@ def train_frame_model(name, feature, fit, title, model_label, details, annotatio
     segments, meta = shared_segments(workdir, spans, output_dir)
     counts = video_frames(sorted(meta))
     rows = segment_frames(segments, meta)
+    if annotated_negatives is not None:
+        negatives = read_annotated_negatives(annotated_negatives, counts)
+        rows, added = append_annotated_training_rows(rows, counts, spans, negatives)
+        print(f'Additional annotated negative training frames: {added}', flush=True)
     tables = []
     for (video,), selected in rows.group_by('video', maintain_order=True):
         features = video_features(workdir, video, feature, meta[video], counts[video],
@@ -202,6 +227,9 @@ def train_frame_model(name, feature, fit, title, model_label, details, annotatio
     report = protocol(annotations, model_label, features=feature, feature_columns=columns,
                       segments=segment_counts(segments), train_frames=train.height,
                       train_positive_frames=int(train['circling'].sum()), **fitted)
+    if annotated_negatives is not None:
+        report['annotated_negatives'] = {'source': str(annotated_negatives), 'extra_training_frames': added}
+        report['sampling'] += ' Add unsampled annotated negative frames to training after the split.'
     notes = [report['label_assumption'], report['sampling'], report['split'],
              f'Per-frame model on {DESCRIPTIONS[feature]}: every frame of the train segments for fitting, '
              f'every frame of the test segments for the metrics. {details}']

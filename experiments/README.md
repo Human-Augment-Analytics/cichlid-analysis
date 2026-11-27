@@ -29,6 +29,14 @@ uv run python -m experiments.shared_features.lovo --variants all
 uv run python -m experiments.shared_features.compare
 ```
 
+Other videos: set `CIRCLING_VIDEOS` (annotation IDs), `CIRCLING_DATA_DIR` (their
+`<video>.parquet` and `<video>_pairs.parquet`) and `CIRCLING_OUTPUTS` (a separate output
+root). Build the pair-motion features with `build_features --videos …`, then steps 2, 3
+and 5 as above. `lovo --holdout 0028_vid` keeps that video out of every fold and tests it
+last on a model of all other videos (the issue #19 protocol).
+`lovo_folds.sbatch` runs the twelve `xgb_*` variants this way on PACE, with and without
+reviewed negatives; `generalizability_report.py` shows the results.
+
 Results: `outputs/experiments/lovo/summary.md` and `results.csv`; per-variant fold
 settings, permutation importance and logistic coefficients are in
 `outputs/experiments/lovo/folds/`. The side-by-side table is
@@ -42,6 +50,13 @@ training video (4 contiguous blocks with a 300-frame buffer), maximizing event
 F1@50. The rule variant grid-searches `w4s_close_frac` and `w4s_orbit_turns_abs`
 cutoffs on the training video only. Frames without a valid pair are scored as not
 circling. A valid pair is one the rule-based cleaning keeps.
+
+XGBoost variants give reviewed hard-negative frames a training weight of 2.
+Those frames are already in the experiment's frame table and have weight 1 in a
+baseline run. Finalized positives keep their original weight. The weights are
+applied only to the fit rows of each outer and inner fold. To compare with the
+unweighted baseline, run with `--no-annotated-hard-negatives` and a separate
+`--out-dir` for its results.
 
 ## Variants
 
