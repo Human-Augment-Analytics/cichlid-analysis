@@ -33,9 +33,9 @@ for name, folder in prediction_models().items():  # e.g. {'rule_based': Path(...
 ```
 
 `predicted` has `video_id`, `start` and `end` columns, plus `direction` and
-`cycles` with `labels=True` and `score` with `scores=True`. `evaluate` also takes an optional `num_frames`
-mapping of video ID to frame count; direction and cycle metrics are only added
-when `gt_labels` is given.
+`cycles` with `labels=True` and `score` with `scores=True`. `evaluate` also takes
+an optional `num_frames` mapping of video ID to frame count; direction and cycle
+metrics are only added when `gt_labels` is given.
 
 ## Input format
 
@@ -46,7 +46,12 @@ with a video ID column plus start/end frame columns, e.g. `VideoID`, `StartFrame
 `Start Frame` also work). Optionally add a `Direction` column (`CW` or `CCW`),
 a `Cycles` column (number of circles, may be fractional), and a finite numeric
 `Score` (higher means more confident; required for mAP). Other columns are
-ignored. Frame ranges are zero-based and inclusive.
+ignored. Frame ranges are zero-based and inclusive. ActionFormer additionally
+writes `Confidence`; `tal_report.py` uses that native score for mAP@IoU ranking.
+
+Ground truth intervals are read from the same video ID and start/end frame
+columns. Every ground-truth row is used, so it must contain only valid circling
+events.
 
 A model that only finds intervals can borrow the rule-based direction and cycle
 count: `uv run python -m models.rule_based.episode_labels outputs/predictions/<model>`
@@ -82,9 +87,6 @@ attribute quality without detection noise.
   a second or two, 0.5 (strict) requires clearly the same event, and mAP averages
   0.1 to 0.7 to show how quality degrades as boundaries tighten. These cut-offs are
   conventions (MS-TCN F1@10/25/50, FSH-TAL mAP), not tuned values.
-
-Ground truth must contain only valid circling events. ActionFormer additionally
-writes `Confidence`; `tal_report.py` uses that native score for mAP@IoU ranking.
 
 ## Metrics
 

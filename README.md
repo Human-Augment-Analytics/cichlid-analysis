@@ -29,7 +29,7 @@ VSCode with the Marimo extension, just like Jupyter.
     video (`VideoID`, `StartFrame`, `EndFrame`, plus any model-specific columns).
 - `ground_truth_annotations/`: annotation workflow, finalized intervals, and supporting notebooks.
 - `feature_engineering/`: reusable feature pipelines. Each feature group has its own package,
-  documentation and generated feature tables and samples.
+  documentation, checked-in sample data, and ignored generated outputs.
 - `tests/`: regression tests for the model feature, span and evaluation functions.
 - `evaluation/`: library for action segmentation evaluation
 - `experiments/shared_features/`: leave-one-video-out comparison of feature sets and
@@ -103,7 +103,10 @@ uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 
 The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
 quality checks, and parameters are documented alongside the pipeline. The build
-also writes a small sample CSV. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+also regenerates a small committed sample CSV. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+
+Pair-motion model variants use these feature definitions through
+`models/common/pair_motion.py`; `feature_groups.py` lists the columns by group.
 
 ### MS-TCN
 
@@ -114,9 +117,6 @@ features with DINOv2 embeddings (see `--help` for the other feature sets).
 uv run python -m models.mstcn_dlc2action.train
 uv run python -m models.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
 ```
-
-Pair-motion model variants use these feature definitions through
-`models/common/pair_motion.py`; `feature_groups.py` lists the columns by group.
 
 ### Shared-feature experiments
 
