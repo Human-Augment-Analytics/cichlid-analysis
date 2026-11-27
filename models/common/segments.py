@@ -7,8 +7,8 @@ import polars as pl
 from sklearn.model_selection import train_test_split
 
 from models.common.config import CLOSE_PX, HARD_NEGATIVES, video_frames
-from models.logistic_regression.train import THRESHOLD, frame_labels
-from models.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
+from models.intervals.logistic_regression.train import THRESHOLD, frame_labels
+from models.intervals.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
 
 LEN_SEGMENT = 128
 OVERLAP = 0
@@ -113,7 +113,7 @@ def pair_closeness(workdir, meta, videos):
         names = (meta[video].get('pair_stats') or {}).get('pair_features')
         if not path.exists() or not names:
             raise SystemExit(f'{path} not found: hard negatives need the pair features, run '
-                             '`python -m models.mstcn_dlc2action.train --prepare-only --features pair` first')
+                             '`python -m models.intervals.mstcn_dlc2action.train --prepare-only --features pair` first')
         with open(path, 'rb') as f:
             values = np.asarray(pickle.load(f)[br.PAIR_CLIP])
         out[video] = (values[:, -1] > 0) & (values[:, names.index('centroid_dist_px')] < CLOSE_PX)
@@ -126,7 +126,7 @@ def load_meta(workdir, videos):
     missing = sorted(set(videos) - set(meta))
     if missing:
         raise SystemExit(f'{missing} not converted in {data}: run '
-                         '`python -m models.mstcn_dlc2action.train --prepare-only` first')
+                         '`python -m models.intervals.mstcn_dlc2action.train --prepare-only` first')
     return meta
 
 

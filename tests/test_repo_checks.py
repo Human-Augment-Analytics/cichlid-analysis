@@ -76,7 +76,7 @@ def argparse_default(path, flag):
 def test_readme_mstcn_default_features_match_cli():
     match = re.search(r"### MS-TCN\n+The default feature set is `([^`]+)`", (ROOT / "README.md").read_text())
     assert match, "README MS-TCN section no longer states the default feature set"
-    assert match.group(1) == argparse_default(ROOT / "models/mstcn_dlc2action/train.py", "--features")
+    assert match.group(1) == argparse_default(ROOT / "models/intervals/mstcn_dlc2action/train.py", "--features")
 
 
 def test_pair_motion_sample_size_matches_docs():

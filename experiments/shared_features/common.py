@@ -7,8 +7,8 @@ from pathlib import Path
 import numpy as np
 
 from evaluation.metrics import evaluate_video, merge, summarize
-from models.xgboost.features import GROUND_TRUTH, VIDEO_FRAMES, frame_labels, read_spans
-from models.xgboost.postprocess import VOTE_FRACTION, majority_vote_fraction
+from models.intervals.xgboost.features import GROUND_TRUTH, VIDEO_FRAMES, frame_labels, read_spans
+from models.intervals.xgboost.postprocess import VOTE_FRACTION, majority_vote_fraction
 
 ROOT = Path(__file__).resolve().parents[2]
 FEATURE_TABLE = ROOT / "outputs/pair_motion/pair_features_frame.parquet"

@@ -6,7 +6,7 @@ import pandas as pd
 import polars as pl
 
 from models.common.config import DATA_DIR, OUTPUTS
-from models.rule_based import circling_cleaning as cc
+from models.common import circling_cleaning as cc
 
 FPS = 30
 CLOSE_PX = 160

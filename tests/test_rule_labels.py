@@ -5,8 +5,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from models.rule_based.episode_labels import (FPS, label_interval_file, label_intervals,
-                                              label_predictions, label_table, video_key)
+from models.direction.rule_based.episode_labels import (FPS, label_interval_file, label_intervals,
+                                                        label_predictions, label_table, video_key)
 
 
 

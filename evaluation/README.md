@@ -54,7 +54,7 @@ columns. Every ground-truth row is used, so it must contain only valid circling
 events.
 
 A model that only finds intervals can borrow the rule-based direction and cycle
-count: `uv run python -m models.rule_based.episode_labels outputs/predictions/<model>`
+count: `uv run python -m models.direction.rule_based.episode_labels outputs/predictions/<model>`
 writes a copy with `Direction` and `Cycles` to `outputs/predictions/<model>_rule_labels/`,
 which is then evaluated as its own model. For that estimator (and the oracle-span
 helper below), **positive `d_orbital_rad_s` is clockwise (CW) on screen** with
@@ -173,7 +173,7 @@ For the rule-based attribute estimator, oracle labels can be generated from a
 multi-video interval CSV:
 
 ```sh
-uv run python -m models.rule_based.episode_labels path/to/ground_truth_intervals.csv \
+uv run python -m models.direction.rule_based.episode_labels path/to/ground_truth_intervals.csv \
   --output-dir outputs/predictions/rule_based_oracle_labels
 ```
 

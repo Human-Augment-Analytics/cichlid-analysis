@@ -8,13 +8,13 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 
-from models.xgboost.features import (FEATURES, FPS, HALF_WINDOW, SERIES_COLUMNS,
-                                     WINDOW, WINDOW_FEATURES,
-                                     closest_pair_series, read_spans, sample_frames,
-                                     segment_intersections, window_features)
-from models.xgboost.postprocess import majority_vote_fraction
-from models.xgboost.train import (evaluate_full_videos, fit_model, positive_spans,
-                                 score_series, split_dataset)
+from models.intervals.xgboost.features import (FEATURES, FPS, HALF_WINDOW, SERIES_COLUMNS,
+                                               WINDOW, WINDOW_FEATURES,
+                                               closest_pair_series, read_spans, sample_frames,
+                                               segment_intersections, window_features)
+from models.intervals.xgboost.postprocess import majority_vote_fraction
+from models.intervals.xgboost.train import (evaluate_full_videos, fit_model, positive_spans,
+                                            score_series, split_dataset)
 
 
 class SamplingTests(unittest.TestCase):
@@ -198,7 +198,7 @@ class PostprocessingTests(unittest.TestCase):
         scores = np.r_[np.ones(40), np.zeros(10), np.ones(40)].astype(np.float32)
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
-            with patch("models.xgboost.train.score_series", return_value=scores):
+            with patch("models.intervals.xgboost.train.score_series", return_value=scores):
                 result = evaluate_full_videos(None, {"test": np.zeros((90, 2))},
                                               {"test": [(0, 39), (50, 89)]},
                                               output, output / "predictions")

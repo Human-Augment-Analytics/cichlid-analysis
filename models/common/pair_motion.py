@@ -24,7 +24,7 @@ from feature_engineering.pair_motion.features_motion import (
 )
 from feature_engineering.pair_motion.io_pose import PAIR_COLUMNS, TRACK_COLUMNS, assert_contract
 from models.common.config import DATA_DIR, OUTPUTS
-from models.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
+from models.intervals.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
 
 VERSION = "male_partner_pair_motion_v2_persistence"
 FEATURE_DIR = OUTPUTS / "frame_features"

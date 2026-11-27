@@ -6,14 +6,14 @@ import numpy as np
 import polars as pl
 import torch
 
-from models.actionformer.model import (build_model, infer_windows, video_item)
-from models.actionformer.postprocess import inclusive_intervals, interval_scores, prediction_table
-from models.actionformer.predict import feature_chunk, window_starts
-from models.actionformer.train import (normalization_stats, normalize, train_model, training_validation_split,
-                                       tune_video_postprocess, validation_loss)
-from models.actionformer.tuning import (load_inference_settings, proposal_summary, select_inference_settings,
-                                        select_oof_inference_settings)
-from models.actionformer.vendor.libs.utils import batched_nms
+from models.intervals.actionformer.model import (build_model, infer_windows, video_item)
+from models.intervals.actionformer.postprocess import inclusive_intervals, interval_scores, prediction_table
+from models.intervals.actionformer.predict import feature_chunk, window_starts
+from models.intervals.actionformer.train import (normalization_stats, normalize, train_model, training_validation_split,
+                                                 tune_video_postprocess, validation_loss)
+from models.intervals.actionformer.tuning import (load_inference_settings, proposal_summary, select_inference_settings,
+                                                  select_oof_inference_settings)
+from models.intervals.actionformer.vendor.libs.utils import batched_nms
 
 
 class ActionFormerTests(unittest.TestCase):
@@ -118,7 +118,7 @@ class ActionFormerTests(unittest.TestCase):
         }
         proposals = [((55.0, 245.0), 0.03), ((0.0, 20.0), 0.02)]
         with tempfile.TemporaryDirectory() as directory:
-            with patch('models.actionformer.tuning.infer_windows', return_value=proposals):
+            with patch('models.intervals.actionformer.tuning.infer_windows', return_value=proposals):
                 settings = select_inference_settings(object(), [sample], torch.device('cpu'), directory)
             self.assertGreaterEqual(settings['min_score'], 0.025)
             self.assertLessEqual(settings['min_seconds'], 4.0)
@@ -166,11 +166,11 @@ class ActionFormerTests(unittest.TestCase):
                     np.zeros(1, dtype=np.float32), np.ones(1, dtype=np.float32))
 
         with tempfile.TemporaryDirectory() as directory:
-            with (patch('models.actionformer.train.prepare_samples', side_effect=prepare),
-                  patch('models.actionformer.train.build_model', return_value=(object(), {})),
-                  patch('models.actionformer.train.train_model', return_value=[{'epoch': 1}]),
-                  patch('models.actionformer.predict.decode_video', return_value=[]) as decode,
-                  patch('models.actionformer.tuning.select_oof_inference_settings',
+            with (patch('models.intervals.actionformer.train.prepare_samples', side_effect=prepare),
+                  patch('models.intervals.actionformer.train.build_model', return_value=(object(), {})),
+                  patch('models.intervals.actionformer.train.train_model', return_value=[{'epoch': 1}]),
+                  patch('models.intervals.actionformer.predict.decode_video', return_value=[]) as decode,
+                  patch('models.intervals.actionformer.tuning.select_oof_inference_settings',
                         return_value={'min_score': 0.1, 'min_seconds': 2.0, 'merge_seconds': 1.0}) as select):
                 result = tune_video_postprocess(
                     segments, meta, spans, counts, 'workdir', 'pairmotion', ['feature'],
@@ -203,7 +203,7 @@ class ActionFormerTests(unittest.TestCase):
         self.assertIsNone(summary['confidence_max'])
 
     def test_old_checkpoint_decoder_is_reopened_for_raw_proposals(self):
-        from models.actionformer.predict import load_checkpoint
+        from models.intervals.actionformer.predict import load_checkpoint
 
         _, config = build_model(2)
         config['model']['test_cfg'].update({
@@ -235,8 +235,8 @@ class ActionFormerTests(unittest.TestCase):
             base_path, motion_path = root / 'base.parquet', root / 'motion.parquet'
             base.write_parquet(base_path)
             motion.write_parquet(motion_path)
-            with (patch('models.actionformer.predict.feature_table', return_value=base_path),
-                  patch('models.actionformer.predict.pair_motion_cache_file', return_value=motion_path)):
+            with (patch('models.intervals.actionformer.predict.feature_table', return_value=base_path),
+                  patch('models.intervals.actionformer.predict.pair_motion_cache_file', return_value=motion_path)):
                 result = feature_chunk(root, 'v', 'pairmotion', {}, len(frames), 0, 256)
         self.assertEqual(result.height, 256)
         self.assertEqual(result['FrameNum'].to_list(), list(range(256)))
@@ -256,15 +256,15 @@ class ActionFormerTests(unittest.TestCase):
     def test_runner_contains_resumable_actionformer_steps(self):
         runner = (Path(__file__).resolve().parents[1] / 'run.ps1').read_text()
         self.assertIn('[switch]$SkipActionFormer', runner)
-        self.assertIn('models.actionformer.train', runner)
-        self.assertIn('models.actionformer.predict', runner)
+        self.assertIn('models.intervals.actionformer.train', runner)
+        self.assertIn('models.intervals.actionformer.predict', runner)
         self.assertIn('actionformer train pairmotion epochs=', runner)
         self.assertIn('$NameOf.actionformer.Values', runner)
         self.assertIn('[switch]$SkipPostprocessTuning', runner)
         self.assertIn('@tunedFrameFlags', runner)
         self.assertIn('[double]$ActionFormerMinSeconds', runner)
         self.assertIn('@actionFormerFlags', runner)
-        mstcn_train = (Path(__file__).resolve().parents[1] / 'models/mstcn_dlc2action/train.py').read_text()
+        mstcn_train = (Path(__file__).resolve().parents[1] / 'models/intervals/mstcn_dlc2action/train.py').read_text()
         self.assertIn("'--preset', 'aug'", mstcn_train)
 
 

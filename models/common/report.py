@@ -5,7 +5,7 @@ import numpy as np
 import polars as pl
 
 from models.common.config import CLOSE_PX, HARD_NEGATIVES, LABELS, label_description
-from models.logistic_regression.train import THRESHOLD, metrics
+from models.intervals.logistic_regression.train import THRESHOLD, metrics
 
 
 def write_report(output_dir, title, label, test, report, notes=(), unit='frames'):

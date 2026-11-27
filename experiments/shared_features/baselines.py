@@ -21,9 +21,9 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
-from models.logistic_regression import features as lrf
-from models.rule_based import circling_cleaning as cc
-from models.xgboost import features as xgf
+from models.intervals.logistic_regression import features as lrf
+from models.common import circling_cleaning as cc
+from models.intervals.xgboost import features as xgf
 
 from .common import EXPERIMENT_DIR, MODEL_FRAMES, VIDEO_FRAMES, VIDEOS
 

@@ -22,7 +22,7 @@ from pathlib import Path
 import pandas as pd
 
 from feature_engineering.pair_motion.feature_groups import ALL_MODEL_FEATURES, FEATURE_GROUPS
-from models.rule_based import circling_cleaning as cc
+from models.common import circling_cleaning as cc
 
 from .common import FEATURE_TABLE, MODEL_FRAMES, VIDEO_FRAMES, VIDEOS, frame_labels, read_spans
 

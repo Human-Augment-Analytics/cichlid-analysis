@@ -11,9 +11,9 @@ from models.common.config import (DATA_DIR, FINALIZED_ANNOTATIONS, OUTPUTS, mode
 from models.common.report import protocol, segment_counts, write_report
 from models.common.segments import segment_frames, shared_segments
 from models.common.turns import turn_table
-from models.logistic_regression.features import (FEATURE_SOURCE, PAIR_ANGLES, PAIR_DISTANCES, PAIR_RATES,
-                                                   WINDOW, frame_features)
-from models.logistic_regression.train import frame_labels
+from models.intervals.logistic_regression.features import (FEATURE_SOURCE, PAIR_ANGLES, PAIR_DISTANCES, PAIR_RATES,
+                                                           WINDOW, frame_features)
+from models.intervals.logistic_regression.train import frame_labels
 
 FEATURE_DIR = OUTPUTS / 'frame_features'
 CHUNK = 60_000
@@ -80,7 +80,7 @@ def embedding_table(workdir, video, feature, meta, frame_count):
     data = Path(workdir) / 'data'
     path = data / f'{video}_{feature}.pickle'
     if not path.exists():
-        raise SystemExit(f'{path} not found: run `python -m models.mstcn_dlc2action.train '
+        raise SystemExit(f'{path} not found: run `python -m models.intervals.mstcn_dlc2action.train '
                          f'--prepare-only --features {feature}` first')
     with open(path, 'rb') as f:
         values = np.asarray(pickle.load(f)[PAIR_CLIP], np.float32)
