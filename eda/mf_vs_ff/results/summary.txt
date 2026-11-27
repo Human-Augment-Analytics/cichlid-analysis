@@ -1,0 +1,109 @@
+========================================================================
+ MF vs FF discrimination via Optical Flow features
+========================================================================
+
+## 1. Question
+
+Can pixel-level Optical Flow features (NO pose, NO masks,
+NO manual labels per fish) distinguish M-F circling bouts
+from F-F circling bouts on raw tank video?  The working
+hypothesis is that MF pairs rotate faster because the male
+leads and makes swift directional changes.
+
+## 2. Data
+
+MF events (12 total, duration-matched to FF range):
+  - Source: GT annotation CSVs under
+    ground_truth_annotations/finalized_annotations/.
+    By project convention every row in these CSVs is an
+    M-F circling event; no sex label is required.
+  - Per video: select events within the FF duration range,
+    then uniform-sample N across that range so MF and FF
+    duration distributions overlap (no accidental duration
+    confound).
+  - Videos sampled: ['vid_0002', 'vid_0028']
+
+FF events (7 total):
+  - Source: user-provided hh:mm:ss timestamps, manually
+    verified by watching the video.
+  - Videos sampled: ['vid_0002', 'vid_0028']
+
+## 3. Feature extraction (pixel-only)
+
+For each selected event:
+  1. Open the source mp4 at frame = Start Frame.
+  2. For every consecutive pair of frames, run
+     cv2.calcOpticalFlowFarneback (downsample=2, crop=0.1,
+     default pyramid parameters) to get a dense (u, v)
+     field.
+  3. Define the "active" pixel mask: |flow| > 0.5 px/frame.
+  4. Compute inside the active mask:
+       rot_omega  = sum(rx*v - ry*u) / sum(rx**2 + ry**2)
+                    angular velocity about activity centroid
+       mean_mag   = mean |flow|          (bulk motion)
+       trans_mag  = |mean flow vector|   (coherent translation)
+       activity   = count of active pixels (pair tightness proxy)
+  5. Aggregate per event: mean / median / p75 / max / std
+     of each feature across the event frames.
+
+No pose parquet, no SAM 2 masks, no fish-identity tracking
+entered this feature stream at any point.  Pose is used
+ONLY for the final direction-correct sanity check elsewhere
+in the project; not here.
+
+## 4. Statistical test
+
+Per feature, a two-sided Mann-Whitney U test between the
+MF and FF event groups.  Non-parametric because sample
+sizes are small (n_MF=12, n_FF=7) and the feature
+distributions are not expected to be Gaussian.  Report
+the MF/FF ratio of means + the p-value.
+
+## 5. Results
+
+Feature-by-feature, sorted by p:
+
+             feature  MF_n  FF_n     MF_mean     FF_mean   MF_median   FF_median  MF_over_FF_ratio  mannwhitney_U  p_value
+rot_omega_abs_median    12     7    0.014158    0.003587    0.013409    0.003775          3.946890           84.0 0.000040
+   rot_omega_abs_p75    12     7    0.019054    0.006721    0.017379    0.007128          2.834910           84.0 0.000040
+  rot_omega_abs_mean    12     7    0.014741    0.004915    0.014076    0.004661          2.999320           83.0 0.000079
+        mean_mag_std    12     7    0.209142    0.328135    0.181010    0.363123          0.637366           22.0 0.100262
+        activity_std    12     7  452.744078  655.928994  402.237128  598.595490          0.690233           23.0 0.119830
+   rot_omega_abs_max    12     7    0.042265    0.033773    0.039038    0.029424          1.251444           58.0 0.195562
+       rot_omega_std    12     7    0.008659    0.006929    0.008423    0.007469          1.249713           53.0 0.384457
+      trans_mag_mean    12     7    0.498555    0.509940    0.488343    0.490559          0.977673           32.0 0.431968
+       activity_mean    12     7 1081.152599 1148.797969 1024.603990 1138.122120          0.941116           34.0 0.535842
+       mean_mag_mean    12     7    0.935892    0.841549    0.946779    0.973705          1.112106           37.0 0.710844
+     mean_mag_median    12     7    0.906408    0.805475    0.919735    0.968083          1.125309           38.0 0.773240
+        mean_mag_max    12     7    1.853855    2.702338    1.724103    1.675460          0.686019           39.0 0.836945
+
+Significant at p < 0.05: 3 / 12 features
+
+Significant features:
+  rot_omega_abs_median     MF > FF  (MF/FF ratio = 3.95,  p = 0.0000)
+  rot_omega_abs_p75        MF > FF  (MF/FF ratio = 2.83,  p = 0.0000)
+  rot_omega_abs_mean       MF > FF  (MF/FF ratio = 3.00,  p = 0.0001)
+
+## 6. Interpretation
+
+Angular velocity magnitude is the clean
+discriminator.  Bulk motion (mean_mag, trans_mag)
+and activity area do NOT separate the groups --
+the difference is specifically rotational, not
+about overall how much the pair moves.  The
+hypothesis that "MF pairs rotate faster because
+the male leads" is empirically supported at
+p < 0.0001.
+
+## 7. Caveats
+
+- n_MF = 12, n_FF = 7: small samples; p-values should be
+  treated as indicative, not definitive.
+- F-F labels are from user visual verification, not from
+  an independent biological ground truth.
+- All videos sampled are overhead tank shots with similar
+  camera geometry; results may not transfer to side-view
+  or depth-sensor footage.
+- Duration matching reduces but does not eliminate the
+  possibility of other confounds (time of day, tank
+  activity level, which individual fish are present).

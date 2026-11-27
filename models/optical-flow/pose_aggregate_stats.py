@@ -1,4 +1,13 @@
-"""Aggregate per-video + overall MAE/RMSE/direction stats for pose num_turns outputs."""
+"""Aggregate per-video + overall MAE / RMSE / direction stats for pose
+num_turns outputs.
+
+Usage
+-----
+    python models/optical-flow/pose_aggregate_stats.py <path_to_pose_outputs>
+
+where <path_to_pose_outputs> is the directory containing one
+`vid<id>_events.csv` per video (written by `pose_num_turns.py --out`).
+"""
 from __future__ import annotations
 
 import sys
@@ -9,8 +18,13 @@ import pandas as pd
 
 
 def main():
-    root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(
-        '/mnt/c/Users/thaku/OneDrive/Desktop/Rupak/OMSCS/CS8903-Biomedical AI/Cichlid project/HAAG repo/outputs/optical-flow/pose')
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(2)
+    root = Path(sys.argv[1])
+    if not root.exists():
+        print(f'error: directory does not exist: {root}')
+        sys.exit(2)
     vids = ['vid0002', 'vid0007-day5', 'vid0007-day6', 'vid013',
             'vid0018', 'vid0028', 'vid0031', 'vid0037']
     summary_lines = []
@@ -80,7 +94,7 @@ def main():
     err = q - gt
     _emit(f'\nquantized error: mean={err.mean():+.3f}  median={err.median():+.2f}  '
           f'min={err.min():+.1f}  max={err.max():+.1f}')
-    _emit(f'\nerror distribution:')
+    _emit('\nerror distribution:')
     for v in sorted(err.round(1).unique()):
         c = int((err.round(1) == v).sum())
         p = 100 * c / len(err)

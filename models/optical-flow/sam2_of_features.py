@@ -205,7 +205,7 @@ def main():
         pr = df['pair_rot_orb'].dropna()
         pos = int((pr > 0).sum()); neg = int((pr < 0).sum())
         direction = 'CW' if pos > neg else 'CCW'
-        print(f'\n=== direction via Farneback-on-masks ===')
+        print('\n=== direction via Farneback-on-masks ===')
         print(f'pair_rot_orb: pos={pos} neg={neg} => {direction}')
         print(f'mean pair_distance: {df["pair_distance"].mean():.1f} px')
         print(f'mean pair_rot_omega: {df["pair_rot_omega"].mean():.4f}')

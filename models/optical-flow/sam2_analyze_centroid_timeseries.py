@@ -58,9 +58,7 @@ def main():
     pair_dist = np.hypot(cx1 - cx2, cy1 - cy2)
 
     theta1 = np.arctan2(cy1 - midy, cx1 - midx)
-    theta2 = np.arctan2(cy2 - midy, cx2 - midx)
     theta1_u = np.unwrap(theta1)
-    theta2_u = np.unwrap(theta2)
     cum_turns = (theta1_u - theta1_u[0]) / (2 * np.pi)   # fish 1 as reference
     # Instantaneous rot_omega (radians / frame), rolling-smoothed.
     rot_omega_raw = np.gradient(theta1_u)
