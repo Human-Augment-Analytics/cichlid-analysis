@@ -9,7 +9,7 @@ import polars as pl
 from models.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, ROOT, VIDEO_FRAMES as KNOWN_VIDEO_FRAMES
 
 GROUND_TRUTH = os.environ.get('CIRCLING_GROUND_TRUTH') or str(
-    ROOT / 'ground_truth_annotations' / 'finalized_annotations' / 'merged_spans.csv')
+    ROOT / 'ground_truth_annotations' / 'finalized_annotations')
 LABELS = (os.environ.get('CIRCLING_LABELS') or 'ground_truth').strip().lower()
 if LABELS not in ('ground_truth', 'baseline'):
     raise SystemExit(f'CIRCLING_LABELS must be ground_truth or baseline, not {LABELS!r}')
@@ -107,35 +107,61 @@ def video_frames(videos=None, data_dir=None):
 
 
 def read_annotations(path=None, videos=None):
+    """Read finalized per-video CSVs or a legacy combined annotation CSV.
+
+    The same VideoID in multiple files is rejected for selected videos because
+    separate recordings (e.g., 0007 day 5/day 6) have independent frame axes.
+    """
     path = FINALIZED_ANNOTATIONS if path is None else path
-    if not str(path).strip():
-        raise SystemExit('Set FINALIZED_ANNOTATIONS in models/common/config.py or CIRCLING_GROUND_TRUTH')
     path = Path(path)
-    if not path.is_file():
+    if not path.exists():
         raise SystemExit(f'FINALIZED_ANNOTATIONS: {path} not found')
-    rows = pl.read_csv(path, infer_schema=False)
-    columns = {re.sub(r'[^a-z]', '', c.lower()): c for c in rows.columns}
-    if not {'videoid', 'startframe', 'endframe'} <= columns.keys():
-        raise SystemExit(f'{path}: needs VideoID, StartFrame and EndFrame columns')
     frames = video_frames(videos)
     spans = {video: [] for video in frames}
-    ignored = set()
-    for video, start, end in rows.select(columns['videoid'], columns['startframe'],
-                                         columns['endframe']).iter_rows():
-        if video not in spans:
-            ignored.add(video)
-            continue
-        start, end = int(start), int(end)
-        if start < 0 or end < start or end >= frames[video]:
-            raise SystemExit(f'{path}: invalid interval {video} {start}-{end}')
-        spans[video].append((start, end))
-    if ignored:
-        print(f'Ignoring {sorted(ignored)}: not in the selected videos {sorted(frames)}', flush=True)
-    empty = [video for video, intervals in spans.items() if not intervals]
-    if len(empty) == len(spans):
+    sources = {video: set() for video in frames}
+    if path.is_dir():
+        files = sorted(path.glob('circling_annotations_vid*.csv'))
+        if not files:
+            raise SystemExit(f'{path}: no finalized annotation CSVs found')
+    elif path.is_file():
+        files = [path]
+    else:
+        raise SystemExit(f'{path}: expected CSV file or directory')
+
+    for file in files:
+        rows = pl.read_csv(file, infer_schema=False)
+        columns = {re.sub(r'[^a-z]', '', col.lower()): col for col in rows.columns}
+        if not {'videoid', 'startframe', 'endframe'} <= columns.keys():
+            raise SystemExit(f'{file}: needs VideoID, StartFrame and EndFrame columns')
+        for row in rows.iter_rows(named=True):
+            video = str(row[columns['videoid']] or '').strip()
+            if video not in spans:
+                continue
+            if 'behavior' in columns:
+                behavior = str(row[columns['behavior']] or '').strip().lower()
+                if behavior != 'circling':
+                    continue
+            start_text = str(row[columns['startframe']] or '').strip()
+            end_text = str(row[columns['endframe']] or '').strip()
+            if not start_text or not end_text:
+                continue
+            try:
+                start, end = int(start_text), int(end_text)
+            except ValueError as exc:
+                raise SystemExit(f'{file}: invalid frame values {start_text!r}, {end_text!r}') from exc
+            if start < 0 or end < start or end >= frames[video]:
+                raise SystemExit(f'{file}: invalid interval {video} {start}-{end}')
+            spans[video].append((start, end))
+            sources[video].add(file.name)
+
+    for video, names in sources.items():
+        if len(names) > 1:
+            raise SystemExit(f'{video}: annotations found in multiple recordings {sorted(names)}; '
+                             'use unique recording IDs before combining them')
+    if not any(spans.values()):
         raise SystemExit(f'{path}: no circling intervals for {sorted(spans)}')
-    if empty:
-        print(f'No circling intervals for {empty}: their segments are all negative', flush=True)
+    for video, intervals in spans.items():
+        print(f'{video}: {len(intervals)} circling intervals from {sorted(sources[video])}', flush=True)
     return {video: sorted(intervals) for video, intervals in spans.items()}
 
 

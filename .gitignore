@@ -234,3 +234,43 @@ feature_engineering/pair_motion/data/*.part
 outputs/mstcn_dlc2action/*
 gpu_ins
 models/mstcn_dlc2action/README.md
+outputs/mstcn_dlc2action/README.md
+outputs/mstcn*
+outputs/actionformer*
+outputs/xgboost*
+outputs/sartab
+outputs/lrcv*
+outputs/predictions/*
+outputs/metrics/*
+outputs/metrics/*
+outputs/figures/*
+outputs/frame_features/*
+outputs/runs
+outputs/circling*
+
+model_performance_report_viz.py
+run.ps1
+evaluation/cross_check_postprocess.py
+
+# Local ActionFormer experiment artifacts
+/outputs/experiment_backups/
+/outputs/overnight_backup/
+
+# Local annotated training data
+/experiments/actionformer/data/
+
+# Temporary dependency lockfile backups
+/uv.lock.backup
+/uv.lock.broken
+/uv.lock.old
+
+# Local research archives
+/cichlid_multirecording_update.zip
+
+# Restored local/regenerable research artifacts
+outputs/xgboost/*.parquet
+outputs/xgboost/scores/
+outputs/xgboost/*.html
+PROJECT_CONTEXT.md
+outputs/experiments/
+outputs/predictions/lovo_*/

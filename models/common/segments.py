@@ -73,7 +73,7 @@ def split_segments(segments, seed=SEED):
     return segments.with_columns(pl.Series('split', split))
 
 
-def write_split(segments, path, n_rows):
+def write_split(segments, path, n_rows, len_segment=LEN_SEGMENT):
     ids = {k: [br.segment_id(v, s, e) for v, s, e in segments.filter(pl.col('split') == k)
                .select('video', 'start_row', 'end_row').iter_rows()] for k in ('train', 'test')}
     path = Path(path)
@@ -84,7 +84,7 @@ def write_split(segments, path, n_rows):
             f.write(header + '\n')
             f.writelines(sid + '\n' for sid in ids[key])
     Path(str(path) + '.json').write_text(json.dumps({
-        'scheme': 'repo', 'len_segment': LEN_SEGMENT, 'overlap': OVERLAP, 'seed': SEED,
+        'scheme': 'repo', 'len_segment': len_segment, 'overlap': OVERLAP, 'seed': SEED,
         'val_is_test': True, 'n_frames': n_rows,
         'sampling': 'every segment with circling plus an equal number without, per video',
         'split': 'stratified random 80/20 train/test, random_state=42'}, indent=2), encoding='utf-8')
@@ -130,7 +130,7 @@ def load_meta(workdir, videos):
     return meta
 
 
-def shared_segments(workdir, spans, output_dir=None):
+def shared_segments(workdir, spans, output_dir=None, len_segment=LEN_SEGMENT):
     workdir = Path(workdir)
     data = workdir / 'data'
     videos = sorted(spans)
@@ -147,8 +147,10 @@ def shared_segments(workdir, spans, output_dir=None):
     n_rows = {v: int(meta[v]['n_frames']) for v in videos}
     positives = br.read_positive_intervals(data, videos)
     closeness = pair_closeness(workdir, meta, videos) if HARD_NEGATIVES else None
-    segments = split_segments(sample_segments(positives, n_rows, closeness=closeness, hard_fraction=HARD_NEGATIVES))
-    write_split(segments, workdir / 'splits' / f'{SPLIT}.txt', n_rows)
+    segments = split_segments(sample_segments(
+        positives, n_rows, len_segment=len_segment,
+        closeness=closeness, hard_fraction=HARD_NEGATIVES))
+    write_split(segments, workdir / 'splits' / f'{SPLIT}.txt', n_rows, len_segment=len_segment)
     if output_dir is not None:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         segments.write_parquet(Path(output_dir) / 'sampled_segments.parquet')

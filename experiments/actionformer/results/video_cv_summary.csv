@@ -1,0 +1,11 @@
+study,configuration,window_frames,mean_map_10_30_50_70,mean_event_f1_at_50,mean_frame_precision,mean_frame_recall,total_predicted_events,notes
+window,256-frame baseline,256,0.2211,0.2062,0.4116,0.9308,2958,Per-fold postprocessing; seven development videos
+window,512-frame,512,0.2520,0.2138,,,,Per-fold postprocessing; seven development videos
+window,1024-frame,1024,0.2783,0.3559,0.5091,0.8988,1618,Per-fold postprocessing; seven development videos
+proposal_cap,1000 proposals,1024,0.2783,0.3559,0.5091,,1618,Frozen 1024-frame checkpoint and fold-specific postprocessing
+proposal_cap,2000 proposals,1024,0.2786,0.3559,0.5091,,1618,Frozen 1024-frame checkpoint and fold-specific postprocessing
+proposal_cap,3000 proposals,1024,0.2786,0.3559,0.5091,,1618,Frozen 1024-frame checkpoint and fold-specific postprocessing
+postprocessing,Original model fixed 0.20/4 s/4 s,1024,0.2783,0.5627,0.7679,0.8126,657,Exploratory development-grid winner; not independent test performance
+hard_negatives,Strict proximity 25% requested (own fold settings),1024,0.2986,0.3241,0.4422,,2060,Only 18 of 693 negatives actually selected via hard-negative rule
+hard_negatives,Strict proximity fixed 0.20/4 s/4 s,1024,0.2986,0.5278,0.7728,,558,Same fixed baseline-selected postprocessing on different frozen checkpoints; exploratory
+window,1024-frame corrected GT,1024,0.2867,0.4042,,,,Updated annotations; seven development folds; fold-selected postprocessing

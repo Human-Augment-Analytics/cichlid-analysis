@@ -25,6 +25,8 @@ dependencies = [
     "dlc2action>=1.0",
     "python-dotenv>=1.0.0",
     "xgboost>=3.2,<4",
+    "torch>=2.15.0",
+    "transformers>=5.22.2",
 ]
 
 [tool.marimo.runtime]
