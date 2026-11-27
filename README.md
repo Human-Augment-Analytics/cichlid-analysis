@@ -138,3 +138,13 @@ Run the regression suite and visualization tests from the repository root:
 ```sh
 uv run --with pytest pytest tests visualization/test_export_video.py visualization/test_live.py
 ```
+
+CI (`.github/workflows/ci.yml`) runs the lightweight repository checks on every
+pull request. Run them locally before pushing:
+
+```sh
+uv lock --check                 # uv.lock is valid and matches pyproject.toml
+uvx ruff@0.14.0 check .         # unused imports and syntax errors (e.g. conflict markers)
+python scripts/check_repo.py    # conflict markers, pasted-twice doc lines, committed/ignored claims
+uv run --no-project --with pytest pytest tests/test_repo_checks.py
+```

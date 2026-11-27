@@ -29,12 +29,12 @@ from models.common.segments import (  # noqa: E402
     SPLIT,
     STRIDE,
     frame_scores,
-    rows_to_frames,
-    sample_segments,
+    rows_to_frames,  # noqa: F401  re-exported for tests
+    sample_segments,  # noqa: F401  re-exported for tests
     shared_segments,
-    split_segments,
+    split_segments,  # noqa: F401  re-exported for tests
     test_frames,
-    write_split,
+    write_split,  # noqa: F401  re-exported for tests
 )
 
 NAMES = {'pairemb': 'mstcn_dinov2', 'pairvmae': 'mstcn_videomae', 'pair': 'mstcn_pose_pair',

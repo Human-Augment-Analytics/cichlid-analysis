@@ -13,7 +13,6 @@ def main():
         '/mnt/c/Users/thaku/OneDrive/Desktop/Rupak/OMSCS/CS8903-Biomedical AI/Cichlid project/HAAG repo/outputs/optical-flow/pose')
     vids = ['vid0002', 'vid0007-day5', 'vid0007-day6', 'vid013',
             'vid0018', 'vid0028', 'vid0031', 'vid0037']
-    import io
     summary_lines = []
     def _emit(line=''):
         print(line)

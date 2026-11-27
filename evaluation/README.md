@@ -138,18 +138,6 @@ attribute quality without detection noise.
   supervision, camera and species differ.
 
 - **Joint direction precision / recall / F1**, for models with a `Direction` column.
-- **Temporal mAP** follows the FSH-TAL temporal action-localization protocol.
-  Predictions are sorted by `Score`, greedily matched one-to-one to the
-  highest-IoU unmatched ground-truth event, and integrated with all-point
-  interpolated precision-recall. The report shows mAP@0.1, 0.3, 0.5 and 0.7;
-  `mAP@0.1:0.7` averages all seven 0.1-spaced thresholds and then videos.
-  Inclusive frame intervals become half-open time intervals
-  `[start / fps, (end + 1) / fps)`. Without genuine scores, mAP is unavailable;
-  row order is never treated as confidence. FSH-TAL's published score is not
-  directly comparable because its behaviors, point-derived ground truth,
-  supervision, camera and species differ.
-
-- **Joint direction precision / recall / F1**, for models with a `Direction` column.
   Predicted and ground-truth segments are paired as in F1@10 (`LABEL_TAU`). For
   each direction d, a predicted d segment paired with a ground-truth d segment is
   a TP; any other predicted d segment is a FP (except one paired with a segment of

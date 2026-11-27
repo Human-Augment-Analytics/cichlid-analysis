@@ -15,7 +15,6 @@ __generated_with = "0.25.0"
 app = marimo.App(width="medium", app_title="Data cleaning")
 
 with app.setup:
-    import os
     from pathlib import Path
 
     import marimo as mo
