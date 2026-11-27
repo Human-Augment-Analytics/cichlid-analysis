@@ -15,7 +15,6 @@ __generated_with = "0.25.0"
 app = marimo.App(width="medium", app_title="Rule-based circling detector")
 
 with app.setup:
-    import os
     from pathlib import Path
 
     import marimo as mo
@@ -90,10 +89,7 @@ def _():
 def _():
     DATA_DIR = cc.default_data_dir(cc.ROOT)           # $CIRCLING_DATA_DIR, <repo>/data or ~/Downloads
     OUT_DIR = cc.ROOT / "outputs" / "predictions" / "rule_based"
-<<<<<<< HEAD
-=======
     CACHE = DATA_DIR / "rule_detector_cache"          # kept next to the data, outside git
->>>>>>> b27b994 (added all new models)
     VIDEOS = ["0031", "0028"]
     LABELS = {
         "0031": [(265510, 266227), (266809, 267100), (267242, 267837), (269089, 271817),

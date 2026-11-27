@@ -27,7 +27,6 @@ def main():
         sys.exit(2)
     vids = ['vid0002', 'vid0007-day5', 'vid0007-day6', 'vid013',
             'vid0018', 'vid0028', 'vid0031', 'vid0037']
-    import io
     summary_lines = []
     def _emit(line=''):
         print(line)
