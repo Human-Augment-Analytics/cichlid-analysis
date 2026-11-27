@@ -4,7 +4,6 @@ Run from the repository root: python -m visualization.live
 import argparse
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import json
 import mimetypes
 import os
 from pathlib import Path

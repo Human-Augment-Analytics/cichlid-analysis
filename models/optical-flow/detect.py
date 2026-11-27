@@ -16,7 +16,6 @@ be used for ranking (mAP) rather than for an absolute probability.
 """
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, asdict
 from typing import Iterable
 

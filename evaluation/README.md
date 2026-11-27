@@ -21,8 +21,6 @@ Other notebooks can import these functions, as `model_performance_report.py` doe
 ```python
 from evaluation.evaluate import (evaluate, prediction_models, prediction_video_ids,
                                  read_ground_truth, read_ground_truth_labels,
-from evaluation.evaluate import (evaluate, prediction_models, prediction_video_ids,
-                                 read_ground_truth, read_ground_truth_labels,
                                  read_predictions, summary_view)
 
 gt = read_ground_truth()
@@ -35,7 +33,6 @@ for name, folder in prediction_models().items():  # e.g. {'rule_based': Path(...
 ```
 
 `predicted` has `video_id`, `start` and `end` columns, plus `direction` and
-`cycles` with `labels=True` and `score` with `scores=True`. `evaluate` also takes an optional `num_frames`
 `cycles` with `labels=True` and `score` with `scores=True`. `evaluate` also takes an optional `num_frames`
 mapping of video ID to frame count; direction and cycle metrics are only added
 when `gt_labels` is given.
@@ -61,13 +58,6 @@ image y pointing down.
 Joint metrics (`direction_f1`, cycle MAE at IoU ≥ 0.1) are the end-to-end product
 score (Layer C). Use the strict-IoU (Layer B) and oracle-span tables to judge
 attribute quality without detection noise.
-which is then evaluated as its own model. For that estimator (and the oracle-span
-helper below), **positive `d_orbital_rad_s` is clockwise (CW) on screen** with
-image y pointing down.
-
-Joint metrics (`direction_f1`, cycle MAE at IoU ≥ 0.1) are the end-to-end product
-score (Layer C). Use the strict-IoU (Layer B) and oracle-span tables to judge
-attribute quality without detection noise.
 
 ### Why three layers, and how to read the τ thresholds
 
@@ -92,34 +82,9 @@ attribute quality without detection noise.
   a second or two, 0.5 (strict) requires clearly the same event, and mAP averages
   0.1 to 0.7 to show how quality degrades as boundaries tighten. These cut-offs are
   conventions (MS-TCN F1@10/25/50, FSH-TAL mAP), not tuned values.
-`Start Frame` also work). Other columns are ignored by the standard metrics and
-every row is used, so ground truth must contain only valid circling events.
-ActionFormer additionally writes `Confidence`; `tal_report.py` uses that native
-score for mAP@IoU ranking. Frame ranges are zero-based and inclusive.
 
-### Why three layers, and how to read the τ thresholds
-
-- **Layer C, joint (IoU ≥ 0.1):** detection and attributes together. A span counts
-  once it overlaps a ground-truth event by 10%, so a wrong or missing event lowers
-  the score. This is what a user of the full pipeline gets. τ = 0.1 is deliberately
-  loose: the question is "did it find this event and label it correctly", not
-  "are the boundaries right".
-- **Layer B, strict (IoU ≥ 0.5):** attributes judged only on well-localized spans.
-  Missed or spurious events are excluded, because F1/mAP already measure them. If
-  Layer B is much better than Layer C, the attribute estimator is fine and detection
-  is the bottleneck. If both are low, the attribute estimator itself is weak.
-- **Oracle spans (Layer A):** attributes computed on the ground-truth intervals, with
-  no detection error. This is the ceiling for the attribute estimator. I expect it
-  to be the most salient number (it isolates direction and cycle estimation); the
-  other layers can be argued for qualitatively as measures of how much detection
-  noise costs.
-- **Reading the gap:** C < B means detection or boundary errors drag the product
-  down. B < oracle means localization noise corrupts the attributes. A low oracle
-  means the direction and cycle estimator needs work regardless of the detector.
-- **Choice of τ:** 0.1 (joint) suits a behavior whose start and end are ambiguous by
-  a second or two, 0.5 (strict) requires clearly the same event, and mAP averages
-  0.1 to 0.7 to show how quality degrades as boundaries tighten. These cut-offs are
-  conventions (MS-TCN F1@10/25/50, FSH-TAL mAP), not tuned values.
+Ground truth must contain only valid circling events. ActionFormer additionally
+writes `Confidence`; `tal_report.py` uses that native score for mAP@IoU ranking.
 
 ## Metrics
 

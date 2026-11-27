@@ -4,7 +4,6 @@ python -m visualization.export_video visualization/export0031.json
 This renderer does not train models or infer poses/behavior.
 """
 import argparse
-import csv
 import itertools
 import shutil
 from collections import defaultdict
