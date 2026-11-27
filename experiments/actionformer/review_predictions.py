@@ -14,7 +14,6 @@ import hashlib
 import html
 import json
 import math
-from collections import Counter
 from pathlib import Path
 
 FPS = 30.0

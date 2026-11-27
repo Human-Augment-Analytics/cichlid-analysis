@@ -21,7 +21,6 @@ import os
 import random
 import re
 import statistics
-import sys
 import time
 from pathlib import Path
 from functools import partial
@@ -203,7 +202,6 @@ def seed_all(torch, numpy, seed):
 def metrics_for_video(video, raw, settings, spans, counts, tools):
     """AP from scored native proposals; F1 from train-tuned hard decisions."""
     import numpy as np
-    import polars as pl
 
     suppress, prediction_table, evaluate_video, map_at_tiou = tools
     proposals = suppress(raw)
