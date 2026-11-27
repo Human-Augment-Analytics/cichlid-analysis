@@ -1,14 +1,27 @@
-# XGBoost circling classifier
+# xgboost: XGBoost on 121-frame windows
 
-Open the training and evaluation notebook from the repository root:
+- **Outputs**: intervals. `outputs/predictions/xgboost/<video>.csv` (`VideoID, StartFrame, EndFrame`);
+  model, metrics and per-frame `scores/` in `outputs/xgboost/`. Videos `0028_vid`, `0031_vid`.
+- **Train / predict** (one step: training also scores both full videos and writes the CSVs):
+  ```sh
+  uv run marimo edit models/intervals/xgboost/notebook.py   # notebook with results
+  uv run python -m models.intervals.xgboost.train [--data-dir D] [--output-dir outputs/xgboost] [--prediction-dir outputs/predictions/xgboost]
+  ```
+  macOS: `brew install libomp` first.
+- **Training setup**:
+  - Labels: `finalized_annotations/circling_annotations_vid*.csv`, overlaps merged.
+  - Features: 605 = 5 signals × 121 centered offsets (−60..+60) of the closest cleaned pair: distance,
+    orbital rate, distance rate, orbital acceleration, head/tail intersection speed.
+  - Sampling: all positive frames + ⌈span length / 2⌉ frames on each side of each positive span.
+  - Split: stratified random 70/30 of sampled frames, seed 42. Saved model = the 70% fit (no refit).
+  - Model: `XGBClassifier(n_estimators=400, max_depth=3, learning_rate=0.05, subsample=0.8,
+    colsample_bytree=0.8, min_child_weight=5, tree_method='hist', random_state=42)`, threshold 0.5.
+  - Spans: centered 30-frame majority vote (≥ 50% of frames ≥ 0.5), contiguous positives, no length filter.
+- Caveat: centered windows overlap across the split, so the holdout is not unseen events or videos.
 
-```sh
-uv sync
-uv run marimo edit models/intervals/xgboost/notebook.py
-```
+## Details
 
-On macOS, install the OpenMP runtime with `brew install libomp` before using
-XGBoost. Inputs use `CIRCLING_DATA_DIR`, `data/`, or `~/Downloads`, with the same
+Inputs use `CIRCLING_DATA_DIR`, `data/`, or `~/Downloads`, with the same
 pose/pair Parquet filenames as the rule-based detector.
 
 The notebook loads the finalized usable positive intervals in

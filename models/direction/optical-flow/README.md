@@ -1,4 +1,27 @@
-# Circling pipeline — direction, turns, span features
+# optical-flow: direction + number of turns per circling event
+
+- **Outputs**: direction (CW/CCW) and quantized `num_turns` per event; Method A also has an experimental
+  span proposer (`detect.py`). Nothing goes to `outputs/predictions/`; results go to `--out`, by convention
+  `outputs/optical-flow/{direction_only,pose,sam2,results}/`.
+- **Run** (no training; inputs are videos, pose parquets and `circling_annotations_vid*.csv` events):
+  ```sh
+  D=models/direction/optical-flow
+  python $D/pipeline.py --video V.mp4 --annotations A.csv --out DIR [--mode gt_span|predicted_span|both]  # A, one video
+  python $D/run_videos.py --videos-dir VIDS --annots-dir ANNOTS --out DIR [--parallel K]               # A, batch
+  python $D/pose_num_turns.py --pose P_pairs.parquet --annotations A.csv --all-events --out E.csv      # B
+  python $D/sam2_num_turns.py --centroids-dir SAM2_OUT --annotations A.csv --out E.csv                 # C
+  ```
+  Extra deps: `requirements.txt` (SAM 2 / Grounding DINO optional; C needs a GPU). Notebook: `direction_eval.ipynb`.
+- **Methods**:
+  - A: Farneback dense flow on the frame, sign-majority of rotation over the span → direction. No usable turn count.
+  - B: unwrap the pair's `orbital_rad` over the span; turns = Δ / 2π; sign = direction (`--sign-is-cw` default).
+  - C: SAM 2 masks (1 click per fish via `sam2_click_init.py`, or `sam2_dino_init.py`) → centroid angles → turns.
+  - Quantization (B, C): fraction ≥ 0.9 rounds up, ≥ 0.5 → half turn, else down; `is_circling` = ≥ 1 turn.
+- Headline (§3): direction 658/658 events (A), 657/658 (B); B turns MAE 0.72.
+
+## Details
+
+### Overview
 
 Detects male-female cichlid **circling** events in overhead tank videos
 and, per event, reports:

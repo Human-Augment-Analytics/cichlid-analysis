@@ -35,17 +35,16 @@ VSCode with the Marimo extension, just like Jupyter.
 - `experiments/shared_features/`: leave-one-video-out comparison of feature sets and
   learners on the shared pair-motion features (additive; the `models/` detectors are
   unchanged). See [experiments/README.md](experiments/README.md).
-- `models/intervals/logistic_regression/`: frame-level logistic regression: features, training,
-  per-frame scoring and post-processing into sustained spans.
-- `models/intervals/rule_based/`: rule-based detector (closest-pair distance plus rotation) and the
-  data-cleaning rules and notebook it relies on.
-- `models/intervals/xgboost/`: marimo training notebook using centered 121-frame windows of
-  the cleaned rule-based distance and rotation features, with 70/30 holdout and full-video evaluation.
+- `models/`: see [models/README.md](models/README.md).
+  - `models/intervals/`: **when** circling happens; each model writes `outputs/predictions/<name>/`
+    ([list](models/intervals/README.md)): rule-based detector, logistic regression, XGBoost,
+    per-frame XGBoost / logistic-regression CV, MS-TCN (DLC2Action), ActionFormer, SARTAB.
+  - `models/direction/`: rotation **direction** and **turns/cycles** of given intervals
+    ([list](models/direction/README.md)): rule-based episode labels, optical-flow / pose / SAM 2 methods.
+  - `models/common/`: shared config, data cleaning, segment sampling, frame features, span post-processing.
 - `model_performance_report.py`: evaluation metrics for every model in `outputs/predictions/`,
   using the functions from `evaluation/evaluate.py`, plus pose-overlay clip previews of
   predicted spans.
-- `models/intervals/mstcn_dlc2action/`: MS-TCN action segmentation (DLC2Action) on pose, pair features
-  and DINOv2 crop embeddings
 - `merged_spans_review.py`: review ground-truth circling spans against the source video,
   with buffered pose-overlay previews (drawing functions imported from
   `model_performance_report.py`).
@@ -75,6 +74,13 @@ uv run marimo edit models/intervals/rule_based/data_cleaning.py  # tracking arti
 
 Running the detector (`uv run python models/intervals/rule_based/detector.py`, or opening it in
 marimo) writes its episodes to `outputs/predictions/rule_based/`.
+
+To add rule-based `Direction` and `Cycles` columns to any model's predictions (writes
+`outputs/predictions/<model>_rule_labels/`):
+
+```sh
+uv run python -m models.direction.rule_based.episode_labels outputs/predictions/<model>
+```
 
 ### XGBoost
 
@@ -117,6 +123,9 @@ features with DINOv2 embeddings (see `--help` for the other feature sets).
 uv run python -m models.intervals.mstcn_dlc2action.train
 uv run python -m models.intervals.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
 ```
+
+Other interval models (per-frame XGBoost, logistic regression CV, ActionFormer, SARTAB) and
+their train/predict commands: [models/intervals/README.md](models/intervals/README.md).
 
 ### Shared-feature experiments
 
