@@ -32,8 +32,8 @@ with app.setup(hide_code=True):
                                      read_ground_truth, read_ground_truth_labels, read_predictions,
                                      summary_view,heldout_metrics, window_report, comparable_models)
     from evaluation.metrics import LABEL_TAU
-    from models.logistic_regression.features import KEYPOINTS
-    from models.logistic_regression.train import VIDEO_FRAMES
+    from models.intervals.logistic_regression.features import KEYPOINTS
+    from models.intervals.logistic_regression.train import VIDEO_FRAMES
     from video_source import TABLE_URLS, VideoReader, download
 
     ROOT = Path(__file__).resolve().parent
@@ -54,32 +54,32 @@ def _():
 
     | Model | Command |
     |-|-|
-    | `logistic_regression` | `uv run python -m models.logistic_regression.predict` |
-    | `rule_based` | `uv run python models/rule_based/detector.py` |
-    | `mstcn_dinov2` | `uv run python -m models.mstcn_dlc2action.predict --features pairemb` |
-    | `mstcn_videomae` | `uv run python -m models.mstcn_dlc2action.predict --features pairvmae` |
-    | `mstcn_pose_pair` | `uv run python -m models.mstcn_dlc2action.predict --features pair` |
-    | `mstcn_pose` | `uv run python -m models.mstcn_dlc2action.predict --features pose` |
-    | `mstcn_pairmotion` | `uv run python -m models.mstcn_dlc2action.predict --features pairmotion` |
-    | `mstcn_pairmotion_dinov2` | `uv run python -m models.mstcn_dlc2action.predict --features pairmotionemb` |
-    | `mstcn_pairmotion_videomae` | `uv run python -m models.mstcn_dlc2action.predict --features pairmotionvmae` |
-    | `xgboost_pose_pair` | `uv run python -m models.xgboost_frame.predict --features pair` |
-    | `xgboost_dinov2` | `uv run python -m models.xgboost_frame.predict --features pairemb` |
-    | `xgboost_videomae` | `uv run python -m models.xgboost_frame.predict --features pairvmae` |
-    | `xgboost_turns` | `uv run python -m models.xgboost_frame.predict --features pairturns` |
-    | `xgboost_turns_videomae` | `uv run python -m models.xgboost_frame.predict --features pairturnsvmae` |
-    | `xgboost_pairmotion` | `uv run python -m models.xgboost_frame.predict --features pairmotion` |
-    | `xgboost_pairmotion_dinov2` | `uv run python -m models.xgboost_frame.predict --features pairmotionemb` |
-    | `xgboost_pairmotion_videomae` | `uv run python -m models.xgboost_frame.predict --features pairmotionvmae` |
-    | `lrcv_pose_pair` | `uv run python -m models.logistic_regression_cv.predict --features pair` |
-    | `lrcv_dinov2` | `uv run python -m models.logistic_regression_cv.predict --features pairemb` |
-    | `lrcv_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairvmae` |
-    | `lrcv_turns` | `uv run python -m models.logistic_regression_cv.predict --features pairturns` |
-    | `lrcv_turns_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairturnsvmae` |
-    | `lrcv_pairmotion` | `uv run python -m models.logistic_regression_cv.predict --features pairmotion` |
-    | `lrcv_pairmotion_dinov2` | `uv run python -m models.logistic_regression_cv.predict --features pairmotionemb` |
-    | `lrcv_pairmotion_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairmotionvmae` |
-    | `sartab` | `uv run python -m models.sartab.predict` |
+    | `logistic_regression` | `uv run python -m models.intervals.logistic_regression.predict` |
+    | `rule_based` | `uv run python models/intervals/rule_based/detector.py` |
+    | `mstcn_dinov2` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pairemb` |
+    | `mstcn_videomae` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pairvmae` |
+    | `mstcn_pose_pair` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pair` |
+    | `mstcn_pose` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pose` |
+    | `mstcn_pairmotion` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pairmotion` |
+    | `mstcn_pairmotion_dinov2` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pairmotionemb` |
+    | `mstcn_pairmotion_videomae` | `uv run python -m models.intervals.mstcn_dlc2action.predict --features pairmotionvmae` |
+    | `xgboost_pose_pair` | `uv run python -m models.intervals.xgboost_frame.predict --features pair` |
+    | `xgboost_dinov2` | `uv run python -m models.intervals.xgboost_frame.predict --features pairemb` |
+    | `xgboost_videomae` | `uv run python -m models.intervals.xgboost_frame.predict --features pairvmae` |
+    | `xgboost_turns` | `uv run python -m models.intervals.xgboost_frame.predict --features pairturns` |
+    | `xgboost_turns_videomae` | `uv run python -m models.intervals.xgboost_frame.predict --features pairturnsvmae` |
+    | `xgboost_pairmotion` | `uv run python -m models.intervals.xgboost_frame.predict --features pairmotion` |
+    | `xgboost_pairmotion_dinov2` | `uv run python -m models.intervals.xgboost_frame.predict --features pairmotionemb` |
+    | `xgboost_pairmotion_videomae` | `uv run python -m models.intervals.xgboost_frame.predict --features pairmotionvmae` |
+    | `lrcv_pose_pair` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pair` |
+    | `lrcv_dinov2` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairemb` |
+    | `lrcv_videomae` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairvmae` |
+    | `lrcv_turns` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairturns` |
+    | `lrcv_turns_videomae` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairturnsvmae` |
+    | `lrcv_pairmotion` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairmotion` |
+    | `lrcv_pairmotion_dinov2` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairmotionemb` |
+    | `lrcv_pairmotion_videomae` | `uv run python -m models.intervals.logistic_regression_cv.predict --features pairmotionvmae` |
+    | `sartab` | `uv run python -m models.intervals.sartab.predict` |
 
     `run.ps1` trains and predicts all of them in order. Every predict command takes
     `[--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]`.

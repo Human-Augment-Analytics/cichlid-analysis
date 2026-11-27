@@ -5,7 +5,7 @@ Malawi cichlid tank videos. Each event span is annotated with its temporal
 boundaries, rotation direction (CW / CCW), number of completed turns,
 location within the tank, and free-text notes. These labels serve as the
 ground truth for every downstream detector / evaluator in this repo
-(see for example `models/optical-flow/`).
+(see for example `models/direction/optical-flow/`).
 
 ## Folder layout
 

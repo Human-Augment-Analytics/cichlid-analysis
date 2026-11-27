@@ -4,12 +4,12 @@ import numpy as np
 import polars as pl
 from polars.testing import assert_frame_equal
 
-from models.logistic_regression.features import (KEYPOINTS, PAIR_ANGLES, PAIR_DISTANCES,
-                                                 PAIR_RATES, pair_frame_features)
-from models.logistic_regression.features import frame_features as combined
-from models.logistic_regression.features import pose_frame_features as frame_features
-from models.logistic_regression.postprocess import find_positive_spans
-from models.logistic_regression.train import frame_labels
+from models.intervals.logistic_regression.features import (KEYPOINTS, PAIR_ANGLES, PAIR_DISTANCES,
+                                                           PAIR_RATES, pair_frame_features)
+from models.intervals.logistic_regression.features import frame_features as combined
+from models.intervals.logistic_regression.features import pose_frame_features as frame_features
+from models.intervals.logistic_regression.postprocess import find_positive_spans
+from models.intervals.logistic_regression.train import frame_labels
 
 
 def poses():

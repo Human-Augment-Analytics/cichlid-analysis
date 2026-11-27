@@ -5,7 +5,7 @@ detectors with leave-one-video-out (LOVO) validation: each video is held out onc
 and the model is fitted on the others (today: fit `0028`, test `0031`, and the
 reverse). Only the combined held-out predictions are scored, with the shared
 `evaluation/` metrics. Videos and frame counts come from `VIDEO_FRAMES` in
-`models/xgboost/features.py`; a new video there becomes a new fold. Generated
+`models/intervals/xgboost/features.py`; a new video there becomes a new fold. Generated
 files go to `outputs/experiments/` and `outputs/predictions/lovo_<variant>/` (both
 ignored).
 

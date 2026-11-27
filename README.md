@@ -35,16 +35,16 @@ VSCode with the Marimo extension, just like Jupyter.
 - `experiments/shared_features/`: leave-one-video-out comparison of feature sets and
   learners on the shared pair-motion features (additive; the `models/` detectors are
   unchanged). See [experiments/README.md](experiments/README.md).
-- `models/logistic_regression/`: frame-level logistic regression: features, training,
+- `models/intervals/logistic_regression/`: frame-level logistic regression: features, training,
   per-frame scoring and post-processing into sustained spans.
-- `models/rule_based/`: rule-based detector (closest-pair distance plus rotation) and the
+- `models/intervals/rule_based/`: rule-based detector (closest-pair distance plus rotation) and the
   data-cleaning rules and notebook it relies on.
-- `models/xgboost/`: marimo training notebook using centered 121-frame windows of
+- `models/intervals/xgboost/`: marimo training notebook using centered 121-frame windows of
   the cleaned rule-based distance and rotation features, with 70/30 holdout and full-video evaluation.
 - `model_performance_report.py`: evaluation metrics for every model in `outputs/predictions/`,
   using the functions from `evaluation/evaluate.py`, plus pose-overlay clip previews of
   predicted spans.
-- `models/mstcn_dlc2action/`: MS-TCN action segmentation (DLC2Action) on pose, pair features
+- `models/intervals/mstcn_dlc2action/`: MS-TCN action segmentation (DLC2Action) on pose, pair features
   and DINOv2 crop embeddings
 - `merged_spans_review.py`: review ground-truth circling spans against the source video,
   with buffered pose-overlay previews (drawing functions imported from
@@ -56,37 +56,37 @@ The committed model is `outputs/circling_baseline/model.joblib`. To retrain it (
 model, metrics and report to `outputs/circling_baseline/`):
 
 ```sh
-uv run python -m models.logistic_regression.train
+uv run python -m models.intervals.logistic_regression.train
 ```
 
 To score every frame (cached in `outputs/circling_baseline/scores/`) and write the
 predicted spans to `outputs/predictions/logistic_regression/`:
 
 ```sh
-uv run python -m models.logistic_regression.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
+uv run python -m models.intervals.logistic_regression.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
 ```
 
 ### Rule-based detector
 
 ```sh
-uv run marimo edit models/rule_based/detector.py       # detector and results
-uv run marimo edit models/rule_based/data_cleaning.py  # tracking artifacts removed first
+uv run marimo edit models/intervals/rule_based/detector.py       # detector and results
+uv run marimo edit models/intervals/rule_based/data_cleaning.py  # tracking artifacts removed first
 ```
 
-Running the detector (`uv run python models/rule_based/detector.py`, or opening it in
+Running the detector (`uv run python models/intervals/rule_based/detector.py`, or opening it in
 marimo) writes its episodes to `outputs/predictions/rule_based/`.
 
 ### XGBoost
 
 ```sh
-uv run marimo edit models/xgboost/notebook.py
+uv run marimo edit models/intervals/xgboost/notebook.py
 ```
 
 The notebook samples all positive centers plus nearby negative frames, trains on
 70% of the sampled rows, evaluates the 30% holdout, and scores both full videos.
 It writes artifacts to `outputs/xgboost/` and standard prediction CSVs to
 `outputs/predictions/xgboost/`. On macOS, run `brew install libomp` first.
-See [models/xgboost/README.md](models/xgboost/README.md) for feature and evaluation details.
+See [models/intervals/xgboost/README.md](models/intervals/xgboost/README.md) for feature and evaluation details.
 
 ### Pair-motion feature pipeline
 
@@ -114,8 +114,8 @@ The default feature set is `pairmotion`. Use `--features pairemb` for pose/pair
 features with DINOv2 embeddings (see `--help` for the other feature sets).
 
 ```sh
-uv run python -m models.mstcn_dlc2action.train
-uv run python -m models.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
+uv run python -m models.intervals.mstcn_dlc2action.train
+uv run python -m models.intervals.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
 ```
 
 ### Shared-feature experiments

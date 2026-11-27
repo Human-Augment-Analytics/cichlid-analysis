@@ -23,8 +23,8 @@ from models.common.pair_motion import (
     combine_motion_embedding,
 )
 from models.common.segments import sample_segments
-from models.mstcn_dlc2action.dlc_yolo_converter.dlc2action_bridge import PAIR_CLIP
-from models.sartab.train import frame_scores
+from models.intervals.mstcn_dlc2action.dlc_yolo_converter.dlc2action_bridge import PAIR_CLIP
+from models.intervals.sartab.train import frame_scores
 
 
 class PairMotionTests(unittest.TestCase):
@@ -141,7 +141,7 @@ class PairMotionTests(unittest.TestCase):
         np.testing.assert_allclose(result["circling_score"].to_numpy(), [0.0, 0.25, 0.75, 1.0])
 
     def test_mstcn_signature_covers_every_video_feature_file(self):
-        from models.mstcn_dlc2action.train import run_signature
+        from models.intervals.mstcn_dlc2action.train import run_signature
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

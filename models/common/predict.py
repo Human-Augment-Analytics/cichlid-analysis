@@ -5,8 +5,8 @@ import numpy as np
 import polars as pl
 
 from models.common.config import OUTPUTS, model_name, video_frames
-from models.logistic_regression.postprocess import find_positive_spans
-from models.logistic_regression.predict import FPS
+from models.intervals.logistic_regression.postprocess import find_positive_spans
+from models.intervals.logistic_regression.predict import FPS
 
 
 def smooth_scores(scores, seconds, fps=FPS):

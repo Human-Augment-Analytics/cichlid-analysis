@@ -11,8 +11,8 @@ from evaluation.evaluate_models import comparable_models, model_videos
 from evaluation.metrics import iou, merge
 from models.common.config import OUTPUTS, VIDEOS, model_name, mstcn_workdir, video_frames
 from models.common.predict import merge_spans
-from models.logistic_regression.postprocess import find_positive_spans
-from models.logistic_regression.predict import FPS
+from models.intervals.logistic_regression.postprocess import find_positive_spans
+from models.intervals.logistic_regression.predict import FPS
 
 IOUS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 SHOWN = [0.1, 0.3, 0.5, 0.7]

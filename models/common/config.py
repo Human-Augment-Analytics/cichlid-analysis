@@ -6,7 +6,7 @@ from pathlib import Path
 
 import polars as pl
 
-from models.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, ROOT, VIDEO_FRAMES as KNOWN_VIDEO_FRAMES
+from models.intervals.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, ROOT, VIDEO_FRAMES as KNOWN_VIDEO_FRAMES
 
 GROUND_TRUTH = os.environ.get('CIRCLING_GROUND_TRUTH') or str(
     ROOT / 'ground_truth_annotations' / 'finalized_annotations' / 'merged_spans.csv')
@@ -53,7 +53,7 @@ def model_name(name):
 
 def label_description(annotations):
     if BASELINE:
-        return ('the 15 spans in CIRCLING_SPANS_BY_VIDEO (models/logistic_regression/train.py), '
+        return ('the 15 spans in CIRCLING_SPANS_BY_VIDEO (models/intervals/logistic_regression/train.py), '
                 'the logistic regression\'s training labels')
     return Path(annotations).name
 

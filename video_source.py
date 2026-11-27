@@ -6,7 +6,7 @@ from urllib.request import urlretrieve
 
 import cv2
 
-from models.logistic_regression.train import VIDEO_FRAMES
+from models.intervals.logistic_regression.train import VIDEO_FRAMES
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"

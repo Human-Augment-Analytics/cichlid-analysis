@@ -9,7 +9,7 @@ from sklearn.metrics import average_precision_score, precision_score, recall_sco
 from models.common.config import OUTPUTS, model_name, mstcn_workdir, video_frames
 from models.common.frame_model import video_features
 from models.common.segments import load_meta
-from models.logistic_regression.features import KEYPOINTS
+from models.intervals.logistic_regression.features import KEYPOINTS
 
 FRAME_MODELS = ['xgboost_pose_pair', 'xgboost_dinov2', 'xgboost_videomae', 'xgboost_turns', 'xgboost_turns_videomae',
                 'xgboost_pairmotion', 'xgboost_pairmotion_dinov2', 'xgboost_pairmotion_videomae',

@@ -10,11 +10,11 @@ import numpy as np
 import polars as pl
 
 from evaluation.evaluate import GROUND_TRUTH, evaluate, read_intervals, read_predictions
-from models.logistic_regression.postprocess import find_positive_spans
-from models.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, VIDEO_FRAMES
-from models.mstcn_dlc2action import predict as mstcn_predict
-from models.mstcn_dlc2action import train as mstcn_train
-from models.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
+from models.intervals.logistic_regression.postprocess import find_positive_spans
+from models.intervals.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, VIDEO_FRAMES
+from models.intervals.mstcn_dlc2action import predict as mstcn_predict
+from models.intervals.mstcn_dlc2action import train as mstcn_train
+from models.intervals.mstcn_dlc2action.dlc_yolo_converter import dlc2action_bridge as br
 
 STRIDE = 2
 META = {v: {'n_frames': (n - 1) // STRIDE + 1, 'stride': STRIDE, 'frame_min': 0, 'fps': 15.0}

@@ -284,7 +284,7 @@ try {
         if (-not $SkipSartab -or -not $SkipActionFormer) { $prepare = @($prepare + "pairmotion" | Sort-Object -Unique) }
         foreach ($feature in $prepare) {
             $null = Step "Prepare data: $feature (pose H5, pair features, embeddings)" -Key "prepare $feature" {
-                Py -m models.mstcn_dlc2action.train --prepare-only --features $feature
+                Py -m models.intervals.mstcn_dlc2action.train --prepare-only --features $feature
             }
         }
     }
@@ -325,10 +325,10 @@ try {
         foreach ($feature in $MstcnFeatures) {
             $freshFlag = @(if ($Fresh) { "--fresh" })
             $null = Step "MS-TCN $feature -> $($NameOf.mstcn[$feature])${Suffix}: train" -Key "mstcn train $feature epochs=$Epochs" {
-                Py -m models.mstcn_dlc2action.train --features $feature --num-epochs $Epochs @freshFlag
+                Py -m models.intervals.mstcn_dlc2action.train --features $feature --num-epochs $Epochs @freshFlag
             }
             $null = Step "MS-TCN $feature -> $($NameOf.mstcn[$feature])${Suffix}: predict" -Always {
-                Py -m models.mstcn_dlc2action.predict --features $feature @newModelFlags
+                Py -m models.intervals.mstcn_dlc2action.predict --features $feature @newModelFlags
             }
         }
     }
@@ -337,20 +337,20 @@ try {
     if (-not $SkipXgboost) {
         foreach ($feature in $FrameFeatures) {
             $null = Step "XGBoost $feature -> $($NameOf.xgboost[$feature])${Suffix}: train" -Key "xgboost train $feature" {
-                Py -m models.xgboost_frame.train --features $feature @postprocessTrainFlag
+                Py -m models.intervals.xgboost_frame.train --features $feature @postprocessTrainFlag
             }
             $null = Step "XGBoost $feature -> $($NameOf.xgboost[$feature])${Suffix}: predict" -Always {
-                Py -m models.xgboost_frame.predict --features $feature @tunedFrameFlags
+                Py -m models.intervals.xgboost_frame.predict --features $feature @tunedFrameFlags
             }
         }
     }
     if (-not $SkipLrcv) {
         foreach ($feature in $FrameFeatures) {
             $null = Step "LogisticRegressionCV $feature -> $($NameOf.lrcv[$feature])${Suffix}: train" -Key "lrcv train $feature" {
-                Py -m models.logistic_regression_cv.train --features $feature @postprocessTrainFlag
+                Py -m models.intervals.logistic_regression_cv.train --features $feature @postprocessTrainFlag
             }
             $null = Step "LogisticRegressionCV $feature -> $($NameOf.lrcv[$feature])${Suffix}: predict" -Always {
-                Py -m models.logistic_regression_cv.predict --features $feature @tunedFrameFlags
+                Py -m models.intervals.logistic_regression_cv.predict --features $feature @tunedFrameFlags
             }
         }
     }
@@ -358,30 +358,30 @@ try {
     # ---------------------------------------------------------------------------------- 4. ActionFormer (native temporal intervals)
     if (-not $SkipActionFormer) {
         $null = Step "ActionFormer pairmotion -> $($NameOf.actionformer.pairmotion)${Suffix}: train" -Key "actionformer train pairmotion epochs=$ActionFormerEpochs" {
-            Py -m models.actionformer.train --features pairmotion --epochs $ActionFormerEpochs
+            Py -m models.intervals.actionformer.train --features pairmotion --epochs $ActionFormerEpochs
         }
         $null = Step "ActionFormer pairmotion -> $($NameOf.actionformer.pairmotion)${Suffix}: predict" -Always {
-            Py -m models.actionformer.predict --features pairmotion @actionFormerFlags
+            Py -m models.intervals.actionformer.predict --features pairmotion @actionFormerFlags
         }
     }
 
     # ---------------------------------------------------------------------------------- 5. SARTAB
     if (-not $SkipSartab) {
-        $null = Step "SARTAB: train" -Key "sartab train" { Py -m models.sartab.train }
-        $null = Step "SARTAB: predict" -Always { Py -m models.sartab.predict @newModelFlags }
+        $null = Step "SARTAB: train" -Key "sartab train" { Py -m models.intervals.sartab.train }
+        $null = Step "SARTAB: predict" -Always { Py -m models.intervals.sartab.predict @newModelFlags }
     }
 
     # ---------------------------------------------------------------------------------- 6. existing baselines
     $baselineVideos = @($Selected | Where-Object { $_ -in @("0028_vid", "0031_vid") })
     if (-not $SkipBaselines -and $baselineVideos.Count) {
         $null = Step "Logistic regression (unchanged: 15 spans, 0028/0031): train" -Key "logistic_regression train" {
-            Py -m models.logistic_regression.train --data-dir $DataDir
+            Py -m models.intervals.logistic_regression.train --data-dir $DataDir
         }
         $null = Step "Logistic regression: predict" -Always {
-            Py -m models.logistic_regression.predict --data-dir $DataDir @predictFlags
+            Py -m models.intervals.logistic_regression.predict --data-dir $DataDir @predictFlags
         }
         $null = Step "Rule-based detector (unchanged: 0028/0031)" -Key "rule_based" {
-            Py models\rule_based\detector.py
+            Py models\intervals\rule_based\detector.py
         }
     } elseif (-not $SkipBaselines) {
         Write-Host "Logistic regression and rule-based cover 0028_vid/0031_vid only; neither is selected, skipping."
