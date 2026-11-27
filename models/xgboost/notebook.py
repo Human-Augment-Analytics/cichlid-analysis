@@ -11,7 +11,6 @@ with app.setup:
 
     import marimo as mo
     import matplotlib.pyplot as plt
-    import numpy as np
     import pandas as pd
     from sklearn.metrics import ConfusionMatrixDisplay, precision_recall_curve
 
@@ -20,7 +19,7 @@ with app.setup:
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from models.rule_based.circling_cleaning import default_data_dir
-    from models.xgboost.features import FEATURES, HALF_WINDOW, SIGNALS, WINDOW, read_spans
+    from models.xgboost.features import FEATURES, HALF_WINDOW, WINDOW, read_spans
     from models.xgboost.train import (OUTPUT_DIR, PREDICTION_DIR, evaluate_full_videos,
                                      fit_model, frame_metrics, prepare_dataset,
                                      save_artifacts, split_dataset)

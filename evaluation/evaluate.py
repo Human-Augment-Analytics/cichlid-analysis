@@ -22,7 +22,6 @@ __generated_with = "0.24.2"
 app = marimo.App(width="medium")
 
 with app.setup(hide_code=True):
-    import os
     import re
     from pathlib import Path
 
@@ -30,12 +29,12 @@ with app.setup(hide_code=True):
     import polars as pl
 
     try:
-        from .metrics import (LABEL_TAU, MAP_REPORT_TAUS, TAUS, evaluate_attribute_quality,
+        from .metrics import (MAP_REPORT_TAUS, TAUS, evaluate_attribute_quality,
                               evaluate_labels, evaluate_oracle_labels, evaluate_video, label_spans,
                               map_at_tiou, mean, merge, summarize, summarize_attribute_quality,
                               summarize_labels)
     except ImportError:
-        from metrics import (LABEL_TAU, MAP_REPORT_TAUS, TAUS, evaluate_attribute_quality,
+        from metrics import (MAP_REPORT_TAUS, TAUS, evaluate_attribute_quality,
                              evaluate_labels, evaluate_oracle_labels, evaluate_video, label_spans,
                              map_at_tiou, mean, merge, summarize, summarize_attribute_quality,
                              summarize_labels)

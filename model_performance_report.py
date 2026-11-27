@@ -28,7 +28,7 @@ with app.setup(hide_code=True):
     from matplotlib.patches import Patch
     from matplotlib.ticker import StrMethodFormatter
 
-    from evaluation.evaluate import (ANNOTATION_DIR, evaluate, prediction_models, prediction_video_ids,
+    from evaluation.evaluate import (ANNOTATION_DIR, evaluate, prediction_video_ids,
                                      read_ground_truth, read_ground_truth_labels, read_predictions,
                                      summary_view,heldout_metrics, window_report, comparable_models)
     from evaluation.metrics import LABEL_TAU

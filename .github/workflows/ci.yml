@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Repository checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11.6"
+
+      - name: Lockfile matches pyproject.toml
+        run: uv lock --check
+
+      - name: Lint (unused imports, syntax errors)
+        run: uvx ruff@0.14.0 check .
+
+      - name: Conflict markers, duplicated docs, committed/ignored claims
+        run: python scripts/check_repo.py
+
+      - name: Repository regression tests
+        run: uv run --no-project --with pytest pytest tests/test_repo_checks.py -v
