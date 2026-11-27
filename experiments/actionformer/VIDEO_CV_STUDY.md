@@ -1,6 +1,6 @@
 # ActionFormer: seven-video circling localization study
 
-> **Status (November 2026):** Development-stage results; selected model not yet evaluated under the frozen final protocol. The values in this document are not independent final-test performance estimates.
+> **Status (November 2026):** Corrected-annotation seven-fold cross-validation and frozen final evaluation completed. The older 256-frame baseline had previously been evaluated on `0037_vid`.
 >
 > This study is **separate from** the older sampled-segment hard-negative experiments described in [`README.md`](README.md). Their frame-level AP and ROC-AUC numbers use a different evaluation protocol and should not be compared directly with these full-video temporal-localization results.
 
@@ -72,6 +72,42 @@ Human inspection suggests several distinct error modes; these interpretations ar
 
 These examples motivate clearer annotation definitions (particularly incomplete rotations), expert adjudication of possible missing annotations, and review of tracking errors before changing labels.
 
+## Corrected-annotation evaluation and final test
+
+The 1024-frame ActionFormer experiment was rerun after the finalized
+ground-truth annotations were corrected.
+
+| Evaluation | Temporal mAP | Event F1@50 |
+|---|---:|---:|
+| Original 1024-frame development CV | 0.2783 | 0.3559 |
+| Updated seven-fold development CV | 0.2867 | 0.4042 |
+| Final test on `0037_vid` | 0.2192 | 0.6099 |
+
+The updated development values are unweighted means across seven
+held-out recordings, using independently selected fold-specific
+postprocessing. The final-test values describe one reserved recording,
+not an average across recordings.
+
+The final model was trained on all seven development recordings
+for 6 epochs, then tested on `0037_vid` using the
+previously frozen postprocessing parameters:
+
+- Confidence threshold: 0.20
+- Minimum interval duration: 4 seconds
+- Merge gap: 4 seconds
+- Temporal window: 1024 frames
+
+The previous fixed-rule development F1@50 of 0.5627 used older
+annotations and was not recomputed in the updated cross-validation run.
+
+**Holdout caveat:** An earlier 256-frame baseline had already been
+evaluated on `0037_vid`, so this recording was not entirely untouched.
+The selected 1024-frame configuration was evaluated using frozen
+settings, without tuning on the new final-test result.
+
+Detailed updated metrics and prediction CSVs are saved under
+`experiments/actionformer/results/`.
+
 ## Leading development configuration
 
 | Setting | Value |
@@ -84,7 +120,7 @@ These examples motivate clearer annotation definitions (particularly incomplete 
 | Confidence threshold | 0.20 |
 | Minimum native interval duration | 4 seconds |
 | Gap for joining retained predictions | 4 seconds |
-| Status | **Frozen candidate for future evaluation; not an independently measured final-test score** |
+| Status | **Frozen configuration evaluated on `0037_vid`** |
 
 ## Reproduction
 
@@ -138,4 +174,4 @@ A small, version-controllable aggregate of the completed results is kept in [`re
 2. **Tracking quality:** Valid male/partner pair coverage was low in some recordings (`0007a_vid`: 23.9%; `0007b_vid`: 3.7%), limiting the information available to the engineered features.
 3. **Selection bias:** The 0.5627 result was selected using development annotations; no fully nested tuning evaluation was performed.
 4. **Window experiment confounding:** Batch size, training segments and postprocessing differed with window length, so the gain cannot be assigned to context length alone.
-5. **Final-test procedure:** Before any new scoring of `0037_vid`, commit the model and fixed postprocessing settings, document the prior baseline exposure, and ensure the final-test code uses the fixed `0.20 / 4 s / 4 s` rule rather than medians of older fold-specific settings. No holdout score for this selected 1024-frame configuration is reported here.
+5. **Final-test interpretation:** The selected configuration achieved mAP 0.2192 and F1@50 0.6099 on `0037_vid`. The older 256-frame baseline had previously been evaluated on that recording; see the holdout caveat above.
