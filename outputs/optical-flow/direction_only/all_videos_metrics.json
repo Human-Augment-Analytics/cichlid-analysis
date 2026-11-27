@@ -1,0 +1,83 @@
+{
+  "n_videos": 8,
+  "n_events_total": 659,
+  "n_events_scored": 658,
+  "n_events_correct": 658,
+  "accuracy": 1.0,
+  "confusion_matrix": {
+    "CW_as_CW": 326,
+    "CW_as_CCW": 0,
+    "CCW_as_CCW": 332,
+    "CCW_as_CW": 0
+  },
+  "per_class": {
+    "CW": {
+      "TP": 326,
+      "FP": 0,
+      "FN": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "CCW": {
+      "TP": 332,
+      "FP": 0,
+      "FN": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "macro_f1": 1.0,
+  "micro_f1": 1.0,
+  "per_video": {
+    "0002_vid": {
+      "n_events_total": 53,
+      "n_events_scored": 53,
+      "n_events_correct": 53,
+      "accuracy": 1.0
+    },
+    "0007_vid_day05": {
+      "n_events_total": 102,
+      "n_events_scored": 102,
+      "n_events_correct": 102,
+      "accuracy": 1.0
+    },
+    "0007_vid_day06": {
+      "n_events_total": 134,
+      "n_events_scored": 134,
+      "n_events_correct": 134,
+      "accuracy": 1.0
+    },
+    "0013_vid": {
+      "n_events_total": 64,
+      "n_events_scored": 64,
+      "n_events_correct": 64,
+      "accuracy": 1.0
+    },
+    "0018_vid": {
+      "n_events_total": 48,
+      "n_events_scored": 48,
+      "n_events_correct": 48,
+      "accuracy": 1.0
+    },
+    "0028_vid": {
+      "n_events_total": 83,
+      "n_events_scored": 83,
+      "n_events_correct": 83,
+      "accuracy": 1.0
+    },
+    "0031_vid": {
+      "n_events_total": 64,
+      "n_events_scored": 64,
+      "n_events_correct": 64,
+      "accuracy": 1.0
+    },
+    "0037_vid": {
+      "n_events_total": 111,
+      "n_events_scored": 110,
+      "n_events_correct": 110,
+      "accuracy": 1.0
+    }
+  }
+}

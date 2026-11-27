@@ -6,8 +6,7 @@ import numpy as np
 import polars as pl
 import torch
 
-from models.actionformer.model import (build_model, infer_windows, suppress_cross_window_duplicates,
-                                       video_item)
+from models.actionformer.model import (build_model, infer_windows, video_item)
 from models.actionformer.postprocess import inclusive_intervals, interval_scores, prediction_table
 from models.actionformer.predict import feature_chunk, window_starts
 from models.actionformer.train import (normalization_stats, normalize, train_model, training_validation_split,

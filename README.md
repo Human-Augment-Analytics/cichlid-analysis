@@ -21,7 +21,6 @@ uv run marimo edit model_performance_report.py
 You can edit the marimo notebook from the browser with the above command, or just work on it in
 VSCode with the Marimo extension, just like Jupyter.
 
-
 ## Repository layout
 
 - `data/`: video and parquet files
@@ -102,31 +101,30 @@ See [models/xgboost/README.md](models/xgboost/README.md) for feature and evaluat
 `feature_engineering/pair_motion/` creates a frame-level pair table. It covers
 body-length-normalized distance, facing, speed and closing rate, angular movement
 (orbital and heading rates, corotation), and 0.5, 1, 2 and 4 s window summaries
-(close fraction, orbit turns, mean distance). It expects the four validated pose
-parquets in `data/`; they are local inputs and are not committed.
+(close fraction, orbit turns, mean distance). It discovers matching
+`<video>.parquet` and `<video>_pairs.parquet` inputs in `data/`; they are local
+inputs and are not committed.
 
 ```sh
 uv run python -m feature_engineering.pair_motion.build_features --data-dir data
 ```
 
 The full table is written to `outputs/pair_motion/` (ignored). Feature definitions,
-quality checks, parameters, and a small committed sample are kept alongside the
-pipeline. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
+quality checks, and parameters are documented alongside the pipeline. The build
+also regenerates a small committed sample CSV. See [feature_engineering/pair_motion/README.md](feature_engineering/pair_motion/README.md).
 
-### MST-CN + DINOv2
-Same labels, sampling, split and span post-processing as the logistic regression but includes embeddings
+Pair-motion model variants use these feature definitions through
+`models/common/pair_motion.py`; `feature_groups.py` lists the columns by group.
 
+### MS-TCN
 
+The default feature set is `pairmotion`. Use `--features pairemb` for pose/pair
+features with DINOv2 embeddings (see `--help` for the other feature sets).
 
 ```sh
-uv  run python -m models.mstcn_dlc2action.train
+uv run python -m models.mstcn_dlc2action.train
 uv run python -m models.mstcn_dlc2action.predict [--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]
-
 ```
-
-
-Nothing in `models/` imports these features; any model can read the parquet and use
-the columns it wants (`feature_groups.py` lists them by group).
 
 ### Shared-feature experiments
 
@@ -140,3 +138,21 @@ uv run python -m experiments.shared_features.lovo --variants all
 ```
 
 See [experiments/README.md](experiments/README.md) for the protocol, variants and results.
+
+## Tests
+
+Run the regression suite and visualization tests from the repository root:
+
+```sh
+uv run --with pytest pytest tests visualization/test_export_video.py visualization/test_live.py
+```
+
+CI (`.github/workflows/ci.yml`) runs the lightweight repository checks on every
+pull request. Run them locally before pushing:
+
+```sh
+uv lock --check                 # uv.lock is valid and matches pyproject.toml
+uvx ruff@0.14.0 check .         # unused imports and syntax errors (e.g. conflict markers)
+python scripts/check_repo.py    # conflict markers, pasted-twice doc lines, committed/ignored claims
+uv run --no-project --with pytest pytest tests/test_repo_checks.py
+```

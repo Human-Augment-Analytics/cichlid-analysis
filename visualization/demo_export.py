@@ -2,10 +2,12 @@
 import json
 import subprocess
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from PIL import Image,ImageDraw,ImageFont
-from .export_video import render,KEYPOINTS
+from PIL import Image, ImageDraw
+
+from .export_video import KEYPOINTS, render
 
 
 def make_inputs(root,frames=360):
