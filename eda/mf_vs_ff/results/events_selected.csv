@@ -1,0 +1,20 @@
+group,video_tag,bout_id,start_frame,end_frame,dur_s,pair_sex,source
+FF,vid_0028,vid_0028_FF_1,598444,598734,10.0,FF,user-verified timestamp
+FF,vid_0002,vid_0002_FF_a,240729,240990,9.0,FF,user-verified timestamp
+FF,vid_0002,vid_0002_FF_b,241019,241077,2.0,FF,user-verified timestamp
+FF,vid_0002,vid_0002_FF_c,259550,259985,15.0,FF,user-verified timestamp
+FF,vid_0002,vid_0002_FF_d,263291,263378,3.0,FF,user-verified timestamp
+FF,vid_0002,vid_0002_FF_e,285998,287332,46.0,FF,user-verified timestamp
+FF,vid_0002,vid_0002_FF_f,319029,319290,9.0,FF,user-verified timestamp
+MF,vid_0028,0028_vid_evt_0041,428550,428640,3.103448275862069,MF,circling_annotations_vid0028.csv (all events are M-F by convention)
+MF,vid_0028,0028_vid_evt_0002,334650,334830,6.206896551724138,MF,circling_annotations_vid0028.csv (all events are M-F by convention)
+MF,vid_0028,0028_vid_evt_0035,422520,422790,9.310344827586206,MF,circling_annotations_vid0028.csv (all events are M-F by convention)
+MF,vid_0028,0028_vid_evt_0031,407910,408270,12.413793103448276,MF,circling_annotations_vid0028.csv (all events are M-F by convention)
+MF,vid_0028,0028_vid_evt_0046,434940,435450,17.586206896551722,MF,circling_annotations_vid0028.csv (all events are M-F by convention)
+MF,vid_0028,0028_vid_evt_0058,466920,467940,35.172413793103445,MF,circling_annotations_vid0028.csv (all events are M-F by convention)
+MF,vid_0002,vid7-v02_evt_0011,59057,59171,3.9310344827586206,MF,circling_annotations_vid0002.csv (all events are M-F by convention)
+MF,vid_0002,vid7-v02_evt_0042,183437,183705,9.241379310344827,MF,circling_annotations_vid0002.csv (all events are M-F by convention)
+MF,vid_0002,vid7-v02_evt_0022,99433,99935,17.310344827586206,MF,circling_annotations_vid0002.csv (all events are M-F by convention)
+MF,vid_0002,vid7-v02_evt_0008,56710,57436,25.03448275862069,MF,circling_annotations_vid0002.csv (all events are M-F by convention)
+MF,vid_0002,vid7-v02_evt_0013,60528,61613,37.41379310344828,MF,circling_annotations_vid0002.csv (all events are M-F by convention)
+MF,vid_0002,vid7-v02_evt_0040,180109,181775,57.44827586206897,MF,circling_annotations_vid0002.csv (all events are M-F by convention)

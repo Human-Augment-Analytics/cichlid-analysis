@@ -113,7 +113,7 @@ direction even when its quantized magnitude is 0.
 |---|---|---|---|
 | **Rotation direction** | ✅ 100 % (658/658) | ✅ 99.8 % (657/658) | ✅ 100 % on small sample |
 | **Number of turns** | — (under-counts 5-10×) | ✅ MAE 0.72, 94 % within 2 | ✅ MAE ~0 on small sample |
-| **Span start / end** | ⚠️ baseline, strict-IoU weak | ⚠️ not yet | 🚧 TODO via OF-on-masks → TAL |
+| **Span start / end** | mAP = 0.63 over tIoUs {0.1, 0.3, 0.5, 0.7} | ⚠️ not yet | 🚧 TODO via OF-on-masks → TAL |
 | **Dense per-frame features for TAL** | — | — | ✅ via `sam2_of_features.py` |
 
 
