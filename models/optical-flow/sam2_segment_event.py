@@ -132,7 +132,6 @@ def render_overlay(frame_bgr: np.ndarray, obj_masks: dict[int, np.ndarray],
             cv2.putText(out, f'#{obj_id}', (int(cx) + 8, int(cy) - 8),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, col, 2, cv2.LINE_AA)
     # Banner
-    H = out.shape[0]
     band = np.zeros((28, out.shape[1], 3), dtype=np.uint8)
     cv2.putText(band, info, (8, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)

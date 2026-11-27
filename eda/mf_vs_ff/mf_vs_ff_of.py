@@ -35,7 +35,6 @@ Takes ~5-10 min (Farneback on all events, downsample=2).
 """
 from __future__ import annotations
 
-import json
 import time
 from pathlib import Path
 

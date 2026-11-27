@@ -94,7 +94,7 @@ def main():
     err = q - gt
     _emit(f'\nquantized error: mean={err.mean():+.3f}  median={err.median():+.2f}  '
           f'min={err.min():+.1f}  max={err.max():+.1f}')
-    _emit(f'\nerror distribution:')
+    _emit('\nerror distribution:')
     for v in sorted(err.round(1).unique()):
         c = int((err.round(1) == v).sum())
         p = 100 * c / len(err)
