@@ -148,11 +148,12 @@ def _(cv_videos, folds, holdout, metrics):
         A model is `complete` when all {len(cv_videos)} folds have finished. The rows come from
         four runs on the same folds:
 
-        - **fold run.** `evaluation/generalizability.py` as a Slurm array on PACE. The `xgboost_*`
-          models train with the reviewed negatives (their default); the `lrcv_*` and ActionFormer
-          models have no such option and train without them. `reviewed_negatives` shows the setting
-          recorded for each fold. `mean_wall_s` is the mean seconds for one fold: training on the
-          fold's training videos plus scoring the test video, without shared feature preparation.
+        - **fold run.** `evaluation/generalizability.py` as a Slurm array on PACE.
+          `reviewed_negatives` is the setting `fold.json` records for each model (`unknown` when
+          the record predates it). The current `xgboost_*` train CLIs add the reviewed negatives by
+          default; `lrcv_*` and ActionFormer have no such option. `mean_wall_s` is the mean seconds
+          for one fold: training on the fold's training videos plus scoring the test video, without
+          shared feature preparation.
         - **rule-based.** `models/rule_based/predict.py`: the refined rule of
           `models/rule_based/detector.py` (pair closer than 160 px; start at 0.75 turns in 4 s, continue
           above 0.4 turns; pauses under 3 s joined; spans of 2 s or more). It has no training step, so
@@ -187,7 +188,7 @@ def _(cv_videos, folds, holdout, metrics):
 def _(combined, results):
     from matplotlib.lines import Line2D
 
-    _colors = {"with": "#7954c7", "without": "#2a9d8f", "n/a": "#d97706"}
+    _colors = {"with": "#7954c7", "without": "#2a9d8f", "unknown": "#9ca3af", "n/a": "#d97706"}
     _markers = {"fold run": "o", "rule-based": "D", "plain xgboost": "s", "shared features": "^"}
     _rows = combined.sort("f1@50", descending=False, nulls_last=False)
     _figure = Figure(figsize=(10, 0.32 * _rows.height + 1.6), layout="constrained")

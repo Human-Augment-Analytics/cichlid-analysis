@@ -89,10 +89,15 @@ def fold_dir(test_video, train_videos=None, default_train_videos=None):
     return DEBUG_FOLDS_DIR / f'{test_video}_{len(train_videos)}videos_{digest}'
 
 
-def reviewed_negatives(name, entry):
-    """'with' or 'without' reviewed hard negatives, from the fold record or the model default."""
-    used = entry.get('annotated_negatives', MODELS.get(name, {}).get('annotated_negatives', False))
-    return 'with' if used else 'without'
+def reviewed_negatives(entry):
+    """'with' or 'without' reviewed hard negatives as recorded by run_fold; 'unknown' for older records.
+
+    Older fold.json files do not say, and the model's current default is no guide: the PACE folds
+    ran code that had no reviewed-negatives option, while the same CLIs now add them by default.
+    """
+    if 'annotated_negatives' not in entry:
+        return 'unknown'
+    return 'with' if entry['annotated_negatives'] else 'without'
 
 
 def link_data(videos, data_dir, aliases, target=GENERALIZABILITY_DIR / 'data'):
@@ -253,7 +258,7 @@ def fold_results(folds_dir=FOLDS_DIR):
                                   num_frames={video: frames}, gt_labels=labels.filter(pl.col('video_id') == video),
                                   videos=[video])
             rows.append({'model': name, 'test_video': video, 'train_videos': len(status['train_videos']),
-                         'standard_train_set': standard, 'reviewed_negatives': reviewed_negatives(name, entry),
+                         'standard_train_set': standard, 'reviewed_negatives': reviewed_negatives(entry),
                          'predicted_spans': predicted.height, 'train_seconds': entry.get('train_seconds'),
                          'predict_seconds': entry.get('predict_seconds'),
                          'wall_seconds': (entry.get('train_seconds') or 0) + (entry.get('predict_seconds') or 0),

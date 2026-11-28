@@ -68,7 +68,7 @@ class FoldStateTests(unittest.TestCase):
             (folder / 'fold.json').write_text(json.dumps({'test_video': 'a', 'train_videos': ['b', 'c'], 'models': {
                 # A rerun that failed: no 'predictions' key, although an old CSV is on disk.
                 'lrcv_turns': {'annotated_negatives': False, 'train_seconds': 1.0},
-                # Recorded before fold.json stored the setting: falls back to the model default.
+                # Recorded before fold.json stored the setting.
                 'xgboost_turns': {'train_seconds': 1.0, 'predict_seconds': 1.0,
                                   'predictions': 'predictions/xgboost_turns/a.csv'}}}))
             results = pl.DataFrame({'video_id': ['a', 'overall'], 'f1@50': [0.5, 0.5]})
@@ -82,15 +82,19 @@ class FoldStateTests(unittest.TestCase):
                     patch.object(gen, 'split_videos', return_value=('h', ['a', 'b', 'c'])):
                 rows = gen.fold_results(directory)
         self.assertEqual(rows['model'].to_list(), ['xgboost_turns'])
-        self.assertEqual(rows['reviewed_negatives'].to_list(), ['with'])
+        self.assertEqual(rows['reviewed_negatives'].to_list(), ['unknown'])
         self.assertEqual(rows['standard_train_set'].to_list(), [True])
 
+    def test_reviewed_negatives_come_from_the_fold_record(self):
+        self.assertEqual(gen.reviewed_negatives({'annotated_negatives': True}), 'with')
+        self.assertEqual(gen.reviewed_negatives({'annotated_negatives': False}), 'without')
+        self.assertEqual(gen.reviewed_negatives({}), 'unknown')
+
     def test_model_defaults_match_train_clis(self):
-        self.assertEqual(gen.reviewed_negatives('xgboost', {}), 'with')
-        self.assertEqual(gen.reviewed_negatives('xgboost_pairmotion', {}), 'with')
-        self.assertEqual(gen.reviewed_negatives('lrcv_pairmotion', {}), 'without')
-        self.assertEqual(gen.reviewed_negatives('actionformer_pairmotion', {}), 'without')
-        self.assertEqual(gen.reviewed_negatives('xgboost', {'annotated_negatives': False}), 'without')
+        self.assertTrue(gen.MODELS['xgboost']['annotated_negatives'])
+        self.assertTrue(gen.MODELS['xgboost_pairmotion']['annotated_negatives'])
+        self.assertFalse(gen.MODELS['lrcv_pairmotion']['annotated_negatives'])
+        self.assertFalse(gen.MODELS['actionformer_pairmotion'].get('annotated_negatives', False))
 
 
 if __name__ == '__main__':
