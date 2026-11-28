@@ -103,6 +103,7 @@ def install_dlc2action_patches() -> bool:
     if not getattr(current, "_circling_patched", False):
         _install_csv_store_patch(options, CSVActionSegStore)
     _install_sequential_loading_patch()
+    _install_float64_filter_patch()
     _install_ssl_eval_patch()
     logger.debug("installed DLC2Action patches (csv store, sequential "
                  "loading, SSL-free evaluation)")
@@ -162,6 +163,29 @@ def _install_sequential_loading_patch() -> None:
             return [fn(x) for x in items]
         _sequential_map._circling_sequential = True
         _input_store.p_map = _sequential_map
+
+
+def _install_float64_filter_patch() -> None:
+    """Upcast pose coordinates to float64 before DLC2Action fills missing values.
+
+    The converter stores float32 H5 columns; DLC2Action's ``_filter`` writes float64
+    per-frame means into them, which pandas >= 3 rejects as a lossy setitem.
+    """
+    from dlc2action.data.input_store import GeneralInputStore
+    if getattr(GeneralInputStore._filter, "_circling_float64", False):
+        return
+    original = GeneralInputStore._filter
+
+    def _filter(self, data_dict):
+        for key, value in list(data_dict.items()):
+            if key != "loaded" and hasattr(value, "select_dtypes"):
+                floats = value.select_dtypes("float32").columns
+                if len(floats):
+                    data_dict[key] = value.astype({c: "float64" for c in floats})
+        return original(self, data_dict)
+
+    _filter._circling_float64 = True
+    GeneralInputStore._filter = _filter
 
 
 def _install_ssl_eval_patch() -> None:

@@ -53,7 +53,7 @@ MOTION_FEATURES = {'pairmotion', 'pairmotionemb', 'pairmotionvmae'}
 DESCRIPTIONS = {'pose': 'male and partner pose', 'pair': 'pose + 17 pair features',
                 'pairemb': 'pose + 17 pair features + 32 PCs of DINOv2 ViT-S/14 fish-masked male crops',
                 'pairvmae': 'pose + 17 pair features + 32 PCs of VideoMAE clip embeddings of the whole scene',
-                'pairmotion': 'pose + normalized male/partner pair motion + gap-aware 0.5/1/2/4/8/16 s windows and persistence fractions',
+                'pairmotion': 'pose + normalized male/partner pair motion + 12 statistics in gap-aware centered 0.5/1/2/4 s windows',
                 'pairmotionemb': 'pairmotion + 32 PCs of DINOv2 fish-masked male crops',
                 'pairmotionvmae': 'pairmotion + 32 PCs of VideoMAE whole-scene clip embeddings'}
 WORKDIR = mstcn_workdir()

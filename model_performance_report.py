@@ -30,11 +30,12 @@ with app.setup(hide_code=True):
 
     from evaluation.evaluate import (ANNOTATION_DIR, evaluate, prediction_video_ids,
                                      read_ground_truth, read_ground_truth_labels, read_predictions,
-                                     summary_view,heldout_metrics, window_report, comparable_models)
+                                     summary_view)
+    from evaluation.evaluate_models import heldout_metrics, window_report, comparable_models
     from evaluation.metrics import LABEL_TAU
     from models.logistic_regression.features import KEYPOINTS
     from models.logistic_regression.train import VIDEO_FRAMES
-    from video_source import TABLE_URLS, VideoReader, download
+    from video_source import TABLE_URLS, VIDEO_URLS, VideoReader, download
 
     ROOT = Path(__file__).resolve().parent
     # data/ next to this notebook, else ../data; downloads go to ./data if neither exists
@@ -49,7 +50,7 @@ def _():
     # Model performance report
 
     Evaluates every model with predictions in `outputs/predictions/<model_name>/<video_id>.csv`
-    against the merged ground-truth spans, using the metrics from `evaluation/evaluate.py`.
+    against the finalized ground-truth circling events, using the metrics from `evaluation/evaluate.py`.
     Regenerate a model's predictions with:
 
     | Model | Command |
@@ -79,14 +80,18 @@ def _():
     | `lrcv_pairmotion` | `uv run python -m models.logistic_regression_cv.predict --features pairmotion` |
     | `lrcv_pairmotion_dinov2` | `uv run python -m models.logistic_regression_cv.predict --features pairmotionemb` |
     | `lrcv_pairmotion_videomae` | `uv run python -m models.logistic_regression_cv.predict --features pairmotionvmae` |
+    | `xgboost` | `uv run python -m models.xgboost.train` (trains and predicts) |
+    | `actionformer_pairmotion` | `uv run python -m models.actionformer.predict --features pairmotion` |
+    | `actionformer_pairmotion_dinov2` | `uv run python -m models.actionformer.predict --features pairmotionemb` |
+    | `actionformer_pairmotion_videomae` | `uv run python -m models.actionformer.predict --features pairmotionvmae` |
     | `sartab` | `uv run python -m models.sartab.predict` |
 
-    `run.ps1` trains and predicts all of them in order. Every predict command takes
+    `run.ps1` trains and predicts all of them in order. Per-frame predict commands accept
     `[--threshold 0.5] [--min-seconds 7.5] [--min-fraction 0.9]`.
+    ActionFormer uses its saved interval selection settings; see its `--help` for overrides.
 
-    The ground truth is `CIRCLING_GROUND_TRUTH` (default `merged_spans.csv`) and the videos are
-    `CIRCLING_VIDEOS` (default `0028_vid,0031_vid`). Each model is scored on the selected videos it
-    has prediction files for. The logistic regression and the rule-based detector cover 0028 and 0031 only.
+    Ground truth comes from finalized `circling_annotations_vid*.csv` files.
+    Each model is scored on the annotated videos it has prediction files for, including empty CSVs. The logistic regression and the rule-based detector cover 0028 and 0031 only.
 
     `CIRCLING_HARD_NEGATIVES=0.5` (`run.ps1 -HardNegatives 0.5`) makes half of the negative training segments
     ones where the fish are close but not circling; those models are named `<model>_hn50`.
@@ -94,7 +99,7 @@ def _():
     With `CIRCLING_LABELS=baseline` (`run.ps1 -Labels baseline`) the added models train on the logistic
     regression's 15 hard-coded spans on 0028/0031, are named `<model>_15spans`, and this report shows only
     them next to `logistic_regression` and `rule_based`. Otherwise it shows every model except the
-    `_15spans` ones. Evaluation is always against `CIRCLING_GROUND_TRUTH`.
+    `_15spans` ones. Evaluation always uses the finalized annotations.
 
     The whole-video numbers include training frames for every learned model, and the rule-based
     detector was tuned on video 0031, so none of them is a fully held-out evaluation. Held-out numbers
@@ -150,19 +155,14 @@ def _():
     return
 
 
-@app.cell
-def _():
-    # Download the pose and pair tables when missing; source videos are streamed for clip
-    # previews unless they are already in `data/`.
-    data_files = [download(_url, DATA_DIR / _filename) for _filename, _url in TABLE_URLS.items()]
-    return
-
-
 @app.cell(hide_code=True)
 def _():
     models = comparable_models()
     mo.stop(not models, mo.md("No predictions found in `outputs/predictions/`."))
     gt = read_ground_truth()
+    models = {_name: _folder for _name, _folder in models.items()
+              if set(prediction_video_ids(_folder)) & set(gt["video_id"])}
+    mo.stop(not models, mo.md("No predictions overlap the annotated videos."))
     _gt_labels = read_ground_truth_labels()
     predictions = {_name: read_predictions(_dir, labels=True, scores=True) for _name, _dir in models.items()}
     evaluations = {
@@ -190,7 +190,7 @@ def _(evaluations, predictions):
         for _overall in [_results.row(-1, named=True)]
     ])
     mo.vstack([
-        mo.md(f"## Model comparison\n\nOverall metrics across both videos · ground truth "
+        mo.md(f"## Model comparison\n\nOverall metrics across each model’s available annotated videos · ground truth "
               f"`{ANNOTATION_DIR.relative_to(ROOT)}/circling_annotations_vid*.csv`. "
               "Direction and cycle metrics pair segments at "
               f"IoU ≥ {LABEL_TAU / 100}; strict attribute columns use IoU ≥ 0.5. "
@@ -215,10 +215,10 @@ def _(evaluations, gt, predictions):
         mo.md("""
         ## Held-out test metrics
 
-        From each model's `metrics.json`: the sampled test set of its own split, at threshold 0.5.
+        From each model's `metrics.json`: the sampled test set of its own split, at its saved threshold.
         The test unit is frames for the per-frame and MS-TCN models and 60 s windows for SARTAB.
-        The logistic regression's test frames come from its 15 training spans, the others from the
-        shared segment split.
+        The logistic regression uses its 15 training spans; windowed XGBoost uses its
+        sampled window split. The other learned models use the shared segment split.
         """),
         mo.ui.table(_heldout, selection=None, pagination=False) if _heldout.height
         else mo.md("No `metrics.json` found."),
@@ -297,9 +297,11 @@ def _(models):
 
 
 @app.cell(hide_code=True)
-def _(clip_model, predictions):
+def _(clip_model, gt, predictions):
     _predicted = predictions[clip_model.value]
     mo.stop(_predicted.is_empty(), mo.md("No predicted spans to preview."))
+    _predicted = _predicted.filter(pl.col("video_id").is_in(gt["video_id"].unique().to_list()))
+    mo.stop(_predicted.is_empty(), mo.md("No predicted spans on annotated videos to preview."))
     _options = {
         f"{_video} · {_start:,}–{_end:,} · {(_end - _start + 1) / FPS:.1f} s": (_video, _start, _end)
         for _video, _start, _end in _predicted.select("video_id", "start", "end").iter_rows()
@@ -312,18 +314,21 @@ def _(clip_model, predictions):
 
 
 @app.function(hide_code=True)
-def render_clip(video_id, start, end, gt_spans, output_dir, padding=0, width=648):
+def render_clip(video_id, start, end, gt_spans, output_dir, padding=0, width=648, frame_count=None):
     """Cache a pose-overlay preview of a predicted span plus padding frames.
 
     Each frame lists its visible TrackIDs and is marked when it falls inside
     the predicted span or a ground-truth span. Bitrate is bounded so long spans stay around 2 MB.
     """
     first = max(0, start - padding)
-    last = min(VIDEO_FRAMES[video_id] - 1, end + padding)
+    last = min((frame_count or VIDEO_FRAMES[video_id]) - 1, end + padding)
     output = output_dir / f"{video_id}_{start}-{end}_pad{padding}.mp4"
     if output.exists():
         return output
-    poses = (pl.scan_parquet(DATA_DIR / f"{video_id}.parquet")
+    pose_path = DATA_DIR / f"{video_id}.parquet"
+    if not pose_path.exists() and pose_path.name in TABLE_URLS:
+        download(TABLE_URLS[pose_path.name], pose_path)
+    poses = (pl.scan_parquet(pose_path)
              .filter(pl.col("FrameNum").is_between(first, last)).collect())
     groups = poses.partition_by("FrameNum", as_dict=True)
     empty = poses.head(0)
@@ -361,9 +366,9 @@ def render_clip(video_id, start, end, gt_spans, output_dir, padding=0, width=648
 
 
 @app.cell(hide_code=True)
-def _(clip_model, clip_padding, clip_selection, gt, predictions):
+def _(clip_model, clip_padding, clip_selection, evaluations, gt, predictions):
     _video, _start, _end = clip_selection.value
-    _frame_count = VIDEO_FRAMES[_video]
+    _frame_count = evaluations[clip_model.value][0].filter(pl.col("video_id") == _video)["num_frames"].item()
     _padding = int(clip_padding.value * FPS)
     _preview_start, _preview_end = max(0, _start - _padding), min(_frame_count - 1, _end + _padding)
     _lanes = [
@@ -408,12 +413,20 @@ def _(clip_model, clip_padding, clip_selection, gt, predictions):
 
 
 @app.cell(hide_code=True)
-def _(clip_model, clip_padding, clip_selection, gt):
+def _(clip_model, clip_padding, clip_selection, evaluations, gt):
     _video, _start, _end = clip_selection.value
+    mo.stop(_video not in set(evaluations[clip_model.value][0]["video_id"]),
+            mo.md("This video has no ground truth available for preview."))
+    mo.stop(not (DATA_DIR / f"{_video}.mp4").exists() and f"{_video}.mp4" not in VIDEO_URLS,
+            mo.md(f"Preview unavailable: add `data/{_video}.mp4`."))
+    mo.stop(not (DATA_DIR / f"{_video}.parquet").exists() and f"{_video}.parquet" not in TABLE_URLS,
+            mo.md(f"Pose preview unavailable: add `data/{_video}.parquet`."))
     _gt_spans = gt.filter(pl.col("video_id") == _video).select("start", "end").rows()
     with mo.status.spinner(title="Rendering pose-overlay preview..."):
         _clip = render_clip(_video, _start, _end, _gt_spans, CLIPS_DIR / clip_model.value,
-                            padding=int(clip_padding.value * FPS))
+                            padding=int(clip_padding.value * FPS),
+                            frame_count=evaluations[clip_model.value][0].filter(
+                                pl.col("video_id") == _video)["num_frames"].item())
     mo.vstack([
         mo.video(str(_clip), width="80%"),
         mo.md(f"`{_clip.relative_to(ROOT)}`"),
