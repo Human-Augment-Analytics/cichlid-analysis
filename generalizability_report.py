@@ -86,8 +86,8 @@ def _(cv_videos, holdout):
     _outside = sorted(set(folds["test_video"]) - set(cv_videos))
     mo.stop(holdout in _outside, mo.md(f"**`{holdout}` is the holdout video but has fold results.**"))
     folds = folds.filter(pl.col("test_video").is_in(cv_videos))
-    _leaky = folds.filter(pl.col("train_videos") != len(cv_videos) - 1)["test_video"].unique().to_list()
-    folds = folds.filter(pl.col("train_videos") == len(cv_videos) - 1)
+    _leaky = folds.filter(~pl.col("standard_train_set"))["test_video"].unique().to_list()
+    folds = folds.filter(pl.col("standard_train_set"))
     mo.stop(folds.is_empty(), mo.md(
         f"Only debugging folds found (not trained on the other {len(cv_videos) - 1} videos): {_leaky}."))
     metrics = [_m for _m in METRICS if _m in folds.columns and folds[_m].fill_nan(None).drop_nulls().len()]
@@ -101,7 +101,7 @@ def _(cv_videos, folds, holdout, metrics):
     _scores = list(dict.fromkeys(("f1@50", "frame_f1", "frame_precision", "frame_recall", *metrics)))
     _columns = ["model", "source", "reviewed_negatives", "test_video", "pred_segments", "gt_segments",
                 "wall_seconds", *_scores]
-    _parts = [folds.with_columns(source=pl.lit("fold run"), reviewed_negatives=pl.lit("without"))]
+    _parts = [folds.with_columns(source=pl.lit("fold run"))]
     _plain = GENERALIZABILITY_DIR / "xgboost_plain_fold_scores.csv"
     if _plain.exists():
         _parts.append(pl.read_csv(_plain, infer_schema_length=None).with_columns(
@@ -148,9 +148,11 @@ def _(cv_videos, folds, holdout, metrics):
         A model is `complete` when all {len(cv_videos)} folds have finished. The rows come from
         four runs on the same folds:
 
-        - **fold run.** `evaluation/generalizability.py` as a Slurm array on PACE, without reviewed
-          negatives. `mean_wall_s` is the mean seconds for one fold: training on the fold's training
-          videos plus scoring the test video, without shared feature preparation.
+        - **fold run.** `evaluation/generalizability.py` as a Slurm array on PACE. The `xgboost_*`
+          models train with the reviewed negatives (their default); the `lrcv_*` and ActionFormer
+          models have no such option and train without them. `reviewed_negatives` shows the setting
+          recorded for each fold. `mean_wall_s` is the mean seconds for one fold: training on the
+          fold's training videos plus scoring the test video, without shared feature preparation.
         - **rule-based.** `models/rule_based/predict.py`: the refined rule of
           `models/rule_based/detector.py` (pair closer than 160 px; start at 0.75 turns in 4 s, continue
           above 0.4 turns; pauses under 3 s joined; spans of 2 s or more). It has no training step, so
@@ -169,8 +171,9 @@ def _(cv_videos, folds, holdout, metrics):
           blocks in each training video (300-frame buffer), then a centered 30-frame majority vote
           is applied. `with`: the reviewed-negative frames are already rows; they get weight 2.
 
-        The `with` setting is not the same in the two runs that have it, so compare `with` and
-        `without` only inside one source.
+        The `with` setting is not the same in every run that has it (fold run and plain xgboost add
+        unsampled reviewed-negative frames as training rows; shared features reweights rows it already
+        has), so compare `with` and `without` only inside one source.
 
         **`{holdout}` columns** are the final test: one model trained on all {len(cv_videos)} fold
         videos. The fold run did not score `{holdout}`, so those cells are empty for it.

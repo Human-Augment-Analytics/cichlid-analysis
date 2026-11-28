@@ -14,6 +14,7 @@ Each fold runs the normal train/predict CLIs in a subprocess with its own output
 and can run as a Slurm array (one --fold-index per task).
 """
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -28,7 +29,8 @@ ROOT = Path(__file__).resolve().parent.parent
 SEED = 42
 GENERALIZABILITY_DIR = ROOT / 'outputs' / 'generalizability'
 FOLDS_DIR = GENERALIZABILITY_DIR / 'folds'
-TRAINING_SPANS = ROOT / 'outputs' / 'finalized_spans.csv'
+# --train-videos runs go here, never into FOLDS_DIR, so the report cannot mistake them for folds.
+DEBUG_FOLDS_DIR = GENERALIZABILITY_DIR / 'debug_folds'
 # Annotation video id -> data file stem (download_data.py names), from the annotation file each id
 # is in: circling_annotations_vid0002.csv holds vid7-v02_d00, vid0007-day5 holds vid5-v07_d05, etc.
 DEFAULT_ALIASES = {'0007_vid': '0007-day6_vid', 'vid5-v07_d05': '0007-day5_vid', 'vid3-v13_d13': '0013_vid',
@@ -37,6 +39,8 @@ DEFAULT_ALIASES = {'0007_vid': '0007-day6_vid', 'vid5-v07_d05': '0007-day5_vid',
 # name -> (features to prepare, train command, commands that turn the test video's inputs into
 # outputs/predictions/<name>/<video>.csv). Pose-only models; embedding variants need
 # DINOv2/VideoMAE features and MS-TCN/SARTAB only score videos inside their training run.
+# 'annotated_negatives': the train CLI adds the reviewed hard-negative intervals by default
+# (models/common/annotated_negatives.py); the others have no such option.
 FRAME = {'xgboost_pose_pair': ('models.xgboost_frame', 'pair'),
          'xgboost_turns': ('models.xgboost_frame', 'pairturns'),
          'xgboost_pairmotion': ('models.xgboost_frame', 'pairmotion'),
@@ -46,6 +50,7 @@ FRAME = {'xgboost_pose_pair': ('models.xgboost_frame', 'pair'),
 MODELS = {
     **{name: {'prepare': ['pair'] + (['pairmotion'] if feature == 'pairmotion' else []),
               'train': ['-m', f'{module}.train', '--features', feature],
+              'annotated_negatives': module == 'models.xgboost_frame',
               'predict': [['-m', 'models.common.score', name],
                           ['-m', f'{module}.predict', '--features', feature]]}
        for name, (module, feature) in FRAME.items()},
@@ -54,6 +59,7 @@ MODELS = {
     'xgboost': {
         'prepare': [],
         'train': ['-m', 'models.xgboost.train', '--skip-full-video'],
+        'annotated_negatives': True,
         'predict': [['-m', 'models.xgboost.predict']]},
     'actionformer_pairmotion': {
         'prepare': ['pair', 'pairmotion'],
@@ -75,8 +81,18 @@ def split_videos(videos=None, seed=SEED):
     return holdout, [v for v in videos if v != holdout]
 
 
-def fold_dir(test_video):
-    return FOLDS_DIR / test_video
+def fold_dir(test_video, train_videos=None, default_train_videos=None):
+    """A fold's output root; a non-default training set gets its own folder under DEBUG_FOLDS_DIR."""
+    if train_videos is None or sorted(train_videos) == sorted(default_train_videos or []):
+        return FOLDS_DIR / test_video
+    digest = hashlib.sha1(','.join(sorted(train_videos)).encode()).hexdigest()[:8]
+    return DEBUG_FOLDS_DIR / f'{test_video}_{len(train_videos)}videos_{digest}'
+
+
+def reviewed_negatives(name, entry):
+    """'with' or 'without' reviewed hard negatives, from the fold record or the model default."""
+    used = entry.get('annotated_negatives', MODELS.get(name, {}).get('annotated_negatives', False))
+    return 'with' if used else 'without'
 
 
 def link_data(videos, data_dir, aliases, target=GENERALIZABILITY_DIR / 'data'):
@@ -155,27 +171,36 @@ def run(args, env, log):
     return time.time() - started
 
 
-def run_fold(test_video, cv_videos, models, data_dir, train_videos=None):
+def run_fold(test_video, cv_videos, models, data_dir, train_videos=None, holdout=None):
     """Train every model on the fold's training videos and predict its test video."""
     from models.common.config import write_finalized_spans
 
-    train_videos = sorted(train_videos or [v for v in cv_videos if v != test_video])
-    folder = fold_dir(test_video)
+    default_train = sorted(v for v in cv_videos if v != test_video)
+    train_videos = sorted(train_videos or default_train)
+    forbidden = sorted({test_video, holdout} & set(train_videos))
+    if forbidden:
+        raise SystemExit(f'{test_video} fold: training videos must not include {forbidden}')
+    folder = fold_dir(test_video, train_videos, default_train)
     folder.mkdir(parents=True, exist_ok=True)
     log = folder / 'run.log'
     base = {**os.environ, 'PYTHONPATH': str(ROOT), 'PYTHONUNBUFFERED': '1',
             'CIRCLING_OUTPUTS': str(folder), 'CIRCLING_DATA_DIR': str(data_dir),
-            'CIRCLING_GROUND_TRUTH': write_finalized_spans(TRAINING_SPANS),
+            # One spans file per fold: concurrent array tasks never share it.
+            'CIRCLING_GROUND_TRUTH': write_finalized_spans(folder / 'finalized_spans.csv'),
             'CIRCLING_LABELS': 'ground_truth', 'CIRCLING_HARD_NEGATIVES': '0'}
     train_env = {**base, 'CIRCLING_VIDEOS': ','.join(train_videos)}
     test_env = {**base, 'CIRCLING_VIDEOS': test_video}
     status_path = folder / 'fold.json'
     status = json.loads(status_path.read_text()) if status_path.exists() else {}
+    if status.get('train_videos') not in (None, train_videos):
+        status = {}  # recorded for another training set: its models and prepared features do not apply
     status.update({'test_video': test_video, 'train_videos': train_videos, 'seed': SEED})
     status.setdefault('models', {})
 
     def save():
-        status_path.write_text(json.dumps(status, indent=2) + '\n')
+        partial = status_path.with_name(f'.{status_path.name}.{os.getpid()}.part')
+        partial.write_text(json.dumps(status, indent=2) + '\n')
+        os.replace(partial, status_path)
 
     prepared = set(status.get('prepared', []))
     for name in models:
@@ -187,11 +212,16 @@ def run_fold(test_video, cv_videos, models, data_dir, train_videos=None):
                 prepared.add(feature)
                 status['prepared'] = sorted(prepared)
                 save()
-        entry = status['models'].setdefault(name, {})
+        # Start from an empty record and remove the old predictions, so a failed rerun leaves the
+        # model unfinished instead of reporting the previous run's predictions.
+        predictions = Path('predictions') / name / f'{test_video}.csv'
+        (folder / predictions).unlink(missing_ok=True)
+        entry = status['models'][name] = {'annotated_negatives': bool(spec.get('annotated_negatives'))}
+        save()
         entry['train_seconds'] = round(run(spec['train'], train_env, log), 1)
         save()
         entry['predict_seconds'] = round(sum(run(step, test_env, log) for step in spec['predict']), 1)
-        entry['predictions'] = str(Path('predictions') / name / f'{test_video}.csv')
+        entry['predictions'] = str(predictions)  # written last: marks the model finished
         save()
         print(f'{test_video} · {name}: trained in {entry["train_seconds"]:.0f} s', flush=True)
     return status
@@ -202,6 +232,7 @@ def fold_results(folds_dir=FOLDS_DIR):
     from evaluation.evaluate import evaluate, read_ground_truth, read_ground_truth_labels, read_predictions
 
     gt, labels = read_ground_truth(), read_ground_truth_labels()
+    _, cv_videos = split_videos()
     rows = []
     for status_path in sorted(Path(folds_dir).glob('*/fold.json')):
         status = json.loads(status_path.read_text())
@@ -210,8 +241,11 @@ def fold_results(folds_dir=FOLDS_DIR):
             if (folder / 'video_frames.json').exists() else {}
         from models.logistic_regression.train import VIDEO_FRAMES
         frames = counts.get(video) or VIDEO_FRAMES.get(video)
+        standard = status['train_videos'] == sorted(v for v in cv_videos if v != video)
         for name, entry in status['models'].items():
-            path = folder / entry.get('predictions', f'predictions/{name}/{video}.csv')
+            if 'predictions' not in entry:  # started but not finished (or failed)
+                continue
+            path = folder / entry['predictions']
             if not path.exists() or frames is None:
                 continue
             predicted = read_predictions(path.parent, labels=True, scores=True).filter(pl.col('video_id') == video)
@@ -219,6 +253,7 @@ def fold_results(folds_dir=FOLDS_DIR):
                                   num_frames={video: frames}, gt_labels=labels.filter(pl.col('video_id') == video),
                                   videos=[video])
             rows.append({'model': name, 'test_video': video, 'train_videos': len(status['train_videos']),
+                         'standard_train_set': standard, 'reviewed_negatives': reviewed_negatives(name, entry),
                          'predicted_spans': predicted.height, 'train_seconds': entry.get('train_seconds'),
                          'predict_seconds': entry.get('predict_seconds'),
                          'wall_seconds': (entry.get('train_seconds') or 0) + (entry.get('predict_seconds') or 0),
@@ -237,7 +272,8 @@ def main():
     parser.add_argument('--alias', action='append', default=[], metavar='VIDEO=STEM',
                         help='data file stem for an annotation video id (repeatable)')
     parser.add_argument('--train-videos', nargs='+', default=None,
-                        help='debugging: train on these videos instead of the other fold videos')
+                        help='debugging: train on these videos instead of the other fold videos; '
+                             f'results go to {DEBUG_FOLDS_DIR.relative_to(ROOT)}/, not into the report')
     args = parser.parse_args()
 
     holdout, cv_videos = split_videos()
@@ -254,7 +290,7 @@ def main():
     needed = sorted(set(cv_videos if args.train_videos is None else [*args.train_videos, *tests]))
     data = link_data(needed, args.data_dir or DATA_DIR, aliases)
     for test in tests:
-        run_fold(test, cv_videos, args.models, data, args.train_videos)
+        run_fold(test, cv_videos, args.models, data, args.train_videos, holdout)
 
 
 if __name__ == '__main__':

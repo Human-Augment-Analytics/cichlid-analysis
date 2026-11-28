@@ -173,8 +173,25 @@ def tune_frame_postprocess(train, fit, columns, workdir, feature, meta, counts, 
     return select_postprocess(oof, spans, counts, output_dir, folds=folds)
 
 
-def append_annotated_training_rows(rows, counts, positives, negatives):
-    """Add unsampled negatives after the repository split, grouping each annotated run."""
+# The widest centred feature window is 8 s (pairturns), so a frame's features reach 4 s to each side.
+TEST_CONTEXT_FRAMES = 4 * 30
+
+
+def near_frames(count, frames, radius=TEST_CONTEXT_FRAMES):
+    """Mask of frames within `radius` frames (inclusive) of any of `frames`."""
+    edges = np.zeros(count + 1, dtype=np.int64)
+    frames = np.asarray(frames, dtype=np.int64)
+    np.add.at(edges, np.clip(frames - radius, 0, count), 1)
+    np.add.at(edges, np.clip(frames + radius + 1, 0, count), -1)
+    return np.cumsum(edges[:-1]) > 0
+
+
+def append_annotated_training_rows(rows, counts, positives, negatives, radius=TEST_CONTEXT_FRAMES):
+    """Add unsampled negatives after the repository split, grouping each annotated run.
+
+    Frames within `radius` of a test frame are left out, so no added training frame shares
+    feature-window context with a held-out test frame.
+    """
     added = {}
     extra = []
     next_group = int(rows['segment'].max()) + 1
@@ -183,7 +200,9 @@ def append_annotated_training_rows(rows, counts, positives, negatives):
         starts = mask & ~np.r_[False, mask[:-1]]
         groups = np.cumsum(starts) - 1 + next_group
         next_group += int(starts.sum())
-        mask[rows.filter(pl.col('video') == video)['FrameNum'].to_numpy()] = False
+        video_rows = rows.filter(pl.col('video') == video)
+        mask[video_rows['FrameNum'].to_numpy()] = False
+        mask &= ~near_frames(count, video_rows.filter(pl.col('split') == 'test')['FrameNum'].to_numpy(), radius)
         frames = np.flatnonzero(mask)
         added[video] = len(frames)
         if len(frames):
@@ -229,7 +248,8 @@ def train_frame_model(name, feature, fit, title, model_label, details, annotatio
                       train_positive_frames=int(train['circling'].sum()), **fitted)
     if annotated_negatives is not None:
         report['annotated_negatives'] = {'source': str(annotated_negatives), 'extra_training_frames': added}
-        report['sampling'] += ' Add unsampled annotated negative frames to training after the split.'
+        report['sampling'] += (' Add unsampled annotated negative frames to training after the split, except '
+                               f'frames within {TEST_CONTEXT_FRAMES} frames of a test frame.')
     notes = [report['label_assumption'], report['sampling'], report['split'],
              f'Per-frame model on {DESCRIPTIONS[feature]}: every frame of the train segments for fitting, '
              f'every frame of the test segments for the metrics. {details}']
