@@ -82,6 +82,7 @@ def _():
     Each `(video, center frame)` appears once. This gives roughly equal classes;
     overlapping buffers can reduce the negative count. All {WINDOW} context frames come
     from the original signal series, even when their centers are not sampled.
+    Additional frames from reviewed negative intervals go into the training split.
 
     Loading and cleaning the pose/pair Parquets can take a minute on the first run.
     """)
@@ -100,8 +101,8 @@ def _():
     mo.md(f"""
     ## Split 70% training / 30% holdout and fit
 
-    Stratify by the center-frame label with seed 42. Fit 300 histogram-based trees
-    (depth 4, learning rate 0.05) on **training rows only**, with a fixed threshold
+    Stratify the original sample by the center-frame label with seed 42. Fit 400 histogram-based trees
+    (depth 3, learning rate 0.05) on **training rows only**, with a fixed threshold
     of 0.5. No tuning or early stopping uses the holdout labels.
 
     Adjacent windows can share {WINDOW - 1} of {WINDOW} frames across this random split. The
@@ -210,7 +211,7 @@ def _(data_dir, dataset, full, holdout, model, spans, test_ids, test_scores, x):
     mo.md(f"""
     ## Saved artifacts
 
-    - `{OUTPUT_DIR}/model.ubj`: the model fitted on the 70% training split.
+    - `{OUTPUT_DIR}/model.ubj`: the model fitted on the training split and added annotated negative frames.
     - `sampled_frames.parquet`: center frames, labels, split, and all {len(FEATURES)} features.
     - `test_predictions.parquet`: holdout scores and predictions.
     - `feature_importance.csv` and `metrics.json`: importance, configuration and evaluations.

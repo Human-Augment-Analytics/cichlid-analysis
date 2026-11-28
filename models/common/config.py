@@ -8,8 +8,33 @@ import polars as pl
 
 from models.logistic_regression.train import CIRCLING_SPANS_BY_VIDEO, ROOT, VIDEO_FRAMES as KNOWN_VIDEO_FRAMES
 
-GROUND_TRUTH = os.environ.get('CIRCLING_GROUND_TRUTH') or str(
-    ROOT / 'ground_truth_annotations' / 'finalized_annotations' / 'merged_spans.csv')
+# CIRCLING_OUTPUTS isolates a run's models, caches and predictions (e.g. one generalizability fold).
+OUTPUTS = Path(os.environ.get('CIRCLING_OUTPUTS') or ROOT / 'outputs').resolve()
+FINALIZED_SPANS = OUTPUTS / 'finalized_spans.csv'
+
+
+def write_finalized_spans(path=FINALIZED_SPANS):
+    """Merged circling spans from every finalized circling_annotations_vid*.csv, as one CSV.
+
+    Upstream replaced the two-video merged_spans.csv with per-video annotation files, so the
+    training default is derived from the same files the evaluation reads. The file is replaced
+    atomically and only when its content changes, so a concurrent reader (another Slurm array
+    task) never sees a partly written file.
+    """
+    from evaluation.evaluate import read_ground_truth
+
+    path = Path(path)
+    content = read_ground_truth().select(VideoID='video_id', StartFrame='start', EndFrame='end').write_csv()
+    if path.is_file() and path.read_text() == content:
+        return str(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_name(f'.{path.name}.{os.getpid()}.part')
+    partial.write_text(content)
+    os.replace(partial, path)
+    return str(path)
+
+
+GROUND_TRUTH = os.environ.get('CIRCLING_GROUND_TRUTH') or write_finalized_spans()
 LABELS = (os.environ.get('CIRCLING_LABELS') or 'ground_truth').strip().lower()
 if LABELS not in ('ground_truth', 'baseline'):
     raise SystemExit(f'CIRCLING_LABELS must be ground_truth or baseline, not {LABELS!r}')
@@ -28,7 +53,6 @@ if BASELINE and VIDEOS != sorted(KNOWN_VIDEO_FRAMES):
     raise SystemExit(f'CIRCLING_LABELS=baseline uses the 15 spans of {sorted(KNOWN_VIDEO_FRAMES)} only; '
                      f'CIRCLING_VIDEOS is {VIDEOS}')
 
-OUTPUTS = ROOT / 'outputs'
 FRAME_COUNTS = OUTPUTS / 'video_frames.json'
 MSTCN_ROOT = OUTPUTS / 'mstcn_dlc2action'
 DINOV2_DIR = MSTCN_ROOT / 'emb_fish_full'
@@ -108,6 +132,14 @@ def video_frames(videos=None, data_dir=None):
 
 def read_annotations(path=None, videos=None):
     path = FINALIZED_ANNOTATIONS if path is None else path
+    if isinstance(path, (list, tuple)):
+        # The evaluation's list of finalized circling_annotations_vid*.csv files
+        from evaluation.evaluate import read_ground_truth
+
+        spans = read_ground_truth(path).select(VideoID='video_id', StartFrame='start', EndFrame='end')
+        path = OUTPUTS / 'finalized_spans_from_list.csv'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        spans.write_csv(path)
     if not str(path).strip():
         raise SystemExit('Set FINALIZED_ANNOTATIONS in models/common/config.py or CIRCLING_GROUND_TRUTH')
     path = Path(path)

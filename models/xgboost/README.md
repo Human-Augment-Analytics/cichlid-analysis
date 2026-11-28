@@ -48,7 +48,8 @@ unioned. Positive labels take precedence over negative buffers, and rows are
 unique by video and center frame. Overlap can reduce the negative proportion.
 
 A reproducible stratified 70/30 frame split is used. XGBoost fits only the 70%
-training rows, with fixed hyperparameters and threshold 0.5. The notebook displays
+training rows plus unsampled frames from the annotated hard-negative intervals,
+with fixed hyperparameters and threshold 0.5. The notebook displays
 holdout metrics, a confusion matrix, a precision–recall curve, feature importance,
 and frame/segment evaluation over the entire length of both videos. Full-video
 scores use bounded batches and retain 60 frames of context across batch boundaries.
@@ -84,9 +85,25 @@ Files follow the model folder layout:
   `evaluation/evaluate.py` and `model_performance_report.py`.
 
 The saved model is the exact holdout-evaluated model; no full-data refit is made.
+The annotated negatives are read from
+`ground_truth_annotations/hard_negatives/hard_negatives_annotated.csv`.
+Finalized positives take precedence on overlapping frames. Frames already present
+in the sampled data keep their original row and split. This applies to the
+centered-window model and to every `models.xgboost_frame.train --features …`
+variant. Both training CLIs accept `--no-annotated-hard-negatives` for a baseline
+run or `--annotated-hard-negatives PATH` to use another CSV with the same schema.
+
 Re-run without marimo with:
 
 ```sh
 uv run python -m models.xgboost.train
 uv run python -m unittest tests.test_xgboost
 ```
+
+`predict.py` scores videos that the saved model did not train on, with the same
+threshold and vote. Both CLIs read `CIRCLING_VIDEOS`, `CIRCLING_OUTPUTS`,
+`CIRCLING_DATA_DIR` and `CIRCLING_GROUND_TRUTH`. Pose and pair tables named
+`<video>.parquet` and `<video>_pairs.parquet` are used first. Videos without a
+traced floor outline get no reflection flag. The generalizability folds run it as
+`xgboost` (`evaluation/generalizability.py`): train with `--skip-full-video` on the
+fold's training videos, then predict the test video.

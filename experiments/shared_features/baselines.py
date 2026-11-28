@@ -22,10 +22,9 @@ import pandas as pd
 import polars as pl
 
 from models.logistic_regression import features as lrf
-from models.rule_based import circling_cleaning as cc
 from models.xgboost import features as xgf
 
-from .common import EXPERIMENT_DIR, MODEL_FRAMES, VIDEO_FRAMES, VIDEOS
+from .common import DATA_DIR, EXPERIMENT_DIR, MODEL_FRAMES, VIDEO_FRAMES, VIDEOS
 
 BASELINE_FRAMES = EXPERIMENT_DIR / "baseline_frames.parquet"
 WINDOW_STRIDE = 4
@@ -34,12 +33,12 @@ WIN_COLUMNS = [f"win_{signal}_offset_{offset:+d}" for signal in xgf.SERIES_COLUM
 
 
 def lr_features(data_dir: Path, video: str) -> pd.DataFrame:
-    video_id = video.removesuffix("_vid")
     count = VIDEO_FRAMES[video]
+    fish_path, pairs_path = xgf.input_paths(data_dir, video)
     coordinates = [f"{k}_{axis}" for k in lrf.KEYPOINTS for axis in ("x", "y")]
-    poses = pl.read_parquet(cc.fish_path(data_dir, video_id), columns=[*lrf.TRACK_KEYS, "FrameNum", *coordinates])
+    poses = pl.read_parquet(fish_path, columns=[*lrf.TRACK_KEYS, "FrameNum", *coordinates])
     pairs = pl.read_parquet(
-        cc.pairs_path(data_dir, video_id),
+        pairs_path,
         columns=["project_id", "day_label", "FrameNum", "TrackID_1", "TrackID_2",
                  *lrf.PAIR_DISTANCES, *lrf.PAIR_ANGLES, *lrf.PAIR_RATES],
     )
@@ -73,7 +72,7 @@ def build(data_dir: Path, model_frames: Path = MODEL_FRAMES) -> pd.DataFrame:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=cc.default_data_dir(cc.ROOT))
+    parser.add_argument("--data-dir", type=Path, default=DATA_DIR)
     parser.add_argument("--out", type=Path, default=BASELINE_FRAMES)
     args = parser.parse_args()
     table = build(args.data_dir)
