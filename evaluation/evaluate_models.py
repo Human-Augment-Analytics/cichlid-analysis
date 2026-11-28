@@ -81,7 +81,7 @@ def heldout_metrics(names):
         if path is None or not path.exists():
             continue
         report = json.loads(path.read_text())
-        test = report.get('test')
+        test = report.get('test') or report.get('holdout')
         if not test:
             continue
         rows.append({'model': name, 'test_unit': report.get('test_unit', 'frames'),
@@ -93,12 +93,12 @@ def heldout_metrics(names):
 
 
 def window_report(gt, evaluations, predictions):
-    frames = video_frames()
     tables = []
     for name, (results, _) in evaluations.items():
         covered = evaluated_videos(results)
         table = window_metrics(gt.filter(pl.col('video_id').is_in(covered)), predictions[name],
-                               {v: frames[v] for v in covered})
+                               {row['video_id']: row['num_frames'] for row in results.iter_rows(named=True)
+                                if row['video_id'] != 'overall'})
         tables.append(table.with_columns(pl.lit(name).alias('model')).select('model', pl.exclude('model')))
     return pl.concat(tables) if tables else pl.DataFrame()
 

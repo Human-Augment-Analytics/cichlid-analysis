@@ -27,9 +27,9 @@ DESCRIPTIONS = {
                  'distance and orbit rate, turns and close fraction over centred 2/4/8 s windows, start/keep flags)',
     'pairturnsvmae': 'the 102 pose + pair frame features plus the rule-based detector\'s inputs and 32 VideoMAE '
                      'embedding PCs',
-    'pairmotion': 'the 50 causal pose features plus body-length-normalized male/partner distances, orientation, '
-                  'speed, cleaned angular movement and gap-aware centered 0.5/1/2/4/8/16 s window features, '
-                  'including sustained close/orbital-motion fractions',
+    'pairmotion': 'the 50 causal pose features plus 82 male/partner features: 33 body-length-normalized '
+                  'distance, orientation, speed and cleaned angular-movement features, 12 statistics in each '
+                  'gap-aware centered 0.5/1/2/4 s window, and pair_present',
     'pairmotionemb': 'pairmotion plus 32 DINOv2 embedding PCs and emb_present',
     'pairmotionvmae': 'pairmotion plus 32 VideoMAE embedding PCs and emb_present',
 }
