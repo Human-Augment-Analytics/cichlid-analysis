@@ -4,9 +4,19 @@ on:
   push:
     branches: [main]
   pull_request:
+    # The default types (opened, synchronize, reopened) rerun CI on new commits. `edited` also
+    # reruns it when the title, description or base branch changes; `ready_for_review` when a
+    # draft is marked ready.
+    types: [opened, synchronize, reopened, edited, ready_for_review]
 
 permissions:
   contents: read
+
+# A newer run for the same PR cancels its older run still in progress. Runs on main are not
+# cancelled, so every merged commit is checked.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   checks:
